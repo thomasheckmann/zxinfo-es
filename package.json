@@ -1,0 +1,25 @@
+{
+  "name": "zxinfo-es",
+  "version": "1.0.0",
+  "description": "Create Elasticsearch instance with ZXDB documents Edit",
+  "main": "create-zxinfo-documents.js",
+  "dependencies": {
+    "jsonfile": "^2.4.0",
+    "mysql": "^2.13.0",
+    "q": "^1.4.1"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/thomasheckmann/zxinfo-es.git"
+  },
+  "author": "Thomas Heckmann",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/thomasheckmann/zxinfo-es/issues"
+  },
+  "homepage": "https://github.com/thomasheckmann/zxinfo-es#readme"
+}
