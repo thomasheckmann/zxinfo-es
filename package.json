@@ -4,6 +4,7 @@
   "description": "Create Elasticsearch instance with ZXDB documents Edit",
   "main": "create-zxinfo-documents.js",
   "dependencies": {
+    "deasync": "^0.1.9",
     "jsonfile": "^2.4.0",
     "mysql": "^2.13.0",
     "q": "^1.4.1"
