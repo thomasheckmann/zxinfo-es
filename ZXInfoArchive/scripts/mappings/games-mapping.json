@@ -112,7 +112,7 @@
           "type": "nested",
           "properties": {
             "amount": {
-              "type": "double"
+              "type": "string"
             },
             "currency": {
               "type": "string"
@@ -360,7 +360,7 @@
           "type": "nested",
           "properties": {
             "amount": {
-              "type": "double"
+              "type": "string"
             },
             "currency": {
               "type": "string",
