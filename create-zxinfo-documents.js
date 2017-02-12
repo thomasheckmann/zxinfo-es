@@ -325,7 +325,7 @@ FROM   entries e
 WHERE  e.id = 996; 
 
  */
-var getInspiredByTieInLicense = function(connection, id) {
+var getInspiredByTieInLicense = function(connection) {
     var deferred = Q.defer();
     var connection = getConnection();
     connection.query('select ll.name as name, lc1.text as country, lict.text as type, lic.name as originalname from entries e inner join licenses lic on e.license_id = lic.id inner join licensetypes lict on lic.licensetype_id = lict.id left join licensors lor on lor.license_id = lic.id left join labels ll on lor.label_id = ll.id left join countries lc1 on ll.country_id = lc1.id where e.id = ?', [id], function(error, results, fields) {
