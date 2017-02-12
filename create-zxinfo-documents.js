@@ -35,6 +35,58 @@ pool.on('release', function(connection) {
 function getConnection() {
     return pool;
 }
+
+Array.prototype.contains = function(element) {
+    return this.indexOf(element) > -1;
+};
+
+var priceHelper = function(price, id) {
+    var amount, currency, license;
+    if (price == null) {
+        return undefined;
+    } else if (["Freeware", "P&P only", "Public Domain", "Rental", "GPL", "Creative Commons", "Commercial", "Commercial / Full price"].contains(price)) {
+        license = price;
+    } else if (price.startsWith("£")) {
+        currency = "£";
+        amount = price.substring(1, price.length);
+    } else if (price.startsWith("$")) {
+        currency = "$";
+        amount = price.substring(1, price.length);
+    } else if (price.startsWith("€")) {
+        currency = "€";
+        amount = price.substring(1, price.length);
+    } else if (price.startsWith("Lit.")) {
+        currency = "Lit.";
+        amount = price.substring(5, price.length);
+    } else if (price.endsWith("ptas.")) {
+        amount = price.substring(0, price.indexOf(" ptas."));
+        currency = "ptas.";
+    } else if (price.endsWith("DM")) {
+        amount = price.substring(0, price.indexOf(" DM"));
+        currency = "DM";
+    } else if (price.endsWith("Sk")) {
+        amount = price.substring(0, price.indexOf(" Sk"));
+        currency = "Sk";
+    } else if (price.endsWith("Fr.")) {
+        amount = price.substring(0, price.indexOf(" Fr."));
+        currency = "Fr.";
+    } else if (price.endsWith("HUF")) {
+        amount = price.substring(0, price.indexOf(" HUF"));
+        currency = "HUF";
+    } else if (price.endsWith("zloty")) {
+        amount = price.substring(0, price.indexOf(" zloty"));
+        currency = "zloty";
+    } else if (price.endsWith("dinarjev")) {
+        amount = price.substring(0, price.indexOf(" dinarjev"));
+        currency = "dinarjev";
+    } else {
+        amount = price;
+        currency = "N/A";
+        console.error("ERROR: ", id + " UNKNOWN PRICE: ", price);
+    }
+    return { amount: amount, currency: currency, license: license };
+}
+
 /**
  * Get basic info
 
@@ -42,7 +94,7 @@ SELECT e.title AS fulltitle,aka.title AS alsoknownas,
        r.release_year AS yearofrelease,
        machinet.text AS machinetype,e.max_players AS numberofplayers,
        turnt.text AS multiplayermode,multipl.text AS multiplayertype,
-       entryt.text AS type,idm.text AS messagelanguage,
+       entryt.text AS type, e.book_isbn as isbn, idm.text AS messagelanguage,
        pubt.text AS originalpublication,r.release_price AS originalprice,
        availt.text AS availability,e.comments AS remarks,sc.score AS score,
        sc.votes AS votes
@@ -75,31 +127,24 @@ WHERE  e.id = 2259
 var getBasicInfo = function(id) {
     var deferred = Q.defer();
     var connection = getConnection();
-    connection.query('select e.title as fulltitle, aka.title as alsoknownas, r.release_year as yearofrelease, machinet.text as machinetype, e.max_players as numberofplayers, turnt.text as multiplayermode, multipl.text as multiplayertype, entryt.text as type, idm.text as messagelanguage, pubt.text as originalpublication, r.release_price as originalprice, availt.text as availability, e.comments as remarks, e.spot_comments as spotcomments, sc.score as score, sc.votes as votes from entries e inner join releases r on r.entry_id = e.id left join aliases aka on aka.entry_id = r.entry_id and aka.release_seq = r.release_seq left join availabletypes availt on e.availabletype_id = availt.id left join machinetypes machinet on e.machinetype_id = machinet.id left join turntypes turnt on e.turntype_id = turnt.id left join multiplaytypes multipl on e.multiplaytype_id = multipl.id left join genretypes entryt on e.genretype_id = entryt.id left join publicationtypes pubt on e.publicationtype_id = pubt.id left join idioms idm on e.idiom_id = idm.id left join scores sc on sc.entry_id = e.id where e.id = ? and r.release_seq = 0', [id], function(error, results, fields) {
+    connection.query('select e.title as fulltitle, aka.title as alsoknownas, r.release_year as yearofrelease, machinet.text as machinetype, e.max_players as numberofplayers, turnt.text as multiplayermode, multipl.text as multiplayertype, entryt.text as type, e.book_isbn as isbn, idm.text as messagelanguage, pubt.text as originalpublication, r.release_price as originalprice, availt.text as availability, e.comments as remarks, e.spot_comments as spotcomments, sc.score as score, sc.votes as votes from entries e inner join releases r on r.entry_id = e.id left join aliases aka on aka.entry_id = r.entry_id and aka.release_seq = r.release_seq left join availabletypes availt on e.availabletype_id = availt.id left join machinetypes machinet on e.machinetype_id = machinet.id left join turntypes turnt on e.turntype_id = turnt.id left join multiplaytypes multipl on e.multiplaytype_id = multipl.id left join genretypes entryt on e.genretype_id = entryt.id left join publicationtypes pubt on e.publicationtype_id = pubt.id left join idioms idm on e.idiom_id = idm.id left join scores sc on sc.entry_id = e.id where e.id = ? and r.release_seq = 0', [id], function(error, results, fields) {
         if (error) {
             throw error;
         }
 
-        var price = results[0].originalprice;
-        var amount, currency;
-        if (price == null) {
-            console.error("ERROR: ", id + " price undefined");
-        } else if (price.startsWith("£")) {
-            currency = "£";
-            amount = price.substring(1, price.length);
-        } else {
-            console.error("ERROR: ", id + " UNKNOWN PRICE: ", price);
-        }
+        var originalprice = [];
+        var orgPrice = priceHelper(results[0].originalprice, id);
+        if (orgPrice != undefined) { originalprice.push(orgPrice) };
 
         var entrytypes, type, subtype;
         if (results[0].type == undefined) {
-            console.error("ERROR: ", id + ": MISSING type");
+            ; //console.error("ERROR: ", id + ": MISSING type");
         } else {
             entrytypes = results[0].type.split(": ");
             type = entrytypes[0];
             subtype = entrytypes[1];
         }
-       var doc = {
+        var doc = {
             fulltitle: results[0].fulltitle,
             alsoknownas: results[0].alsoknownas,
             yearofrelease: results[0].yearofrelease,
@@ -109,13 +154,10 @@ var getBasicInfo = function(id) {
             multiplayertype: results[0].multiplayertype,
             type: type,
             subtype: subtype,
+            isbn: results[0].isbn,
             messagelanguage: results[0].messagelanguage,
             originalpublication: results[0].originalpublication,
-            originalprice: [{
-                // results[0].originalprice,
-                amount: amount,
-                currency: currency
-            }],
+            originalprice: originalprice,
             availability: results[0].availability,
             remarks: results[0].remarks,
             spotcomments: results[0].spotcomments,
@@ -761,7 +803,7 @@ var getAdverts = function(id) {
 
 var zxdb_doc = function(id) {
     var done = false;
-     Q.all([getBasicInfo(id),
+    Q.all([getBasicInfo(id),
         getPublisher(id),
         getReReleasedBy(id),
         getAuthors(id),
@@ -797,7 +839,8 @@ var zxdb_doc = function(id) {
             done = true;
         })
     });
-    require('deasync').loopWhile(function(){return !done;});
+    require('deasync').loopWhile(function() {
+        return !done; });
 }
 
 var getAllIDs = function() {
@@ -813,7 +856,8 @@ var getAllIDs = function() {
         }
         done = true;
     });
-    require('deasync').loopWhile(function(){return !done;});
+    require('deasync').loopWhile(function() {
+        return !done; });
     console.log("Finished!");
     pool.end();
 }
