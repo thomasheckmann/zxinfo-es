@@ -289,7 +289,7 @@ var getAuthors = function(id) {
             tmparr.push(results[i].name);
         }
         if (tmparr.length > 0) {
-            arr.push({ authors: tmparr })
+            arr.push({ authors: tmparr, group: group })
         }
         deferred.resolve({ authors: arr });
     });
