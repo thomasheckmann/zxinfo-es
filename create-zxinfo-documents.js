@@ -210,11 +210,25 @@ var getPublisher = function(id) {
 
 /**
  * Get re-released by
+SELECT pub.name AS name,pc1.text AS country, aka.title as as_title
+FROM   releases r 
+       LEFT JOIN aliases aka
+              ON aka.entry_id = r.entry_id
+                 AND aka.release_seq = r.release_seq
+       INNER JOIN publishers p 
+               ON p.entry_id = r.entry_id 
+                  AND p.release_seq = r.release_seq 
+       INNER JOIN labels pub 
+               ON p.label_id = pub.id 
+       LEFT JOIN countries pc1 
+              ON pub.country_id = pc1.id 
+WHERE  r.entry_id = 2000011
+       AND r.release_seq > 0   
  */
 var getReReleasedBy = function(id) {
     var deferred = Q.defer();
     var connection = getConnection();
-    connection.query('select pub.name as name, pc1.text as country from releases r inner join publishers p on p.entry_id = r.entry_id and p.release_seq = r.release_seq inner join labels pub on p.label_id = pub.id left join countries pc1 on pub.country_id = pc1.id where r.entry_id = ? and r.release_seq > 0', [id], function(error, results, fields) {
+    connection.query('SELECT pub.name AS name,pc1.text AS country, aka.title as as_title FROM releases r LEFT JOIN aliases aka ON aka.entry_id = r.entry_id AND aka.release_seq = r.release_seq INNER JOIN publishers p ON p.entry_id = r.entry_id AND p.release_seq = r.release_seq INNER JOIN labels pub ON p.label_id = pub.id LEFT JOIN countries pc1 ON pub.country_id = pc1.id WHERE r.entry_id = ? AND r.release_seq > 0', [id], function(error, results, fields) {
         if (error) {
             throw error;
         }
@@ -224,6 +238,7 @@ var getReReleasedBy = function(id) {
             var item = {
                 name: results[i].name,
                 country: results[i].country,
+                as_title: results[i].as_title
             }
             arr.push(item);
         }
