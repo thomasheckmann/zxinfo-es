@@ -297,26 +297,45 @@ var getAuthors = function(id) {
 }
 
 /**
- * Get authoring
+ * Get authored
 
 -- This program was authored with the following tools...
-SELECT dev.name AS name,team.name AS dev_group
-FROM   authors aut
-       INNER JOIN labels dev
-               ON aut.label_id = dev.id
-       LEFT JOIN countries ac1
-              ON dev.country_id = ac1.id
-       LEFT JOIN labels team
-              ON aut.team_id = team.id
-       LEFT JOIN countries tc1
-              ON team.country_id = tc1.id
-WHERE  aut.entry_id = ? 
 
  */
-var getAuthoring = function(id) {
+var getAuthored = function(id) {
     var deferred = Q.defer();
     var connection = getConnection();
     connection.query('select tool.title, pub.name as publisher from authorings iaut inner join entries tool on iaut.util_id = tool.id left join publishers p on p.entry_id = tool.id left join labels pub on p.label_id = pub.id where iaut.entry_id = ? and p.release_seq = 0', [id], function(error, results, fields) {
+        if (error) {
+            throw error;
+        }
+        var arr = [];
+        var i = 0;
+        for (; i < results.length; i++) {
+            var item = {
+                title: results[i].title,
+                publisher: results[i].publisher
+            }
+            arr.push(item);
+        }
+        deferred.resolve({ authored: arr });
+    });
+    return deferred.promise;
+}
+
+/*
+-- The following programs are known to have been authored with this tool...
+select prog.title as title, pub.name as publisher from authorings eaut 
+inner join entries prog on eaut.entry_id = prog.id
+left join publishers p on p.entry_id = prog.id 
+left join labels pub on p.label_id = pub.id 
+
+where eaut.util_id = 30002;
+*/
+var getAuthoring = function(id) {
+    var deferred = Q.defer();
+    var connection = getConnection();
+    connection.query('select prog.title as title, pub.name as publisher from authorings eaut inner join entries prog on eaut.entry_id = prog.id left join publishers p on p.entry_id = prog.id left join labels pub on p.label_id = pub.id where eaut.util_id = ?', [id], function(error, results, fields) {
         if (error) {
             throw error;
         }
@@ -415,32 +434,22 @@ var getInspiredByTieInLicense = function(id) {
  * Get series
 
  -- This program belongs in the following series (with these other titles)...
-SELECT prog.title AS title,pub.name AS publisher
-FROM   entries e
-       INNER JOIN members memb
-               ON memb.entry_id = e.id
-       INNER JOIN groups g
-               ON memb.group_id = g.id
-       INNER JOIN grouptypes groupt
-               ON g.grouptype_id = groupt.id
-                  AND groupt.id IN ( "n", "s", "u" )
-       INNER JOIN members others
-               ON others.group_id = g.id
-       INNER JOIN entries prog
-               ON others.entry_id = prog.id
-       LEFT JOIN publishers p
-              ON p.entry_id = e.id
-       LEFT JOIN labels pub
-              ON p.label_id = pub.id
-WHERE  e.id = 9372
-   AND p.release_seq = 0
-ORDER  BY others.series_seq ASC 
+select prog.title as title, pub.name as publisher
+from entries e
+inner join members memb on memb.entry_id = e.id
+inner join groups g on memb.group_id = g.id 
+inner join grouptypes groupt on g.grouptype_id = groupt.id and groupt.id in ("N", "S", "U")
+inner join members others on others.group_id = g.id
+inner join entries prog on others.entry_id = prog.id 
+left join publishers p on p.entry_id = prog.id 
+left join labels pub on p.label_id = pub.id 
+where e.id = 9297 and p.release_seq = 0 order by g.name, others.series_seq ASC 
 
  */
 var getSeries = function(id) {
     var deferred = Q.defer();
     var connection = getConnection();
-    connection.query('select prog.title as title, pub.name as publisher from entries e inner join members memb on memb.entry_id = e.id inner join groups g on memb.group_id = g.id inner join grouptypes groupt on g.grouptype_id = groupt.id and groupt.id in ("N", "S", "U") inner join members others on others.group_id = g.id inner join entries prog on others.entry_id = prog.id left join publishers p on p.entry_id = e.id left join labels pub on p.label_id = pub.id where e.id = ? and p.release_seq = 0 order by others.series_seq ASC', [id], function(error, results, fields) {
+    connection.query('select prog.title as title, pub.name as publisher, g.name as groupname, groupt.id as grouptype from entries e inner join members memb on memb.entry_id = e.id inner join groups g on memb.group_id = g.id inner join grouptypes groupt on g.grouptype_id = groupt.id and groupt.id in ("N", "S", "U") inner join members others on others.group_id = g.id inner join entries prog on others.entry_id = prog.id left join publishers p on p.entry_id = prog.id left join labels pub on p.label_id = pub.id where e.id = ? and p.release_seq = 0 order by g.name, others.series_seq ASC', [id], function(error, results, fields) {
         if (error) {
             throw error;
         }
@@ -449,11 +458,42 @@ var getSeries = function(id) {
         for (; i < results.length; i++) {
             var item = {
                 title: results[i].title,
-                publisher: results[i].publisher
+                publisher: results[i].publisher,
+                groupname: results[i].groupname,
+                grouptype: results[i].grouptype,
             }
             arr.push(item);
         }
         deferred.resolve({ series: arr });
+    });
+    return deferred.promise;
+}
+
+/*
+-- This program is also available on the following platforms... 
+SELECT p.link_system, plat.text
+FROM   ports p 
+       INNER JOIN platforms plat 
+               ON p.platform_id = plat.id 
+WHERE  p.entry_id = 2259 ORDER BY plat.id; 
+*/
+var getOtherSystems = function(id) {
+    var deferred = Q.defer();
+    var connection = getConnection();
+    connection.query('SELECT p.link_system, plat.text FROM ports p INNER JOIN platforms plat ON p.platform_id = plat.id WHERE p.entry_id = ? ORDER BY plat.id', [id], function(error, results, fields) {
+        if (error) {
+            throw error;
+        }
+        var arr = [];
+        var i = 0;
+        for (; i < results.length; i++) {
+            var item = {
+                name: results[i].text,
+                url: results[i].link_system
+            }
+            arr.push(item);
+        }
+        deferred.resolve({ othersystems: arr });
     });
     return deferred.promise;
 }
@@ -822,10 +862,12 @@ var zxdb_doc = function(id) {
         getPublisher(id),
         getReReleasedBy(id),
         getAuthors(id),
+        getAuthored(id),
         getAuthoring(id),
         getControls(id),
         getInspiredByTieInLicense(id),
         getSeries(id),
+        getOtherSystems(id),
         getCompilationContent(id),
         getFeatures(id),
         getSites(id),
