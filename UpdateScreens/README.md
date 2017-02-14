@@ -13,4 +13,8 @@ To update with new screens from ZXDB:
 	* images(png/gif) goes to directory 'new'
 	* extra json (additionals) goes to directory 'json'
 
+* update JSON in Elasticsearh by running node program
+````
+> node update-new-screens.js UpdateScreens/json/
+````
 

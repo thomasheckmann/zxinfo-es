@@ -98,7 +98,7 @@ function convertScreens($in_dir, $out_dir) {
 			file_put_contents($outfile, $binary);
 			$newfilesize = filesize($outfile);			
 			echo "($id) - ($type) $filename - $scrType, size: $size => $outfile, size: $newfilesize\n";
-			$object = (object) ['filename' => $newfilename, 'url' => '/new/sinclair/screens/' . $outfile, 'size' => $newfilesize, 'type' => $type];
+			$object = (object) ['filename' => $newfilename, 'url' => '/' . $outfile, 'size' => $newfilesize, 'type' => $type];
 
 			if(is_null($scr_array[$id])) {
 				$scr_array[$id] = array();
@@ -113,7 +113,6 @@ convertScreens('mirror/spectrumcomputing.co.uk/new/sinclair/screens/load/scr/', 
 // convertScreens('img/', 'img/');
 // print_r($scr_array);
 foreach ($scr_array as $key => $items) {
-	echo "$key - " . str_pad($key, 7, '0', STR_PAD_LEFT) . "\n";
 	$json_file = str_pad($key, 7, '0', STR_PAD_LEFT) . ".json";
 	$json_items = json_encode($items, JSON_UNESCAPED_SLASHES);
 	$json_str = "{ \"additionals\": $json_items }";
