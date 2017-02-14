@@ -1,5 +1,4 @@
 /node_modules/
-/mirror/
 *.log
 .DS_Store
 todo.txt
