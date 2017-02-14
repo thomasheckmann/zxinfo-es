@@ -346,6 +346,7 @@ var getAuthoring = function(id) {
                 title: results[i].title,
                 publisher: results[i].publisher
             }
+            console.log(results[i].title);
             arr.push(item);
         }
         deferred.resolve({ authoring: arr });
