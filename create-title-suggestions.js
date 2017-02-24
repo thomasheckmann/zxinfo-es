@@ -1,50 +1,13 @@
-'use strict';
-var zxinfo_suggests_index = 'zxinfo_suggests';
-var zxinfo_suggests_type_title = 'zxinfo_suggests_type_title';
-
-var elasticsearch = require('elasticsearch');
-var client = new elasticsearch.Client({
-    host: 'localhost:9200',
-    log: 'info'
-});
-
-var mariadb_username = 'root';
-var mariadb_password = 'zxdb1234';
-var mariadb_dbname = 'zxdb';
+var es = require('./esConfig');
+var db = require('./dbConfig');
 
 var json_output_dir = 'data/processed/json/';
 var allcombinations = require('allcombinations')
 
-var mysql = require('mysql');
 var jsonfile = require('jsonfile')
 
-var pool = mysql.createPool({
-    connectionLimit: 10,
-    host: 'localhost',
-    user: mariadb_username,
-    password: mariadb_password,
-    database: mariadb_dbname
-});
-
-var usedConnection = 0;
-pool.on('acquire', function(connection) {
-    usedConnection++;
-    // console.log('==> Connection %d acquired (%d)', connection.threadId, usedConnection);
-});
-pool.on('connection', function(connection) {
-    console.log('+== Connection %d is made', connection.threadId);
-});
-pool.on('release', function(connection) {
-    usedConnection--;
-    //console.log('<== Connection %d released (%d)', connection.threadId, usedConnection);
-});
-
-function getConnection() {
-    return pool;
-}
-
 var getAllIDs = function() {
-    var connection = getConnection();
+    var connection = db.getConnection();
     var done = false;
     connection.query('select id, title from entries where 1 order by id asc', function(error, results, fields) {
         if (error) {
@@ -104,9 +67,9 @@ var getAllIDs = function() {
             };
 
             var doneIndex = false;
-            client.index({
-                    index: zxinfo_suggests_index,
-                    type: zxinfo_suggests_type_title,
+            es.client.index({
+                    index: es.zxinfo_suggests_index,
+                    type: es.zxinfo_suggests_type_title,
                     id: id,
                     body: item
                 },
@@ -128,7 +91,7 @@ var getAllIDs = function() {
         return !done;
     });
     console.log("Finished!");
-    pool.end();
+    db.closeConnection(connection);
 }
 
 getAllIDs();

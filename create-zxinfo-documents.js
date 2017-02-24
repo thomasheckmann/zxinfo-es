@@ -1,40 +1,12 @@
 'use strict';
 
-var mariadb_username = 'root';
-var mariadb_password = 'zxdb1234';
-var mariadb_dbname = 'zxdb';
+var db = require('./dbConfig');
 
 var json_output_dir = 'data/processed/json/';
 
-var mysql = require('mysql');
 var Q = require('Q');
 var jsonfile = require('jsonfile')
 var path = require('path');
-
-var pool = mysql.createPool({
-    connectionLimit: 10,
-    host: 'localhost',
-    user: mariadb_username,
-    password: mariadb_password,
-    database: mariadb_dbname
-});
-
-var usedConnection = 0;
-pool.on('acquire', function(connection) {
-    usedConnection++;
-    // console.log('==> Connection %d acquired (%d)', connection.threadId, usedConnection);
-});
-pool.on('connection', function(connection) {
-    console.log('+== Connection %d is made', connection.threadId);
-});
-pool.on('release', function(connection) {
-    usedConnection--;
-    //console.log('<== Connection %d released (%d)', connection.threadId, usedConnection);
-});
-
-function getConnection() {
-    return pool;
-}
 
 Array.prototype.contains = function(element) {
     return this.indexOf(element) > -1;
@@ -126,7 +98,7 @@ WHERE  e.id = 2259
  */
 var getBasicInfo = function(id) {
     var deferred = Q.defer();
-    var connection = getConnection();
+    var connection = db.getConnection();
     connection.query('select e.title as fulltitle, aka.title as alsoknownas, r.release_year as yearofrelease, machinet.text as machinetype, e.max_players as numberofplayers, turnt.text as multiplayermode, multipl.text as multiplayertype, entryt.text as type, e.book_isbn as isbn, idm.text as messagelanguage, pubt.text as originalpublication, r.release_price as originalprice, availt.text as availability, e.comments as remarks, e.spot_comments as spotcomments, sc.score as score, sc.votes as votes from entries e inner join releases r on r.entry_id = e.id left join aliases aka on aka.entry_id = r.entry_id and aka.release_seq = r.release_seq left join availabletypes availt on e.availabletype_id = availt.id left join machinetypes machinet on e.machinetype_id = machinet.id left join turntypes turnt on e.turntype_id = turnt.id left join multiplaytypes multipl on e.multiplaytype_id = multipl.id left join genretypes entryt on e.genretype_id = entryt.id left join publicationtypes pubt on e.publicationtype_id = pubt.id left join idioms idm on e.idiom_id = idm.id left join scores sc on sc.entry_id = e.id where e.id = ? and r.release_seq = 0', [id], function(error, results, fields) {
         if (error) {
             throw error;
@@ -189,7 +161,7 @@ WHERE  p.entry_id = 21343
  */
 var getPublisher = function(id) {
     var deferred = Q.defer();
-    var connection = getConnection();
+    var connection = db.getConnection();
     connection.query('select pub.name as name, pc1.text as country from publishers p inner join labels pub on p.label_id = pub.id left join countries pc1 on pub.country_id = pc1.id where p.entry_id = ? and p.release_seq = 0', [id], function(error, results, fields) {
         if (error) {
             throw error;
@@ -227,7 +199,7 @@ WHERE  r.entry_id = 2000011
  */
 var getReReleasedBy = function(id) {
     var deferred = Q.defer();
-    var connection = getConnection();
+    var connection = db.getConnection();
     connection.query('SELECT pub.name AS name,pc1.text AS country, aka.title as as_title FROM releases r LEFT JOIN aliases aka ON aka.entry_id = r.entry_id AND aka.release_seq = r.release_seq INNER JOIN publishers p ON p.entry_id = r.entry_id AND p.release_seq = r.release_seq INNER JOIN labels pub ON p.label_id = pub.id LEFT JOIN countries pc1 ON pub.country_id = pc1.id WHERE r.entry_id = ? AND r.release_seq > 0', [id], function(error, results, fields) {
         if (error) {
             throw error;
@@ -269,7 +241,7 @@ WHERE  aut.entry_id = ?
      */
 var getAuthors = function(id) {
     var deferred = Q.defer();
-    var connection = getConnection();
+    var connection = db.getConnection();
     connection.query('select dev.name as name, team.name as dev_group from authors aut inner join labels dev on aut.label_id = dev.id left join countries ac1 on dev.country_id = ac1.id left join labels team on aut.team_id = team.id left join countries tc1 on team.country_id = tc1.id where aut.entry_id = ?', [id], function(error, results, fields) {
         if (error) {
             throw error;
@@ -304,7 +276,7 @@ var getAuthors = function(id) {
  */
 var getAuthored = function(id) {
     var deferred = Q.defer();
-    var connection = getConnection();
+    var connection = db.getConnection();
     connection.query('select tool.title, pub.name as publisher from authorings iaut inner join entries tool on iaut.util_id = tool.id left join publishers p on p.entry_id = tool.id left join labels pub on p.label_id = pub.id where iaut.entry_id = ? and p.release_seq = 0', [id], function(error, results, fields) {
         if (error) {
             throw error;
@@ -334,7 +306,7 @@ where eaut.util_id = 30002;
 */
 var getAuthoring = function(id) {
     var deferred = Q.defer();
-    var connection = getConnection();
+    var connection = db.getConnection();
     connection.query('select prog.title as title, pub.name as publisher from authorings eaut inner join entries prog on eaut.entry_id = prog.id left join publishers p on p.entry_id = prog.id left join labels pub on p.label_id = pub.id where eaut.util_id = ?', [id], function(error, results, fields) {
         if (error) {
             throw error;
@@ -346,7 +318,6 @@ var getAuthoring = function(id) {
                 title: results[i].title,
                 publisher: results[i].publisher
             }
-            console.log(results[i].title);
             arr.push(item);
         }
         deferred.resolve({ authoring: arr });
@@ -366,7 +337,7 @@ WHERE  ctr.entry_id = 996
  */
 var getControls = function(id) {
     var deferred = Q.defer();
-    var connection = getConnection();
+    var connection = db.getConnection();
     connection.query('select ctrt.text as control from controls ctr inner join controltypes ctrt on ctr.controltype_id = ctrt.id where ctr.entry_id = ?', [id], function(error, results, fields) {
         if (error) {
             throw error;
@@ -404,7 +375,7 @@ WHERE  e.id = 996;
  */
 var getInspiredByTieInLicense = function(id) {
     var deferred = Q.defer();
-    var connection = getConnection();
+    var connection = db.getConnection();
     connection.query('select ll.name as name, lc1.text as country, lict.text as type, lic.name as originalname from entries e inner join licenses lic on e.license_id = lic.id inner join licensetypes lict on lic.licensetype_id = lict.id left join licensors lor on lor.license_id = lic.id left join labels ll on lor.label_id = ll.id left join countries lc1 on ll.country_id = lc1.id where e.id = ?', [id], function(error, results, fields) {
         if (error) {
             throw error;
@@ -449,7 +420,7 @@ where e.id = 9297 and p.release_seq = 0 order by g.name, others.series_seq ASC
  */
 var getSeries = function(id) {
     var deferred = Q.defer();
-    var connection = getConnection();
+    var connection = db.getConnection();
     connection.query('select prog.title as title, pub.name as publisher, g.name as groupname, groupt.id as grouptype from entries e inner join members memb on memb.entry_id = e.id inner join groups g on memb.group_id = g.id inner join grouptypes groupt on g.grouptype_id = groupt.id and groupt.id in ("N", "S", "U") inner join members others on others.group_id = g.id inner join entries prog on others.entry_id = prog.id left join publishers p on p.entry_id = prog.id left join labels pub on p.label_id = pub.id where e.id = ? and p.release_seq = 0 order by g.name, others.series_seq ASC', [id], function(error, results, fields) {
         if (error) {
             throw error;
@@ -480,7 +451,7 @@ WHERE  p.entry_id = 2259 ORDER BY plat.id;
 */
 var getOtherSystems = function(id) {
     var deferred = Q.defer();
-    var connection = getConnection();
+    var connection = db.getConnection();
     connection.query('SELECT p.link_system, plat.text FROM ports p INNER JOIN platforms plat ON p.platform_id = plat.id WHERE p.entry_id = ? ORDER BY plat.id', [id], function(error, results, fields) {
         if (error) {
             throw error;
@@ -522,7 +493,7 @@ WHERE  ecomp.compilation_id = 11869
  */
 var getCompilationContent = function(id) {
     var deferred = Q.defer();
-    var connection = getConnection();
+    var connection = db.getConnection();
     connection.query('select ecomp.tape_side as tape_side, ecomp.tape_seq as tape_seq, ecomp.prog_seq as prog_seq, item.title as title, ll.name as publisher from compilations ecomp inner join entries item on ecomp.entry_id = item.id inner join variationtypes evart on ecomp.variationtype_id = evart.id inner join publishers p on p.entry_id = ecomp.entry_id left join labels ll on p.label_id = ll.id left join countries lc1 on ll.country_id = lc1.id where ecomp.compilation_id = ? and p.release_seq = 0', [id], function(error, results, fields) {
         if (error) {
             throw error;
@@ -560,7 +531,7 @@ WHERE  feat.entry_id = 176;
  */
 var getFeatures = function(id) {
     var deferred = Q.defer();
-    var connection = getConnection();
+    var connection = db.getConnection();
     connection.query('select g.name, groupt.id, groupt.text from members feat inner join groups g on feat.group_id = g.id inner join grouptypes groupt on g.grouptype_id = groupt.id and groupt.id not in ("N", "S", "U") where feat.entry_id = ?', [id], function(error, results, fields) {
         if (error) {
             throw error;
@@ -593,7 +564,7 @@ WHERE  rel.entry_id = 176;
  */
 var getSites = function(id) {
     var deferred = Q.defer();
-    var connection = getConnection();
+    var connection = db.getConnection();
     connection.query('select relw.name as sitename, rel.link from relatedlinks rel inner join websites relw on rel.website_id = relw.id where rel.entry_id = ?', [id], function(error, results, fields) {
         if (error) {
             throw error;
@@ -632,7 +603,7 @@ WHERE  icomp.entry_id = 176
  */
 var getInCompilations = function(id) {
     var deferred = Q.defer();
-    var connection = getConnection();
+    var connection = db.getConnection();
     connection.query('select comp.title as title, pub.name as publisher, entryt.text as type from compilations icomp inner join entries comp on icomp.compilation_id = comp.id left join genretypes entryt on comp.genretype_id = entryt.id left join publishers p on p.entry_id = comp.id left join labels pub on p.label_id = pub.id where icomp.entry_id = ? and p.release_seq = 0', [id], function(error, results, fields) {
         if (error) {
             throw error;
@@ -665,7 +636,7 @@ WHERE  bti.entry_id = 770;
  */
 var getBookTypeIns = function(id) {
     var deferred = Q.defer();
-    var connection = getConnection();
+    var connection = db.getConnection();
     connection.query('select * from booktypeins bti inner join entries book on bti.book_id = book.id where bti.entry_id = ?', [id], function(error, results, fields) {
         if (error) {
             throw error;
@@ -705,7 +676,7 @@ WHERE  d.file_link IS NOT NULL
  */
 var getDownloads = function(id) {
     var deferred = Q.defer();
-    var connection = getConnection();
+    var connection = db.getConnection();
     connection.query('select d.file_link as url, file_size as size, filet.text as type, origint.text as origin, d.file_code as code, d.file_barcode as barcode, d.file_dl as dl, schemet.text as encodingscheme from downloads d inner join filetypes filet on d.filetype_id = filet.id inner join origintypes origint on d.origintype_id = origint.id left join schemetypes schemet on d.schemetype_id = schemet.id where d.file_link is NOT NULL and d.machinetype_id is not NULL and d.entry_id = ?', [id], function(error, results, fields) {
         if (error) {
             throw error;
@@ -744,7 +715,7 @@ WHERE  d.machinetype_id IS NULL
  */
 var getAdditionals = function(id) {
     var deferred = Q.defer();
-    var connection = getConnection();
+    var connection = db.getConnection();
     connection.query('select d.file_link as url, file_size as size, filet.text as type from downloads d inner join filetypes filet on d.filetype_id = filet.id where d.machinetype_id is NULL and d.entry_id = ?', [id], function(error, results, fields) {
         if (error) {
             throw error;
@@ -753,7 +724,7 @@ var getAdditionals = function(id) {
         var i = 0;
         for (; i < results.length; i++) {
             if (results[i].url == undefined) {
-                console.log(id + ": empty additionals: ");
+                ; // console.log(id + ": empty additionals: ");
             } else {
                 var downloaditem = {
                     filename: path.basename(results[i].url),
@@ -776,7 +747,7 @@ var getAdditionals = function(id) {
  */
 var getMagazineRefs = function(id) {
     var deferred = Q.defer();
-    var connection = getConnection();
+    var connection = db.getConnection();
     connection.query('select m.name as magazine, i.date_year as issueyear, i.date_month as issueno, ref.page as pageno, reft.text as magazine_type, f.name as magazine_text, m.link_mask from entries e inner join magrefs ref on ref.entry_id = e.id inner join features f on ref.feature_id = f.id inner join referencetypes reft on ref.referencetype_id = reft.id inner join issues i on ref.issue_id = i.id inner join magazines m on i.magazine_id = m.id where e.id = ? and ref.referencetype_id not in (1, 2, 3, 15) order by date_year, date_month', [id], function(error, results, fields) {
         if (error) {
             throw error;
@@ -826,7 +797,7 @@ ORDER  BY date_year,date_month
  */
 var getAdverts = function(id) {
     var deferred = Q.defer();
-    var connection = getConnection();
+    var connection = db.getConnection();
     connection.query('select m.name as magazine, i.date_year as issueyear, i.date_month as issueno, ref.page as pageno, reft.text as magazine_type, f.name as magazine_text, m.link_mask from entries e inner join magrefs ref on ref.entry_id = e.id inner join features f on ref.feature_id = f.id inner join referencetypes reft on ref.referencetype_id = reft.id inner join issues i on ref.issue_id = i.id inner join magazines m on i.magazine_id = m.id where e.id = ? and ref.referencetype_id in (1, 2, 3, 15) order by date_year, date_month', [id], function(error, results, fields) {
         if (error) {
             throw error;
@@ -902,7 +873,7 @@ var zxdb_doc = function(id) {
 }
 
 var getAllIDs = function() {
-    var connection = getConnection();
+    var connection = db.getConnection();
     var done = false;
     connection.query('select id from entries where 1 order by id asc', function(error, results, fields) {
         if (error) {
@@ -917,7 +888,7 @@ var getAllIDs = function() {
     require('deasync').loopWhile(function() {
         return !done; });
     console.log("Finished!");
-    pool.end();
+    db.closeConnection(connection);
 }
 
 getAllIDs();

@@ -1,13 +1,11 @@
+/**
+ updates additionals on existing JSON {id}, with additionals read from JSON file
+*/
+
+var es = require('./esConfig');
+
 var fs = require('fs');
 var jsonfile = require('jsonfile')
-var zxinfo_index = 'zxinfo_games_write';
-var zxinfo_type = 'zxinfo_games';
-
-var elasticsearch = require('elasticsearch');
-var client = new elasticsearch.Client({
-    host: 'localhost:9200',
-    log: 'info'
-});
 
 if (process.argv.length <= 2) {
     console.log("Usage: " + __filename + " path/to/directory");
@@ -25,9 +23,9 @@ fs.readdir(path, function(err, items) {
             var done = false;
 
             var body;
-            client.get({
-                    index: zxinfo_index,
-                    type: zxinfo_type,
+            es.client.get({
+                    index: es.zxinfo_index,
+                    type: es.zxinfo_type,
                     id: id
                 },
                 function(error, response) {
@@ -48,9 +46,9 @@ fs.readdir(path, function(err, items) {
             }
 
             done = false;
-            client.index({
-                    index: zxinfo_index,
-                    type: zxinfo_type,
+            es.client.index({
+                    index: es.zxinfo_index,
+                    type: es.zxinfo_type,
                     id: id,
                     body: body
                 },
@@ -63,8 +61,6 @@ fs.readdir(path, function(err, items) {
             require('deasync').loopWhile(function() {
                 return !done;
             });
-
-
         }
     }
 });

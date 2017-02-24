@@ -1,13 +1,7 @@
+var es = require('./esConfig');
+
 var fs = require('fs');
 var jsonfile = require('jsonfile')
-var zxinfo_index = 'zxinfo_games_write';
-var zxinfo_type = 'zxinfo_games';
-
-var elasticsearch = require('elasticsearch');
-var client = new elasticsearch.Client({
-    host: 'localhost:9200',
-    log: 'info'
-});
 
 if (process.argv.length <= 2) {
     console.log("Usage: " + __filename + " path/to/directory");
@@ -23,19 +17,21 @@ fs.readdir(path, function(err, items) {
             var id = items[i].substr(0, 7);
             var body = jsonfile.readFileSync(path + items[i]);
             var done = false;
-            client.index({
-                    index: zxinfo_index,
-                    type: zxinfo_type,
+            es.client.index({
+                    index: es.zxinfo_index,
+                    type: es.zxinfo_type,
                     id: id,
                     body: body
                 },
                 function(error, response) {
-                	if(error) {
-                		throw error;
-                	}
-                	done = true;
+                    if (error) {
+                        throw error;
+                    }
+                    // console.log(id + ' => ', response);
+                    done = true;
                 });
-		    require('deasync').loopWhile(function(){return !done;});
+            require('deasync').loopWhile(function() {
+                return !done; });
 
         }
     }
