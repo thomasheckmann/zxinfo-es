@@ -73,7 +73,7 @@ var getAllIDs = function() {
                     id: id,
                     body: item
                 },
-                function(error, response) {
+                function(error,resp,status) {
                     if (error) {
                         throw error;
                     }

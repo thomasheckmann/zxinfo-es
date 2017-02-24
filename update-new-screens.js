@@ -6,6 +6,7 @@ var es = require('./esConfig');
 
 var fs = require('fs');
 var jsonfile = require('jsonfile')
+var _ = require('lodash');
 
 if (process.argv.length <= 2) {
     console.log("Usage: " + __filename + " path/to/directory");
@@ -44,6 +45,8 @@ fs.readdir(path, function(err, items) {
             for (; j < additionals_new.additionals.length; j++) {
                 body.additionals.push(additionals_new.additionals[j]);
             }
+            // remove duplicates
+            body.additionals = _.uniqWith(body.additionals, _.isEqual);
 
             done = false;
             es.client.index({
