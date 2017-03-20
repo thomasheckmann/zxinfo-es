@@ -30,6 +30,41 @@ After finish, import into Elasticsearch
 > node import-into-elastic.js data/processed/json/
 ````
 
+## optional - create title suggestions
+Use this to generate documents for use with completion suggester in Elasticsearch - read more about it [on the blog](https://www.elastic.co/blog/you-complete-me). The script makes suggestions based on title and alias.
+
+Make sure the index has been created
+````
+> (cd ZXInfoArchive/scripts/ && ./createSuggestersIndex.sh)
+````
+
+Generate and index documents with suggesters (to index 'zxinfo_suggests_index')
+````
+> node create-zxinfo-documents
+````
+
+## optional - add new screenshots
+Make sure you got all lates screen by running
+
+````
+> cd UpdateScreens
+> ./getscreens.sh
+````
+
+Convert screens from scr format to png or gif by running
+````
+> php convert.php
+````
+
+JSON additional for new screens are saved in folder 'json/' - needs to be merged with documents from Elasticsearch by running
+````
+> node update-new-screens.js UpdateScreens/json/
+````
+
+Copy converted screens to htdocs or similar
+
+
+
 ## 02-2017
 * Fixed a problem with wrong publisher in 'series'
 * Added Other systems info
