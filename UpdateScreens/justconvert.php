@@ -66,10 +66,8 @@ function convertScreens($in_dir, $out_dir) {
 	    }
 		if (strpos($filename, 'load.') !== false) {
 			$type = 'Loading screen';
-			$format = 'Picture';
 		} else if (strpos($filename, 'game.') !== false) {
 			$type = 'In-game screen';
-			$format = 'Picture';
 		}
 
 		$arr = explode("-", $filename, 2);
@@ -100,7 +98,7 @@ function convertScreens($in_dir, $out_dir) {
 			file_put_contents($outfile, $binary);
 			$newfilesize = filesize($outfile);			
 			echo "($id) - ($type) $filename - $scrType, size: $size => $outfile, size: $newfilesize\n";
-			$object = (object) ['filename' => $newfilename, 'url' => '/' . $outfile, 'size' => $newfilesize, 'type' => $type, 'format' => $format];
+			$object = (object) ['filename' => $newfilename, 'url' => '/' . $outfile, 'size' => $newfilesize, 'type' => $type];
 
 			if(is_null($scr_array[$id])) {
 				$scr_array[$id] = array();
@@ -110,17 +108,6 @@ function convertScreens($in_dir, $out_dir) {
 	}
 }
 
-convertScreens('mirror/spectrumcomputing.co.uk/new/sinclair/screens/in-game/scr/', 'new/sinclair/screens/in-game/scr/');
-convertScreens('mirror/spectrumcomputing.co.uk/new/sinclair/screens/load/scr/', 'new/sinclair/screens/load/scr/');
-// convertScreens('img/', 'img/');
-// print_r($scr_array);
-foreach ($scr_array as $key => $items) {
-	$json_file = str_pad($key, 7, '0', STR_PAD_LEFT) . ".json";
-	$json_items = json_encode($items, JSON_UNESCAPED_SLASHES);
-	$json_str = "{ \"additionals\": $json_items }";
-
-	file_put_contents("json/" . $json_file, $json_str);
-
-}
+convertScreens('t/', 't/');
 
 

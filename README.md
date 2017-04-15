@@ -40,7 +40,7 @@ Make sure the index has been created
 
 Generate and index documents with suggesters (to index 'zxinfo_suggests_index')
 ````
-> node create-zxinfo-documents
+> node create-title-suggestions
 ````
 
 ## optional - add new screenshots
@@ -63,7 +63,9 @@ JSON additional for new screens are saved in folder 'json/' - needs to be merged
 
 Copy converted screens to htdocs or similar
 
-
+## 04-2017
+* Download and filetype_id has changed. see [forum](https://www.worldofspectrum.org/forums/discussion/52951/database-model-zxdb/p24)
+* - added as format to addtionals and downloads 
 
 ## 02-2017
 * Fixed a problem with wrong publisher in 'series'

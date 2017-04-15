@@ -677,7 +677,7 @@ WHERE  d.file_link IS NOT NULL
 var getDownloads = function(id) {
     var deferred = Q.defer();
     var connection = db.getConnection();
-    connection.query('select d.file_link as url, file_size as size, filet.text as type, origint.text as origin, d.file_code as code, d.file_barcode as barcode, d.file_dl as dl, schemet.text as encodingscheme from downloads d inner join filetypes filet on d.filetype_id = filet.id inner join origintypes origint on d.origintype_id = origint.id left join schemetypes schemet on d.schemetype_id = schemet.id where d.file_link is NOT NULL and d.machinetype_id is not NULL and d.entry_id = ?', [id], function(error, results, fields) {
+    connection.query('SELECT d.file_link AS url,file_size AS size,filet.text AS type, format.text AS format, origint.text AS origin, d.file_code AS code,d.file_barcode AS barcode,d.file_dl AS dl, schemet.text AS encodingscheme FROM downloads d INNER JOIN filetypes filet ON d.filetype_id = filet.id INNER JOIN formattypes format ON d.formattype_id = format.id INNER JOIN origintypes origint ON d.origintype_id = origint.id LEFT JOIN schemetypes schemet ON d.schemetype_id = schemet.id WHERE d.file_link IS NOT NULL AND d.machinetype_id IS NOT NULL AND d.entry_id = ?', [id], function(error, results, fields) {
         if (error) {
             throw error;
         }
@@ -689,6 +689,7 @@ var getDownloads = function(id) {
                 url: results[i].url,
                 size: results[i].size,
                 type: results[i].type,
+                format: results[i].format,
                 origin: results[i].origin,
                 code: results[i].code,
                 barcode: results[i].barcode,
@@ -705,18 +706,20 @@ var getDownloads = function(id) {
 /**
  * Get additionals (Everything else that is not machine specific - simple output)
 
-SELECT d.file_link AS url,file_size AS size,filet.text AS type
+SELECT d.file_link AS url,file_size AS size,filet.text AS type, format.text AS format
 FROM   downloads d
        INNER JOIN filetypes filet
                ON d.filetype_id = filet.id
+       INNER JOIN formattypes format
+             ON d.formattype_id = format.id
 WHERE  d.machinetype_id IS NULL
-   AND d.entry_id = ? 
+   AND d.entry_id = ?
 
  */
 var getAdditionals = function(id) {
     var deferred = Q.defer();
     var connection = db.getConnection();
-    connection.query('select d.file_link as url, file_size as size, filet.text as type from downloads d inner join filetypes filet on d.filetype_id = filet.id where d.machinetype_id is NULL and d.entry_id = ?', [id], function(error, results, fields) {
+    connection.query('SELECT d.file_link AS url,file_size AS size,filet.text AS type, format.text AS format FROM downloads d INNER JOIN filetypes filet ON d.filetype_id = filet.id INNER JOIN formattypes format ON d.formattype_id = format.id WHERE d.machinetype_id IS NULL AND d.entry_id = ?', [id], function(error, results, fields) {
         if (error) {
             throw error;
         }
@@ -730,7 +733,8 @@ var getAdditionals = function(id) {
                     filename: path.basename(results[i].url),
                     url: results[i].url,
                     size: results[i].size,
-                    type: results[i].type
+                    type: results[i].type,
+                    format: results[i].format
                 }
                 arr.push(downloaditem);
             }
