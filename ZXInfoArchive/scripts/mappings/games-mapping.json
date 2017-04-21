@@ -1,38 +1,15 @@
 {
-  "settings": {
-    "index.mapper.dynamic": false
-  },
   "mappings": {
     "zxinfo_games": {
       "properties": {
-        "additional": {
-          "type": "nested",
-          "properties": {
-            "info": {
-              "type": "string"
-            },
-            "group": {
-              "type": "string",
-              "index": "not_analyzed"
-            },
-            "title": {
-              "type": "string",
-              "index": "not_analyzed"
-            },
-            "publisher": {
-              "type": "string",
-              "index": "not_analyzed"
-            },
-            "type": {
-              "type": "string",
-              "index": "not_analyzed"
-            }
-          }
-        },
         "additionals": {
           "type": "nested",
           "properties": {
             "filename": {
+              "type": "string",
+              "index": "not_analyzed"
+            },
+            "format": {
               "type": "string",
               "index": "not_analyzed"
             },
@@ -47,13 +24,37 @@
               "type": "string",
               "index": "not_analyzed"
             },
-            "format": {
-              "type": "string",
-              "index": "not_analyzed"
-            },
             "url": {
               "type": "string",
               "index": "not_analyzed"
+            }
+          }
+        },
+        "adverts": {
+          "properties": {
+            "issue": {
+              "type": "string"
+            },
+            "issueno": {
+              "type": "long"
+            },
+            "issueyear": {
+              "type": "long"
+            },
+            "link_mask": {
+              "type": "string"
+            },
+            "magazine": {
+              "type": "string"
+            },
+            "magazine_type": {
+              "type": "string"
+            },
+            "page": {
+              "type": "string"
+            },
+            "pageno": {
+              "type": "long"
             }
           }
         },
@@ -63,13 +64,23 @@
         "articles": {
           "type": "string"
         },
+        "authored": {
+          "properties": {
+            "publisher": {
+              "type": "string"
+            },
+            "title": {
+              "type": "string"
+            }
+          }
+        },
         "authoring": {
           "type": "nested",
           "properties": {
-            "title": {
+            "publisher": {
               "type": "string"
             },
-            "publisher": {
+            "title": {
               "type": "string"
             }
           }
@@ -78,12 +89,8 @@
           "type": "nested",
           "properties": {
             "authors": {
-              "type": "multi_field",
+              "type": "string",
               "fields": {
-                "authors": {
-                  "type": "string",
-                  "index": "analyzed"
-                },
                 "raw": {
                   "type": "string",
                   "index": "not_analyzed"
@@ -91,12 +98,8 @@
               }
             },
             "group": {
-              "type": "multi_field",
+              "type": "string",
               "fields": {
-                "group": {
-                  "type": "string",
-                  "index": "analyzed"
-                },
                 "raw": {
                   "type": "string",
                   "index": "not_analyzed"
@@ -109,8 +112,15 @@
           "type": "string",
           "index": "not_analyzed"
         },
-        "blurp": {
-          "type": "string"
+        "booktypeins": {
+          "properties": {
+            "bookid": {
+              "type": "long"
+            },
+            "title": {
+              "type": "string"
+            }
+          }
         },
         "budgetprice": {
           "type": "nested",
@@ -129,20 +139,19 @@
         "contents": {
           "type": "nested",
           "properties": {
+            "publisher": {
+              "type": "string",
+              "index": "not_analyzed"
+            },
+            "sequence": {
+              "type": "long"
+            },
             "side": {
               "type": "string",
               "index": "not_analyzed"
             },
             "title": {
               "type": "string",
-              "index": "not_analyzed"
-            },
-            "publisher": {
-              "type": "string",
-              "index": "not_analyzed"
-            },
-            "sequence": {
-              "type": "long",
               "index": "not_analyzed"
             }
           }
@@ -157,12 +166,6 @@
               "type": "string"
             }
           }
-        },
-        "designer": {
-          "type": "string"
-        },
-        "devicename": {
-          "type": "string"
         },
         "downloads": {
           "type": "nested",
@@ -186,6 +189,9 @@
             "filename": {
               "type": "string",
               "index": "not_analyzed"
+            },
+            "format": {
+              "type": "string"
             },
             "language": {
               "type": "string",
@@ -215,8 +221,18 @@
             }
           }
         },
-        "featuretitle": {
-          "type": "string"
+        "features": {
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "name": {
+              "type": "string"
+            },
+            "text": {
+              "type": "string"
+            }
+          }
         },
         "fulltitle": {
           "type": "string",
@@ -227,23 +243,16 @@
             }
           }
         },
-        "inspiredby": {
+        "incompilations": {
           "properties": {
-            "name": {
-              "type": "string",
-              "index": "not_analyzed"
+            "publisher": {
+              "type": "string"
             },
-            "country": {
-              "type": "string",
-              "index": "not_analyzed"
+            "title": {
+              "type": "string"
             },
             "type": {
-              "type": "string",
-              "index": "not_analyzed"
-            },
-            "origin": {
-              "type": "string",
-              "index": "not_analyzed"
+              "type": "string"
             }
           }
         },
@@ -253,12 +262,27 @@
         "language": {
           "type": "string"
         },
+        "licensed": {
+          "properties": {
+            "country": {
+              "type": "string"
+            },
+            "name": {
+              "type": "string"
+            },
+            "originalname": {
+              "type": "string"
+            },
+            "type": {
+              "type": "string"
+            }
+          }
+        },
         "machinetype": {
           "type": "string",
           "index": "not_analyzed"
         },
-        "magazine_0": {
-          "type": "nested",
+        "magrefs": {
           "properties": {
             "issue": {
               "type": "string"
@@ -269,8 +293,8 @@
             "issueyear": {
               "type": "long"
             },
-            "pageno": {
-              "type": "long"
+            "link_mask": {
+              "type": "string"
             },
             "magazine": {
               "type": "string"
@@ -281,80 +305,20 @@
             "page": {
               "type": "string"
             },
-            "url": {
-              "type": "string"
-            }
-          }
-        },
-        "magazine_1": {
-          "type": "nested",
-          "properties": {
-            "issue": {
-              "type": "string"
-            },
-            "issueno": {
-              "type": "long"
-            },
-            "issueyear": {
-              "type": "long"
-            },
             "pageno": {
               "type": "long"
-            },
-            "magazine": {
-              "type": "string"
-            },
-            "magazine_type": {
-              "type": "string"
-            },
-            "page": {
-              "type": "string"
-            },
-            "url": {
-              "type": "string"
             }
           }
-        },
-        "manufacturer": {
-          "type": "string"
         },
         "messagelanguage": {
           "type": "string",
           "index": "not_analyzed"
         },
-        "modifiedby": {
-          "type": "nested",
-          "properties": {
-            "as": {
-              "type": "string"
-            },
-            "country": {
-              "type": "string",
-              "index": "not_analyzed"
-            },
-            "name": {
-              "type": "multi_field",
-              "fields": {
-                "name": {
-                  "type": "string",
-                  "index": "analyzed"
-                },
-                "raw": {
-                  "type": "string",
-                  "index": "not_analyzed"
-                }
-              }
-            }
-          }
-        },
         "multiplayermode": {
           "type": "string",
           "index": "not_analyzed"
         },
-        "note": {
-          "type": "string"
-        },
-        "numberofpages": {
+        "multiplayertype": {
           "type": "string"
         },
         "numberofplayers": {
@@ -369,16 +333,8 @@
             "currency": {
               "type": "string",
               "index": "not_analyzed"
-            }
-          }
-        },
-        "originalgame": {
-          "type": "nested",
-          "properties": {
-            "originalpublisher": {
-              "type": "string"
             },
-            "originaltitle": {
+            "license": {
               "type": "string"
             }
           }
@@ -390,6 +346,9 @@
         "othersystems": {
           "type": "nested",
           "properties": {
+            "name": {
+              "type": "string"
+            },
             "system": {
               "type": "string"
             },
@@ -399,30 +358,6 @@
             }
           }
         },
-        "pageinfo": {
-          "properties": {
-            "domain": {
-              "type": "string",
-              "index": "no"
-            },
-            "path": {
-              "type": "string",
-              "index": "no"
-            },
-            "url": {
-              "type": "string",
-              "index": "no"
-            },
-            "version": {
-              "type": "string",
-              "index": "no"
-            }
-          }
-        },
-        "protectionscheme": {
-          "type": "string",
-          "index": "not_analyzed"
-        },
         "publisher": {
           "type": "nested",
           "properties": {
@@ -431,12 +366,8 @@
               "index": "not_analyzed"
             },
             "name": {
-              "type": "multi_field",
+              "type": "string",
               "fields": {
-                "name": {
-                  "type": "string",
-                  "index": "analyzed"
-                },
                 "raw": {
                   "type": "string",
                   "index": "not_analyzed"
@@ -448,13 +379,13 @@
         "remarks": {
           "type": "string"
         },
-        "remanufacturedby": {
-          "type": "string"
-        },
         "rereleasedby": {
           "type": "nested",
           "properties": {
             "as": {
+              "type": "string"
+            },
+            "as_title": {
               "type": "string"
             },
             "country": {
@@ -462,17 +393,26 @@
               "index": "not_analyzed"
             },
             "name": {
-              "type": "multi_field",
+              "type": "string",
               "fields": {
-                "name": {
-                  "type": "string",
-                  "index": "analyzed"
-                },
                 "raw": {
                   "type": "string",
                   "index": "not_analyzed"
                 }
               }
+            }
+          }
+        },
+        "roles": {
+          "type": "nested",
+          "properties": {
+            "name": {
+              "type": "string",
+              "index": "not_analyzed"
+            },
+            "role": {
+              "type": "string",
+              "index": "not_analyzed"
             }
           }
         },
@@ -489,16 +429,36 @@
         "series": {
           "type": "nested",
           "properties": {
-            "title": {
+            "groupname": {
+              "type": "string"
+            },
+            "grouptype": {
               "type": "string"
             },
             "publisher": {
+              "type": "string"
+            },
+            "title": {
+              "type": "string"
+            }
+          }
+        },
+        "sites": {
+          "properties": {
+            "link": {
+              "type": "string"
+            },
+            "sitename": {
               "type": "string"
             }
           }
         },
         "spotcomments": {
           "type": "string"
+        },
+        "subtype": {
+          "type": "string",
+          "index": "not_analyzed"
         },
         "tieinlicence": {
           "type": "string"
@@ -524,15 +484,11 @@
           "type": "string",
           "index": "not_analyzed"
         },
-        "subtype": {
-          "type": "string",
-          "index": "not_analyzed"
+        "year": {
+          "type": "string"
         },
         "yearofrelease": {
           "type": "long"
-        },
-        "year": {
-          "type": "string"
         }
       }
     }
