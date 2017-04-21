@@ -22,7 +22,7 @@ Start your MariaDB with ZXDB data as described on [github](https://github.com/th
 
 Generate JSON documents, the document will be save in 'data/processed/json'
 ````
-> node create-zxinfo-documents
+> node create-zxinfo-documents -all
 ````
 
 After finish, import into Elasticsearch
@@ -62,6 +62,11 @@ JSON additional for new screens are saved in folder 'json/' - needs to be merged
 ````
 
 Copy converted screens to htdocs or similar
+
+## 04-2017
+* Add command line options to create-zxinfo-documents to process a single game
+* Added more details for each query
+* Added roles to document, see e.g. gameid=26834
 
 ## 04-2017
 * Download and filetype_id has changed. see [forum](https://www.worldofspectrum.org/forums/discussion/52951/database-model-zxdb/p24)

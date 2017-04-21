@@ -1,3 +1,14 @@
+/**
+
+DOCUMENTATION HELPER:
+docker exec -i zxdb mysql -uroot -pzxdb1234 zxdb -e "select * from controltypes;"
+
+COPY/PASTE into https://ozh.github.io/ascii-tables/
+
+COPY/PASTE RESULT INTO COMMENTS
+
+*/
+
 'use strict';
 
 var db = require('./dbConfig');
@@ -62,6 +73,7 @@ var priceHelper = function(price, id) {
 /**
  * Get basic info
 
+--
 SELECT e.title AS fulltitle,aka.title AS alsoknownas,
        r.release_year AS yearofrelease,
        machinet.text AS machinetype,e.max_players AS numberofplayers,
@@ -92,8 +104,14 @@ FROM   entries e
               ON e.idiom_id = idm.id
        LEFT JOIN scores sc
               ON sc.entry_id = e.id
-WHERE  e.id = 2259
+WHERE  e.id = 4010
    AND r.release_seq = 0; 
+
++-----------+----------------------------+---------------+-----------------+-----------------+-----------------+-----------------+---------------------+------+-----------------+---------------------+---------------+--------------+---------+-------+-------+
+| fulltitle | alsoknownas                | yearofrelease | machinetype     | numberofplayers | multiplayermode | multiplayertype | type                | isbn | messagelanguage | originalpublication | originalprice | availability | remarks | score | votes |
++-----------+----------------------------+---------------+-----------------+-----------------+-----------------+-----------------+---------------------+------+-----------------+---------------------+---------------+--------------+---------+-------+-------+
+| Rambo     | Rambo: First Blood Part II | 1985          | ZX-Spectrum 48K | 2               | Alternating     | NULL            | Arcade: Shoot-em-up | NULL | English         | NULL                | �7.95         | Available    | NULL    | 6.80  | 72    |
++-----------+----------------------------+---------------+-----------------+-----------------+-----------------+-----------------+---------------------+------+-----------------+---------------------+---------------+--------------+---------+-------+-------+
 
  */
 var getBasicInfo = function(id) {
@@ -109,8 +127,7 @@ var getBasicInfo = function(id) {
         if (orgPrice != undefined) { originalprice.push(orgPrice) };
 
         var entrytypes, type, subtype;
-        if (results[0].type == undefined) {
-            ; //console.error("ERROR: ", id + ": MISSING type");
+        if (results[0].type == undefined) {; //console.error("ERROR: ", id + ": MISSING type");
         } else {
             entrytypes = results[0].type.split(": ");
             type = entrytypes[0];
@@ -155,8 +172,14 @@ FROM   publishers p
                ON p.label_id = pub.id
        LEFT JOIN countries pc1
               ON pub.country_id = pc1.id
-WHERE  p.entry_id = 21343
+WHERE  p.entry_id = 4010
    AND p.release_seq = 0 
+
++--------------------+---------+
+| name               | country |
++--------------------+---------+
+| Ocean Software Ltd | UK      |
++--------------------+---------+
 
  */
 var getPublisher = function(id) {
@@ -182,6 +205,8 @@ var getPublisher = function(id) {
 
 /**
  * Get re-released by
+
+--
 SELECT pub.name AS name,pc1.text AS country, aka.title as as_title
 FROM   releases r 
        LEFT JOIN aliases aka
@@ -194,8 +219,18 @@ FROM   releases r
                ON p.label_id = pub.id 
        LEFT JOIN countries pc1 
               ON pub.country_id = pc1.id 
-WHERE  r.entry_id = 2000011
-       AND r.release_seq > 0   
+WHERE  r.entry_id = 4010
+       AND r.release_seq > 0 
+
+ID: 2000011 as title
++--------------------+---------+----------+
+| name               | country | as_title |
++--------------------+---------+----------+
+| Erbe Software S.A. | Spain   | NULL     |
+| IBSA               | Spain   | NULL     |
+| The Hit Squad      | UK      | NULL     |
++--------------------+---------+----------+
+
  */
 var getReReleasedBy = function(id) {
     var deferred = Q.defer();
@@ -220,12 +255,9 @@ var getReReleasedBy = function(id) {
 }
 
 /**
-     * Get authors
-    David J. Anderson   Platinum Productions
-    Ian Morrison        Platinum Productions
-    Alan Laird          Platinum Productions
-    F. David Thorpe     NULL
+ * Get authors
 
+--
 SELECT dev.name AS name,team.name AS dev_group
 FROM   authors aut
        INNER JOIN labels dev
@@ -236,9 +268,18 @@ FROM   authors aut
               ON aut.team_id = team.id
        LEFT JOIN countries tc1
               ON team.country_id = tc1.id
-WHERE  aut.entry_id = ? 
+WHERE  aut.entry_id = 483
 
-     */
++-------------------+----------------------+
+| name              | dev_group            |
++-------------------+----------------------+
+| David J. Anderson | Platinum Productions |
+| Ian Morrison      | Platinum Productions |
+| Alan Laird        | Platinum Productions |
+| F. David Thorpe   | NULL                 |
++-------------------+----------------------+
+
+*/
 var getAuthors = function(id) {
     var deferred = Q.defer();
     var connection = db.getConnection();
@@ -269,9 +310,75 @@ var getAuthors = function(id) {
 }
 
 /**
+ * Get Roles
+
+--
+SELECT dev.name AS name, rt.text as role
+FROM   authors aut
+       INNER JOIN labels dev
+               ON aut.label_id = dev.id
+       INNER JOIN roles r
+              ON aut.entry_id = r.entry_id AND aut.author_seq = r.author_seq
+       LEFT JOIN roletypes rt 
+            ON r.roletype_id = rt.id
+WHERE  aut.entry_id = 26834
+ORDER BY rt.id
+
++---------------+---------------------+
+| name          | role                |
++---------------+---------------------+
+| Colin Stewart | Inlay/Poster Art    |
+| Colin Stewart | Code                |
+| Colin Stewart | Game Design/Concept |
+| Colin Stewart | In-Game Graphics    |
+| Colin Stewart | Level Design        |
+| Einar Saukas  | Load Screen         |
+| Colin Stewart | Sound Effects       |
++---------------+---------------------+
+
+*/
+var getRoles = function(id) {
+    var deferred = Q.defer();
+    var connection = db.getConnection();
+    connection.query('SELECT dev.name AS name, rt.text as role FROM authors aut INNER JOIN labels dev ON aut.label_id = dev.id INNER JOIN roles r ON aut.entry_id = r.entry_id AND aut.author_seq = r.author_seq LEFT JOIN roletypes rt ON r.roletype_id = rt.id WHERE aut.entry_id = ? ORDER BY rt.id', [id], function(error, results, fields) {
+        if (error) {
+            throw error;
+        }
+        var arr = [];
+        var i = 0;
+        for (; i < results.length; i++) {
+            var item = {
+                name: results[i].name,
+                role: results[i].role
+            }
+            arr.push(item);
+        }
+        deferred.resolve({ roles: arr });
+    });
+    return deferred.promise;
+}
+
+/**
  * Get authored
 
 -- This program was authored with the following tools...
+SELECT tool.title, 
+       pub.NAME AS publisher 
+FROM   authorings iaut 
+       INNER JOIN entries tool 
+               ON iaut.util_id = tool.id 
+       LEFT JOIN publishers p 
+              ON p.entry_id = tool.id 
+       LEFT JOIN labels pub 
+              ON p.label_id = pub.id 
+WHERE  p.release_seq = 0 
+       AND iaut.entry_id = 30321 
+
++-----------------+--------------+
+| title           | publisher    |
++-----------------+--------------+
+| NIRVANA+ ENGINE | Einar Saukas |
++-----------------+--------------+
 
  */
 var getAuthored = function(id) {
@@ -295,14 +402,28 @@ var getAuthored = function(id) {
     return deferred.promise;
 }
 
-/*
--- The following programs are known to have been authored with this tool...
-select prog.title as title, pub.name as publisher from authorings eaut 
-inner join entries prog on eaut.entry_id = prog.id
-left join publishers p on p.entry_id = prog.id 
-left join labels pub on p.label_id = pub.id 
+/**
+ * Get Authoring
 
-where eaut.util_id = 30002;
+-- The following programs are known to have been authored with this tool...
+SELECT prog.title AS title, 
+       pub.NAME   AS publisher 
+FROM   authorings eaut 
+       INNER JOIN entries prog 
+               ON eaut.entry_id = prog.id 
+       LEFT JOIN publishers p 
+              ON p.entry_id = prog.id 
+       LEFT JOIN labels pub 
+              ON p.label_id = pub.id 
+WHERE  eaut.util_id = 30002;
+
++--------------+----------------------+
+| title        | publisher            |
++--------------+----------------------+
+| Snake Escape | Einar Saukas         |
+| Pietro Bros  | Cristian M. Gonzalez |
++--------------+----------------------+
+
 */
 var getAuthoring = function(id) {
     var deferred = Q.defer();
@@ -328,11 +449,22 @@ var getAuthoring = function(id) {
 /**
  * Get controls
 
+--
 SELECT ctrt.text AS control
 FROM   controls ctr
        INNER JOIN controltypes ctrt
                ON ctr.controltype_id = ctrt.id
-WHERE  ctr.entry_id = 996 
+WHERE  ctr.entry_id = 4010
+
++---------------------+
+| control             |
++---------------------+
+| Cursor              |
+| Interface 2 (left)  |
+| Interface 2 (right) |
+| Kempston            |
+| Redefineable keys   |
++---------------------+
 
  */
 var getControls = function(id) {
@@ -370,7 +502,14 @@ FROM   entries e
               ON lor.label_id = ll.id
        LEFT JOIN countries lc1
               ON ll.country_id = lc1.id
-WHERE  e.id = 996; 
+WHERE  e.id = 4010; 
+
++---------------------------+---------+-------+----------------------------+
+| name                      | country | type  | originalname               |
++---------------------------+---------+-------+----------------------------+
+| Anabasis Investments N.V. | USA     | Movie | Rambo: First Blood Part II |
+| Carolco Pictures Inc      | USA     | Movie | Rambo: First Blood Part II |
++---------------------------+---------+-------+----------------------------+
 
  */
 var getInspiredByTieInLicense = function(id) {
@@ -406,16 +545,35 @@ var getInspiredByTieInLicense = function(id) {
  * Get series
 
  -- This program belongs in the following series (with these other titles)...
-select prog.title as title, pub.name as publisher
-from entries e
-inner join members memb on memb.entry_id = e.id
-inner join groups g on memb.group_id = g.id 
-inner join grouptypes groupt on g.grouptype_id = groupt.id and groupt.id in ("N", "S", "U")
-inner join members others on others.group_id = g.id
-inner join entries prog on others.entry_id = prog.id 
-left join publishers p on p.entry_id = prog.id 
-left join labels pub on p.label_id = pub.id 
-where e.id = 9297 and p.release_seq = 0 order by g.name, others.series_seq ASC 
+SELECT prog.title AS title, 
+       pub.NAME   AS publisher 
+FROM   entries e 
+       INNER JOIN members memb 
+               ON memb.entry_id = e.id 
+       INNER JOIN groups g 
+               ON memb.group_id = g.id 
+       INNER JOIN grouptypes groupt 
+               ON g.grouptype_id = groupt.id 
+                  AND groupt.id IN ( "N", "S", "U" ) 
+       INNER JOIN members others 
+               ON others.group_id = g.id 
+       INNER JOIN entries prog 
+               ON others.entry_id = prog.id 
+       LEFT JOIN publishers p 
+              ON p.entry_id = prog.id 
+       LEFT JOIN labels pub 
+              ON p.label_id = pub.id 
+WHERE  e.id = 9297 
+       AND p.release_seq = 0 
+ORDER  BY g.NAME, 
+          others.series_seq ASC 
+
++-------+-------------------+
+| title | publisher         |
++-------+-------------------+
+| 1942  | Elite Systems Ltd |
+| 1943  | Go!               |
++-------+-------------------+
 
  */
 var getSeries = function(id) {
@@ -441,13 +599,26 @@ var getSeries = function(id) {
     return deferred.promise;
 }
 
-/*
+/**
+ * Get Other Systems
+
 -- This program is also available on the following platforms... 
-SELECT p.link_system, plat.text
+SELECT p.link_system, 
+       plat.text 
 FROM   ports p 
        INNER JOIN platforms plat 
                ON p.platform_id = plat.id 
-WHERE  p.entry_id = 2259 ORDER BY plat.id; 
+WHERE  p.entry_id = 4010 
+ORDER  BY plat.id; 
+
++---------------------------------------------------------+--------------------+
+| link_system                                             | text               |
++---------------------------------------------------------+--------------------+
+| http://www.cpc-power.com/index.php?page=detail&num=1758 | Amstrad CPC        |
+| http://www.lemon64.com/?game_id=2084                    | Commodore 64       |
+| http://www.smstributes.co.uk/getinfo.asp?gameid=280     | Sega Master System |
++---------------------------------------------------------+--------------------+
+
 */
 var getOtherSystems = function(id) {
     var deferred = Q.defer();
@@ -490,6 +661,19 @@ FROM   compilations ecomp
 WHERE  ecomp.compilation_id = 11869
    AND p.release_seq = 0 
 
++-----------+----------+----------+---------------------------+----------------------+
+| tape_side | tape_seq | prog_seq | title                     | publisher            |
++-----------+----------+----------+---------------------------+----------------------+
+| A         | 1        | 1        | Wizball                   | Ocean Software Ltd   |
+| A         | 1        | 2        | Head over Heels           | Ocean Software Ltd   |
+| B         | 1        | 1        | Arkanoid                  | Imagine Software Ltd |
+| B         | 1        | 2        | Cobra                     | Ocean Software Ltd   |
+| A         | 2        | 1        | Frankie Goes to Hollywood | Ocean Software Ltd   |
+| A         | 2        | 2        | Great Escape, The         | Ocean Software Ltd   |
+| B         | 2        | 1        | Short Circuit             | Ocean Software Ltd   |
+| B         | 2        | 2        | Yie Ar Kung-Fu            | Imagine Software Ltd |
++-----------+----------+----------+---------------------------+----------------------+
+
  */
 var getCompilationContent = function(id) {
     var deferred = Q.defer();
@@ -519,14 +703,23 @@ var getCompilationContent = function(id) {
 
 -- This program contains the following features... / participated in the following competitions...
 -- Competition, Feature, Major Clone, Themed Group
-SELECT g.name,groupt.id,groupt.text
-FROM   members featinner
-       JOIN groups g
-         ON feat.group_id = g.idinner
-       JOIN grouptypes groupt
-         ON g.grouptype_id = groupt.id
-            AND groupt.id NOT IN ( 'N', 'S', 'U' )
+SELECT g.name, 
+       groupt.id, 
+       groupt.text 
+FROM   members feat 
+       INNER JOIN groups g 
+               ON feat.group_id = g.id 
+       INNER JOIN grouptypes groupt 
+               ON g.grouptype_id = groupt.id 
+                  AND groupt.id NOT IN ( "N", "S", "U" ) 
 WHERE  feat.entry_id = 176; 
+
++-----------------------+----+---------+
+| name                  | id | text    |
++-----------------------+----+---------+
+| Isometric 3D Graphics | F  | Feature |
+| Rainbow Graphics      | F  | Feature |
++-----------------------+----+---------+
 
  */
 var getFeatures = function(id) {
@@ -559,7 +752,14 @@ SELECT relw.name AS sitename,rel.link
 FROM   relatedlinks rel
        INNER JOIN websites relw
                ON rel.website_id = relw.id
-WHERE  rel.entry_id = 176; 
+WHERE  rel.entry_id = 4010; 
+
++-----------+-----------------------------------------------------------------+
+| sitename  | link                                                            |
++-----------+-----------------------------------------------------------------+
+| Freebase  | http://zxspectrum.freebase.com/view/base/zxspectrum/wos/0004010 |
+| Wikipedia | http://en.wikipedia.org/wiki/Rambo_%281985_video_game%29        |
++-----------+-----------------------------------------------------------------+
 
  */
 var getSites = function(id) {
@@ -597,8 +797,17 @@ FROM   compilations icomp
               ON p.entry_id = comp.id
        LEFT JOIN labels pub
          ON p.label_id = pub.id
-WHERE  icomp.entry_id = 176
+WHERE  icomp.entry_id = 4010
    AND p.release_seq = 0; 
+
++----------------------------+--------------------+-------------+
+| title                      | publisher          | type        |
++----------------------------+--------------------+-------------+
+| Screen Heroes              | Ocean Software Ltd | Compilation |
+| They Sold a Million 3      | The Hit Squad      | Compilation |
+| Live Ammo                  | Ocean Software Ltd | Compilation |
+| 40 Principales Vol. 4, Los | Erbe Software S.A. | Compilation |
++----------------------------+--------------------+-------------+
 
  */
 var getInCompilations = function(id) {
@@ -627,11 +836,17 @@ var getInCompilations = function(id) {
  * Get BookTypeIn
 
 -- This program was published as type-in in the following books...
-SELECT *
+SELECT book.title AS title, book.id AS bookid 
 FROM   booktypeins bti
        INNER JOIN entries book
                ON bti.book_id = book.id
 WHERE  bti.entry_id = 770; 
+
++-----------------------+---------+
+| title                 | bookid  |
++-----------------------+---------+
+| ZX Spectrum +3 Manual | 2000448 |
++-----------------------+---------+
 
  */
 var getBookTypeIns = function(id) {
@@ -658,20 +873,40 @@ var getBookTypeIns = function(id) {
 /**
  * Get Downloads - game files, does not have a machinetype_id
 
-SELECT d.file_link AS url,file_size AS size,filet.text AS type,
-       origint.text AS origin,
-       d.file_code AS code,d.file_barcode AS barcode,d.file_dl AS dl,
-       schemet.text AS encodingscheme
-FROM   downloads d
-       INNER JOIN filetypes filet
-               ON d.filetype_id = filet.id
-       INNER JOIN origintypes origint
-               ON d.origintype_id = origint.id
-       LEFT JOIN schemetypes schemet
-              ON d.schemetype_id = schemet.id
-WHERE  d.file_link IS NOT NULL
-   AND d.machinetype_id IS NOT NULL
-   AND d.entry_id = ? 
+--
+SELECT d.file_link    AS url, 
+       file_size      AS size, 
+       filet.text     AS type, 
+       format.text    AS format, 
+       origint.text   AS origin, 
+       d.file_code    AS code, 
+       d.file_barcode AS barcode, 
+       d.file_dl      AS dl, 
+       schemet.text   AS encodingscheme 
+FROM   downloads d 
+       INNER JOIN filetypes filet 
+               ON d.filetype_id = filet.id 
+       INNER JOIN formattypes format 
+               ON d.formattype_id = format.id 
+       INNER JOIN origintypes origint 
+               ON d.origintype_id = origint.id 
+       LEFT JOIN schemetypes schemet 
+              ON d.schemetype_id = schemet.id 
+WHERE  d.file_link IS NOT NULL 
+       AND d.machinetype_id IS NOT NULL 
+       AND d.entry_id = 4010 
+
++-------------------------------------------------------+-------+-------------------+--------------------+----------------------+------+---------------+--------------+---------------------------+
+| url                                                   | size  | type              | format             | origin               | code | barcode       | dl           | encodingscheme            |
++-------------------------------------------------------+-------+-------------------+--------------------+----------------------+------+---------------+--------------+---------------------------+
+| /pub/sinclair/games/r/Rambo.tzx.zip                   | 26743 | Tape image        | Perfect TZX tape   | Original release (O) | NULL | 5013156010088 | NULL         | SpeedLock 1               |
+| /pub/sinclair/games/r/Rambo(BUGFIX).tzx.zip           | 25234 | BUGFIX tape image | Perfect TZX tape   | Original release (O) | NULL | 5013156010088 | NULL         | None                      |
+| /pub/sinclair/games/r/Rambo.tap.zip                   | 30083 | Tape image        | (non-TZX) TAP tape | (unspecified)        | NULL | NULL          | NULL         | Undetermined              |
+| /pub/sinclair/games/r/Rambo(BUGFIX).tap.zip           | 25281 | BUGFIX tape image | (non-TZX) TAP tape | (unspecified)        | NULL | NULL          | NULL         | Undetermined              |
+| /pub/sinclair/games/r/Rambo(ErbeSoftwareS.A.).tzx.zip | 27610 | Tape image        | Perfect TZX tape   | Re-release (R)       | NULL | NULL          | M-40060-1985 | Unspecified custom loader |
+| /pub/sinclair/games/r/Rambo(IBSA).tzx.zip             | 27822 | Tape image        | Perfect TZX tape   | Re-release (R)       | NULL | NULL          | M-40060-1985 | Unspecified custom loader |
+| /pub/sinclair/games/r/Rambo(TheHitSquad).tzx.zip      | 32438 | Tape image        | Perfect TZX tape   | Re-release (R)       | MC01 | 5013156410000 | NULL         | SpeedLock 7               |
++-------------------------------------------------------+-------+-------------------+--------------------+----------------------+------+---------------+--------------+---------------------------+
 
  */
 var getDownloads = function(id) {
@@ -706,6 +941,7 @@ var getDownloads = function(id) {
 /**
  * Get additionals (Everything else that is not machine specific - simple output)
 
+--
 SELECT d.file_link AS url,file_size AS size,filet.text AS type, format.text AS format
 FROM   downloads d
        INNER JOIN filetypes filet
@@ -713,7 +949,15 @@ FROM   downloads d
        INNER JOIN formattypes format
              ON d.formattype_id = format.id
 WHERE  d.machinetype_id IS NULL
-   AND d.entry_id = ?
+   AND d.entry_id = 4010
+
++--------------------------------------------+------+----------------+-------------+
+| url                                        | size | type           | format      |
++--------------------------------------------+------+----------------+-------------+
+| /pub/sinclair/screens/load/r/gif/Rambo.gif | 6007 | Loading screen | Picture     |
+| /pub/sinclair/screens/load/r/scr/Rambo.scr | 6912 | Loading screen | Screen dump |
+| /pub/sinclair/screens/in-game/r/Rambo.gif  | 3978 | In-game screen | Picture     |
++--------------------------------------------+------+----------------+-------------+
 
  */
 var getAdditionals = function(id) {
@@ -726,8 +970,7 @@ var getAdditionals = function(id) {
         var arr = [];
         var i = 0;
         for (; i < results.length; i++) {
-            if (results[i].url == undefined) {
-                ; // console.log(id + ": empty additionals: ");
+            if (results[i].url == undefined) {; // console.log(id + ": empty additionals: ");
             } else {
                 var downloaditem = {
                     filename: path.basename(results[i].url),
@@ -740,38 +983,6 @@ var getAdditionals = function(id) {
             }
         }
         deferred.resolve({ additionals: arr });
-    });
-    return deferred.promise;
-}
-
-/**
- * Get MagazineRefs
-
- Same as Adverts, just negate IN clause
- */
-var getMagazineRefs = function(id) {
-    var deferred = Q.defer();
-    var connection = db.getConnection();
-    connection.query('select m.name as magazine, i.date_year as issueyear, i.date_month as issueno, ref.page as pageno, reft.text as magazine_type, f.name as magazine_text, m.link_mask from entries e inner join magrefs ref on ref.entry_id = e.id inner join features f on ref.feature_id = f.id inner join referencetypes reft on ref.referencetype_id = reft.id inner join issues i on ref.issue_id = i.id inner join magazines m on i.magazine_id = m.id where e.id = ? and ref.referencetype_id not in (1, 2, 3, 15) order by date_year, date_month', [id], function(error, results, fields) {
-        if (error) {
-            throw error;
-        }
-        var arr = [];
-        var i = 0;
-        for (; i < results.length; i++) {
-            var item = {
-                magazine: results[i].magazine,
-                issue: results[i].issueno + "." + results[i].issueyear,
-                issueyear: results[i].issueyear,
-                issueno: results[i].issueno,
-                page: results[i].pageno + "",
-                pageno: results[i].pageno,
-                magazine_type: results[i].magazine_type + ' - ' + results[i].magazine_text,
-                link_mask: results[i].link_mask
-            }
-            arr.push(item);
-        }
-        deferred.resolve({ magrefs: arr });
     });
     return deferred.promise;
 }
@@ -794,15 +1005,57 @@ FROM   entries e
                ON ref.issue_id = i.id
        INNER JOIN magazines m
                ON i.magazine_id = m.id
-WHERE  e.id = 996
+WHERE  e.id = 4010
    AND ref.referencetype_id IN ( 1, 2, 3, 15 )
-ORDER  BY date_year,date_month 
+ORDER  BY date_year,date_month,pageno
+
++--------------------------+-----------+---------+--------+---------------+----------------------+-------------------------------------------------------------------------------------------------------------------+
+| magazine                 | issueyear | issueno | pageno | magazine_type | magazine_text        | link_mask                                                                                                         |
++--------------------------+-----------+---------+--------+---------------+----------------------+-------------------------------------------------------------------------------------------------------------------+
+| Computer & Video Games   | 1985      | 10      | 41     | Full-page ad  |                      | /pub/sinclair/magazines/C+VG/Issue{i3}/Pages/CVG{i3}{p5}.jpg                                                      |
+| Crash                    | 1985      | 10      | 139    | Full-page ad  |                      | /pub/sinclair/magazines/Crash/Issue{i2}/Pages/Crash{i2}{p5}.jpg                                                   |
+| Sinclair User            | 1985      | 11      | 2      | Full-page ad  |                      | /pub/sinclair/magazines/SinclairUser/Issue{i3}/Pages/SinclairUser{i3}{p5}.jpg                                     |
+| Your Computer            | 1985      | 11      | 2      | Full-page ad  |                      | /pub/sinclair/magazines/YourComputer/Issue{y2}{m2}/Pages/YourComputer{y2}{m2}{p5}.jpg                             |
+| Popular Computing Weekly | 1985      | 11      | 352    | Full-page ad  |                      | /pub/sinclair/magazines/PopularComputingWeekly/Issue{y2}{m2}{d2}/Pages/PopularComputingWeekly{y2}{m2}{d2}{p5}.jpg |
+| Popular Computing Weekly | 1985      | 11      | 455    | Full-page ad  |                      | /pub/sinclair/magazines/PopularComputingWeekly/Issue{y2}{m2}{d2}/Pages/PopularComputingWeekly{y2}{m2}{d2}{p5}.jpg |
+| Crash                    | 1985      | 12      | 161    | Full-page ad  |                      | /pub/sinclair/magazines/Crash/Issue{i2}/Pages/Crash{i2}{p5}.jpg                                                   |
+| Popular Computing Weekly | 1986      | 1       | 540    | Full-page ad  |                      | /pub/sinclair/magazines/PopularComputingWeekly/Issue{y2}{m2}{d2}/Pages/PopularComputingWeekly{y2}{m2}{d2}{p5}.jpg |
+| Sinclair User            | 1986      | 1       | 23     | Advert        |                      | /pub/sinclair/magazines/SinclairUser/Issue{i3}/Pages/SinclairUser{i3}{p5}.jpg                                     |
+| Crash                    | 1986      | 1       | 3      | Advert        |                      | /pub/sinclair/magazines/Crash/Issue{i2}/Pages/Crash{i2}{p5}.jpg                                                   |
+| Computer & Video Games   | 1986      | 1       | 85     | Full-page ad  |                      | /pub/sinclair/magazines/C+VG/Issue{i3}/Pages/CVG{i3}{p5}.jpg                                                      |
+| Computer Gamer           | 1986      | 1       | 33     | Full-page ad  |                      | /pub/sinclair/magazines/ComputerGamer/Issue{i2}/Pages/ComputerGamer{i2}{p5}.jpg                                   |
+| Your Sinclair            | 1986      | 1       | 113    | Advert        |                      | /pub/sinclair/magazines/YourSinclair/Issue{i2}/Pages/YourSinclair{i2}{p5}.jpg                                     |
+| Computer Gamer           | 1986      | 2       | 11     | Advert        |                      | /pub/sinclair/magazines/ComputerGamer/Issue{i2}/Pages/ComputerGamer{i2}{p5}.jpg                                   |
+| Crash                    | 1986      | 2       | 43     | Advert        |                      | /pub/sinclair/magazines/Crash/Issue{i2}/Pages/Crash{i2}{p5}.jpg                                                   |
+| Sinclair User            | 1986      | 2       | 51     | Full-page ad  |                      | /pub/sinclair/magazines/SinclairUser/Issue{i3}/Pages/SinclairUser{i3}{p5}.jpg                                     |
+| Computer & Video Games   | 1986      | 2       | 11     | Advert        |                      | /pub/sinclair/magazines/C+VG/Issue{i3}/Pages/CVG{i3}{p5}.jpg                                                      |
+| Sinclair User            | 1986      | 3       | 3      | Advert        |                      | /pub/sinclair/magazines/SinclairUser/Issue{i3}/Pages/SinclairUser{i3}{p5}.jpg                                     |
+| Crash                    | 1986      | 3       | 3      | Advert        |                      | /pub/sinclair/magazines/Crash/Issue{i2}/Pages/Crash{i2}{p5}.jpg                                                   |
+| Computer & Video Games   | 1986      | 4       | 63     | Full-page ad  |                      | /pub/sinclair/magazines/C+VG/Issue{i3}/Pages/CVG{i3}{p5}.jpg                                                      |
+| Crash                    | 1986      | 4       | 7      | Advert        |                      | /pub/sinclair/magazines/Crash/Issue{i2}/Pages/Crash{i2}{p5}.jpg                                                   |
+| Your Sinclair            | 1986      | 4       | 97     | Advert        |                      | /pub/sinclair/magazines/YourSinclair/Issue{i2}/Pages/YourSinclair{i2}{p5}.jpg                                     |
+| Crash                    | 1986      | 6       | 2      | Advert        |                      | /pub/sinclair/magazines/Crash/Issue{i2}/Pages/Crash{i2}{p5}.jpg                                                   |
+| Your Sinclair            | 1986      | 7       | 96     | Advert        |                      | /pub/sinclair/magazines/YourSinclair/Issue{i2}/Pages/YourSinclair{i2}{p5}.jpg                                     |
+| Computer Gamer           | 1986      | 8       | 42     | Advert        |                      | /pub/sinclair/magazines/ComputerGamer/Issue{i2}/Pages/ComputerGamer{i2}{p5}.jpg                                   |
+| Crash                    | 1986      | 8       | 4      | Advert        |                      | /pub/sinclair/magazines/Crash/Issue{i2}/Pages/Crash{i2}{p5}.jpg                                                   |
+| Your Sinclair            | 1986      | 8       | 96     | Advert        |                      | /pub/sinclair/magazines/YourSinclair/Issue{i2}/Pages/YourSinclair{i2}{p5}.jpg                                     |
+| Computer & Video Games   | 1986      | 8       | 6      | Advert        |                      | /pub/sinclair/magazines/C+VG/Issue{i3}/Pages/CVG{i3}{p5}.jpg                                                      |
+| Your Sinclair            | 1986      | 10      | 104    | Advert        |                      | /pub/sinclair/magazines/YourSinclair/Issue{i2}/Pages/YourSinclair{i2}{p5}.jpg                                     |
+| Computer & Video Games   | 1989      | 7       | 115    | Advert        | The Hit Squad advert | /pub/sinclair/magazines/C+VG/Issue{i3}/Pages/CVG{i3}{p5}.jpg                                                      |
+| Sinclair User            | 1989      | 7       | 57     | Advert        | The Hit Squad advert | /pub/sinclair/magazines/SinclairUser/Issue{i3}/Pages/SinclairUser{i3}{p5}.jpg                                     |
+| Games Machine            | 1989      | 7       | 19     | Advert        | The Hit Squad advert | NULL                                                                                                              |
+| Your Sinclair            | 1989      | 7       | 48     | Advert        | The Hit Squad advert | /pub/sinclair/magazines/YourSinclair/Issue{i2}/Pages/YourSinclair{i2}{p5}.jpg                                     |
+| Sinclair User            | 1989      | 8       | 9      | Advert        | The Hit Squad advert | /pub/sinclair/magazines/SinclairUser/Issue{i3}/Pages/SinclairUser{i3}{p5}.jpg                                     |
+| Your Sinclair            | 1989      | 10      | 66     | Advert        | The Hit Squad advert | /pub/sinclair/magazines/YourSinclair/Issue{i2}/Pages/YourSinclair{i2}{p5}.jpg                                     |
+| Sinclair User            | 1989      | 10      | 69     | Advert        | The Hit Squad advert | /pub/sinclair/magazines/SinclairUser/Issue{i3}/Pages/SinclairUser{i3}{p5}.jpg                                     |
+| Crash                    | 1989      | 10      | 23     | Advert        | The Hit Squad advert | /pub/sinclair/magazines/Crash/Issue{i2}/Pages/Crash{i2}{p5}.jpg                                                   |
++--------------------------+-----------+---------+--------+---------------+----------------------+-------------------------------------------------------------------------------------------------------------------+
 
  */
 var getAdverts = function(id) {
     var deferred = Q.defer();
     var connection = db.getConnection();
-    connection.query('select m.name as magazine, i.date_year as issueyear, i.date_month as issueno, ref.page as pageno, reft.text as magazine_type, f.name as magazine_text, m.link_mask from entries e inner join magrefs ref on ref.entry_id = e.id inner join features f on ref.feature_id = f.id inner join referencetypes reft on ref.referencetype_id = reft.id inner join issues i on ref.issue_id = i.id inner join magazines m on i.magazine_id = m.id where e.id = ? and ref.referencetype_id in (1, 2, 3, 15) order by date_year, date_month', [id], function(error, results, fields) {
+    connection.query('select m.name as magazine, i.date_year as issueyear, i.date_month as issueno, ref.page as pageno, reft.text as magazine_type, f.name as magazine_text, m.link_mask from entries e inner join magrefs ref on ref.entry_id = e.id inner join features f on ref.feature_id = f.id inner join referencetypes reft on ref.referencetype_id = reft.id inner join issues i on ref.issue_id = i.id inner join magazines m on i.magazine_id = m.id where e.id = ? and ref.referencetype_id in (1, 2, 3, 15) order by date_year, date_month, pageno', [id], function(error, results, fields) {
         if (error) {
             throw error;
         }
@@ -826,10 +1079,40 @@ var getAdverts = function(id) {
     return deferred.promise;
 }
 
+/**
+ * Get MagazineRefs
 
-/*
- * #############################################
+ Same as Adverts, just negate IN clause
  */
+var getMagazineRefs = function(id) {
+        var deferred = Q.defer();
+        var connection = db.getConnection();
+        connection.query('select m.name as magazine, i.date_year as issueyear, i.date_month as issueno, ref.page as pageno, reft.text as magazine_type, f.name as magazine_text, m.link_mask from entries e inner join magrefs ref on ref.entry_id = e.id inner join features f on ref.feature_id = f.id inner join referencetypes reft on ref.referencetype_id = reft.id inner join issues i on ref.issue_id = i.id inner join magazines m on i.magazine_id = m.id where e.id = ? and ref.referencetype_id not in (1, 2, 3, 15) order by date_year, date_month', [id], function(error, results, fields) {
+            if (error) {
+                throw error;
+            }
+            var arr = [];
+            var i = 0;
+            for (; i < results.length; i++) {
+                var item = {
+                    magazine: results[i].magazine,
+                    issue: results[i].issueno + "." + results[i].issueyear,
+                    issueyear: results[i].issueyear,
+                    issueno: results[i].issueno,
+                    page: results[i].pageno + "",
+                    pageno: results[i].pageno,
+                    magazine_type: results[i].magazine_type + ' - ' + results[i].magazine_text,
+                    link_mask: results[i].link_mask
+                }
+                arr.push(item);
+            }
+            deferred.resolve({ magrefs: arr });
+        });
+        return deferred.promise;
+    }
+    /*
+     * #############################################
+     */
 
 
 var zxdb_doc = function(id) {
@@ -838,6 +1121,7 @@ var zxdb_doc = function(id) {
         getPublisher(id),
         getReReleasedBy(id),
         getAuthors(id),
+        getRoles(id),
         getAuthored(id),
         getAuthoring(id),
         getControls(id),
@@ -873,7 +1157,8 @@ var zxdb_doc = function(id) {
         })
     });
     require('deasync').loopWhile(function() {
-        return !done; });
+        return !done;
+    });
 }
 
 var getAllIDs = function() {
@@ -890,9 +1175,47 @@ var getAllIDs = function() {
         done = true;
     });
     require('deasync').loopWhile(function() {
-        return !done; });
+        return !done;
+    });
     console.log("Finished!");
     db.closeConnection(connection);
 }
 
-getAllIDs();
+var getID = function(gameid) {
+    var connection = db.getConnection();
+    var done = false;
+    connection.query('select id from entries where id = ? order by id asc', [gameid], function(error, results, fields) {
+        if (error) {
+            throw new Error("Can't connect: ", err.stack);
+        }
+        var i = 0;
+        for (; i < results.length; i++) {
+            zxdb_doc(results[i].id);
+        }
+        done = true;
+    });
+    require('deasync').loopWhile(function() {
+        return !done;
+    });
+    console.log("Finished!");
+    db.closeConnection(connection);
+}
+
+if (process.argv.length <= 2) {
+    console.log("Usage: " + __filename + " [-all] [game_id]");
+    process.exit(-1);
+}
+
+if (process.argv[2] === '-all') {
+    console.log("Processing ALL games");
+    getAllIDs();
+} else {
+    var gameid = process.argv[2];
+    console.log(gameid + ", " + parseInt(gameid))
+    if (gameid == parseInt(gameid)) {
+        console.log("Processing game: " + gameid);
+        getID(gameid);
+    } else {
+        console.log(gameid + " is NOT a valid gameid");
+    }
+}
