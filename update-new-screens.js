@@ -31,6 +31,7 @@ fs.readdir(path, function(err, items) {
                 },
                 function(error, response) {
                     if (error) {
+                        console.error("ERR: ", error);
                         throw error;
                     }
                     body = response._source;

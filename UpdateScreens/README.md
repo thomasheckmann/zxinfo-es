@@ -18,3 +18,6 @@ To update with new screens from ZXDB:
 > node update-new-screens.js UpdateScreens/json/
 ````
 
+# Changelog
+## 05-2017
+* Changed mapping - feature to nested object

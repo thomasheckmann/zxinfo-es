@@ -544,9 +544,11 @@ var getInspiredByTieInLicense = function(id) {
 /**
  * Get series
 
- -- This program belongs in the following series (with these other titles)...
-SELECT prog.title AS title, 
-       pub.NAME   AS publisher 
+-- (S)equenced - groupname (1942), (LastNinja)
+
+-- This program belongs in the following series (with these other titles)...
+SELECT DISTINCT prog.title AS title, 
+       pub.NAME   AS publisher, g.name as groupname, groupt.id as grouptype 
 FROM   entries e 
        INNER JOIN members memb 
                ON memb.entry_id = e.id 
@@ -554,7 +556,7 @@ FROM   entries e
                ON memb.group_id = g.id 
        INNER JOIN grouptypes groupt 
                ON g.grouptype_id = groupt.id 
-                  AND groupt.id IN ( "N", "S", "U" ) 
+                  AND groupt.id = "S" 
        INNER JOIN members others 
                ON others.group_id = g.id 
        INNER JOIN entries prog 
@@ -568,18 +570,18 @@ WHERE  e.id = 9297
 ORDER  BY g.NAME, 
           others.series_seq ASC 
 
-+-------+-------------------+
-| title | publisher         |
-+-------+-------------------+
-| 1942  | Elite Systems Ltd |
-| 1943  | Go!               |
-+-------+-------------------+
++-------+-------------------+-----------+-----------+
+| title |     publisher     | groupname | grouptype |
++-------+-------------------+-----------+-----------+
+|  1942 | Elite Systems Ltd |      1942 | S         |
+|  1943 | Go!               |      1942 | S         |
++-------+-------------------+-----------+-----------+
 
  */
 var getSeries = function(id) {
     var deferred = Q.defer();
     var connection = db.getConnection();
-    connection.query('select prog.title as title, pub.name as publisher, g.name as groupname, groupt.id as grouptype from entries e inner join members memb on memb.entry_id = e.id inner join groups g on memb.group_id = g.id inner join grouptypes groupt on g.grouptype_id = groupt.id and groupt.id in ("N", "S", "U") inner join members others on others.group_id = g.id inner join entries prog on others.entry_id = prog.id left join publishers p on p.entry_id = prog.id left join labels pub on p.label_id = pub.id where e.id = ? and p.release_seq = 0 order by g.name, others.series_seq ASC', [id], function(error, results, fields) {
+    connection.query('select distinct prog.title as title, pub.name as publisher, g.name as groupname, groupt.id as grouptype from entries e inner join members memb on memb.entry_id = e.id inner join groups g on memb.group_id = g.id inner join grouptypes groupt on g.grouptype_id = groupt.id and groupt.id = "S" inner join members others on others.group_id = g.id inner join entries prog on others.entry_id = prog.id left join publishers p on p.entry_id = prog.id left join labels pub on p.label_id = pub.id where e.id = ? and p.release_seq = 0 order by g.name, others.series_seq ASC', [id], function(error, results, fields) {
         if (error) {
             throw error;
         }
@@ -701,31 +703,44 @@ var getCompilationContent = function(id) {
 /**
  * Get features
 
+-- (C)ompetition - Tron256(17819)
+-- (F)eature - Lunar Jetman(9372)
+-- (M)ajor Clone - Gulpman(2175)
+-- (N)amed - LED Storm(9369)
+-- (T)hemed - Valhalla(7152)
+-- (U)Unnamed - Alpha-Beth(10966)
+
 -- This program contains the following features... / participated in the following competitions...
 -- Competition, Feature, Major Clone, Themed Group
 SELECT g.name, 
-       groupt.id, 
+       groupt.id,
        groupt.text 
 FROM   members feat 
        INNER JOIN groups g 
                ON feat.group_id = g.id 
        INNER JOIN grouptypes groupt 
                ON g.grouptype_id = groupt.id 
-                  AND groupt.id NOT IN ( "N", "S", "U" ) 
+                  AND groupt.id <> "S" 
 WHERE  feat.entry_id = 176; 
 
-+-----------------------+----+---------+
-| name                  | id | text    |
-+-----------------------+----+---------+
-| Isometric 3D Graphics | F  | Feature |
-| Rainbow Graphics      | F  | Feature |
-+-----------------------+----+---------+
++----------------------------+----+----------------------+
+|            name            | id |         text         |
++----------------------------+----+----------------------+
+| 2001 Minigame Competition  | C  | Competition          |
+| Multi-machine Medium       | F  | Feature              |
+| Currah Microspeech Support | F  | Feature              |
+| Pac-Man                    | M  | Major Clone          |
+| Tron                       | M  | Major Clone          |
+| Crash cover demo           | N  | Non-sequenced Series |
+| Ancient Mythology          | T  | Themed Group         |
+| g002                       | U  | Unnamed Group        |
++----------------------------+----+----------------------+
 
  */
 var getFeatures = function(id) {
     var deferred = Q.defer();
     var connection = db.getConnection();
-    connection.query('select g.name, groupt.id, groupt.text from members feat inner join groups g on feat.group_id = g.id inner join grouptypes groupt on g.grouptype_id = groupt.id and groupt.id not in ("N", "S", "U") where feat.entry_id = ?', [id], function(error, results, fields) {
+    connection.query('select g.name, groupt.id, groupt.text from members feat inner join groups g on feat.group_id = g.id inner join grouptypes groupt on g.grouptype_id = groupt.id and groupt.id <> "S" where feat.entry_id = ?', [id], function(error, results, fields) {
         if (error) {
             throw error;
         }
