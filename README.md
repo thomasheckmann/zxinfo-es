@@ -20,15 +20,23 @@ Create Elasticsearch mappings
 
 Start your MariaDB with ZXDB data as described on [github](https://github.com/thomasheckmann/zxinfo-services)
 
-Generate JSON documents, the document will be save in 'data/processed/json'
+Generates json documents for all releases.
 ````
 > node create-zxinfo-documents -all
+````
+This command creates all JSON documents to be imported into Elasticsearch in the following directory:
+* _'data/processed/json'_
+
+If you only want to generate JSON document for a specific game, just specify the ID as parameter (instead of the -all above). For example to generate JSON document for 'Rambo' with ID=4010
+````
+> node create-zxinfo-documents 4010
 ````
 
 After finish, import into Elasticsearch
 ````
 > node import-into-elastic.js data/processed/json/
 ````
+This command indexes all JSON document in the folder. It updates index 'zxinfo_index' which can be configure in the file esConfig.js
 
 ## optional - create title suggestions
 Use this to generate documents for use with completion suggester in Elasticsearch - read more about it [on the blog](https://www.elastic.co/blog/you-complete-me). The script makes suggestions based on title and alias.
@@ -38,30 +46,41 @@ Make sure the index has been created
 > (cd ZXInfoArchive/scripts/ && ./createSuggestersIndex.sh)
 ````
 
-Generate and index documents with suggesters (to index 'zxinfo_suggests_index')
+Generate and index documents with suggesters straight into Elasticsearch (to index 'zxinfo_suggests_index')
 ````
 > node create-title-suggestions
 ````
 
 ## optional - add new screenshots
-Make sure you got all lates screen by running
-
+Make sure you got all lates screen from http://spectrumcomputing.co.uk 
 ````
 > cd UpdateScreens
 > ./getscreens.sh
 ````
+This command creates a mirror with screen in the directory:
+* _'UpdateScreens/mirror'_
 
-Convert screens from scr format to png or gif by running
+The .scr files needs to be converted to PNG (or GIF if containing FLASH) and additional info needs to be added to documents in Elasticsearch.
+
+Convert .scr to GIF or PNG
 ````
 > php convert.php
 ````
+This command convert screens from scr format to png or gif and generate required JSON update files which will output to:
+* _'UpdateScreens/json'_ - JSON update which must be merge with Elasticsearch documents
+* _'UpdateScreens/new/sinclair/screens/load/scr/'_ - converted loading screens (GIF or PNG)
+* _'UpdateScreens/new/sinclair/screens/in-game/scr/'_ - converted in-game screens (GIF or PNG)
 
-JSON additional for new screens are saved in folder 'json/' - needs to be merged with documents from Elasticsearch by running
+In-game and loading screen directory structure is compatible with the use on http://spectrumcomputing.co.uk
+
+Merge additional info with documents in Elasticsearch
 ````
 > node update-new-screens.js UpdateScreens/json/
 ````
 
-Copy converted screens to htdocs or similar
+Copy converted screens to htdocs or similar accesible by web-server.
+## 05-2017
+* Updated README
 
 ## 04-2017
 * Add command line options to create-zxinfo-documents to process a single game
