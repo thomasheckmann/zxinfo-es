@@ -1103,7 +1103,7 @@ var getAdverts = function(id) {
 var getMagazineRefs = function(id) {
         var deferred = Q.defer();
         var connection = db.getConnection();
-        connection.query('select m.name as magazine, i.date_year as issueyear, i.date_month as issueno, ref.page as pageno, reft.text as magazine_type, f.name as magazine_text, m.link_mask from entries e inner join magrefs ref on ref.entry_id = e.id inner join features f on ref.feature_id = f.id inner join referencetypes reft on ref.referencetype_id = reft.id inner join issues i on ref.issue_id = i.id inner join magazines m on i.magazine_id = m.id where e.id = ? and ref.referencetype_id not in (1, 2, 3, 15) order by date_year, date_month', [id], function(error, results, fields) {
+        connection.query('select m.name as magazine, i.date_year as issueyear, i.date_month as issueno, ref.page as pageno, reft.text as magazine_type, f.name as magazine_text, m.link_mask, ref.link as link from entries e inner join magrefs ref on ref.entry_id = e.id inner join features f on ref.feature_id = f.id inner join referencetypes reft on ref.referencetype_id = reft.id inner join issues i on ref.issue_id = i.id inner join magazines m on i.magazine_id = m.id where e.id = ? and ref.referencetype_id not in (1, 2, 3, 15) order by date_year, date_month', [id], function(error, results, fields) {
             if (error) {
                 throw error;
             }
@@ -1118,7 +1118,8 @@ var getMagazineRefs = function(id) {
                     page: results[i].pageno + "",
                     pageno: results[i].pageno,
                     magazine_type: results[i].magazine_type + ' - ' + results[i].magazine_text,
-                    link_mask: results[i].link_mask
+                    link_mask: results[i].link_mask,
+                    link: results[i].link
                 }
                 arr.push(item);
             }
