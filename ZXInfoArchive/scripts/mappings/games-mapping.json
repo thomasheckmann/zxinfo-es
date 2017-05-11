@@ -287,30 +287,44 @@
           "index": "not_analyzed"
         },
         "magrefs": {
+          "type": "nested",
           "properties": {
             "issue": {
-              "type": "string"
+              "type": "string",
+              "index": "not_analyzed"
             },
             "issueno": {
-              "type": "long"
+              "type": "long",
+              "index": "not_analyzed"
             },
             "issueyear": {
-              "type": "long"
+              "type": "long",
+              "index": "not_analyzed"
             },
             "link_mask": {
-              "type": "string"
+              "type": "string",
+              "index": "not_analyzed"
             },
             "magazine": {
-              "type": "string"
+              "type": "string",
+              "fields": {
+                "raw": {
+                  "type": "string",
+                  "index": "not_analyzed"
+                }
+              }
             },
             "magazine_type": {
-              "type": "string"
+              "type": "string",
+              "index": "not_analyzed"
             },
             "page": {
-              "type": "string"
+              "type": "string",
+              "index": "not_analyzed"
             },
             "pageno": {
-              "type": "long"
+              "type": "long",
+              "index": "not_analyzed"
             }
           }
         },
