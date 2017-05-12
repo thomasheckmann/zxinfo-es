@@ -30,6 +30,30 @@
             }
           }
         },
+        "screens": {
+          "type": "nested",
+          "properties": {
+            "filename": {
+              "type": "string",
+              "index": "not_analyzed"
+            },
+            "format": {
+              "type": "string",
+              "index": "not_analyzed"
+            },
+            "size": {
+              "type": "long"
+            },
+            "type": {
+              "type": "string",
+              "index": "not_analyzed"
+            },
+            "url": {
+              "type": "string",
+              "index": "not_analyzed"
+            }
+          }
+        },
         "adverts": {
           "type": "nested",
           "properties": {

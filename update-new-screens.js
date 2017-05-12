@@ -20,7 +20,7 @@ fs.readdir(path, function(err, items) {
         if (items[i].endsWith(".json")) {
             console.log("inserting: ", items[i]);
             var id = items[i].substr(0, 7);
-            var additionals_new = jsonfile.readFileSync(path + items[i]);
+            var screens_new = jsonfile.readFileSync(path + items[i]);
             var done = false;
 
             var body;
@@ -43,11 +43,11 @@ fs.readdir(path, function(err, items) {
             });
 
             var j = 0;
-            for (; j < additionals_new.additionals.length; j++) {
-                body.additionals.push(additionals_new.additionals[j]);
+            for (; j < screens_new.screens.length; j++) {
+                body.screens.push(screens_new.screens[j]);
             }
             // remove duplicates
-            body.additionals = _.uniqWith(body.additionals, _.isEqual);
+            body.screens = _.uniqWith(body.screens, _.isEqual);
 
             done = false;
             es.client.index({

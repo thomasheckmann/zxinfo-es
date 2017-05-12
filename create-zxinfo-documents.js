@@ -702,6 +702,88 @@ var getCompilationContent = function(id) {
 }
 
 /**
+* If compilation, get loading + in-game screens from content.
+  Get rid of animated GIF with screens
+
+SELECT
+    d.file_link AS url,
+    d.file_size AS size,
+    filet.text AS type,
+    FORMAT.text AS format
+FROM
+    compilations c
+INNER JOIN entries e ON
+    c.entry_id = e.id
+INNER JOIN downloads d ON
+    e.id = d.entry_id AND d.release_seq = 0
+INNER JOIN filetypes filet ON
+    d.filetype_id = filet.id
+INNER JOIN formattypes FORMAT ON
+    d.formattype_id = FORMAT.id
+WHERE
+    d.filetype_id IN(1, 2) AND d.formattype_id = 53 AND c.compilation_id = 11196
+UNION 
+SELECT
+    d.file_link AS url,
+    file_size AS size,
+    filet.text AS type,
+    format.text AS format
+FROM
+    downloads d
+INNER JOIN filetypes filet ON
+    d.filetype_id = filet.id
+INNER JOIN formattypes FORMAT ON
+    d.formattype_id = FORMAT.id
+WHERE
+    d.machinetype_id IS NULL AND d.filetype_id IN(1, 2) AND d.formattype_id = 53 AND d.entry_id = 11196
+
++----------------------------------------------------------+-------+----------------+---------+
+| url                                                      | size  | type           | format  |
++----------------------------------------------------------+-------+----------------+---------+
+| /pub/sinclair/screens/load/k/gif/Kung-FuMaster.gif       | 6324  | Loading screen | Picture |
+| /pub/sinclair/screens/in-game/k/Kung-FuMaster.gif        | 5603  | In-game screen | Picture |
+| /pub/sinclair/screens/load/t/gif/TopGun.gif              | 4288  | Loading screen | Picture |
+| /pub/sinclair/screens/in-game/t/TopGun.gif               | 3914  | In-game screen | Picture |
+| /pub/sinclair/screens/load/j/gif/JackTheNipper.gif       | 5841  | Loading screen | Picture |
+| /pub/sinclair/screens/in-game/j/JackTheNipper.gif        | 4391  | In-game screen | Picture |
+| /pub/sinclair/screens/load/a/gif/AufWiedersehenMonty.gif | 6632  | Loading screen | Picture |
+| /pub/sinclair/screens/in-game/a/AufWiedersehenMonty.gif  | 5878  | In-game screen | Picture |
+| /pub/sinclair/screens/load/s/gif/SuperCycle.gif          | 3068  | Loading screen | Picture |
+| /pub/sinclair/screens/in-game/s/SuperCycle.gif           | 4944  | In-game screen | Picture |
+| /pub/sinclair/screens/load/g/gif/Gauntlet.gif            | 6469  | Loading screen | Picture |
+| /pub/sinclair/screens/in-game/g/Gauntlet.gif             | 4252  | In-game screen | Picture |
+| /pub/sinclair/screens/in-game/123/6GameActionPack.gif    | 23915 | In-game screen | Picture |
++----------------------------------------------------------+-------+----------------+---------+
+
+*/
+var getScreens = function(id) {
+    var deferred = Q.defer();
+    var connection = db.getConnection();
+    connection.query('SELECT d.file_link AS url, d.file_size AS size, filet.text AS type, FORMAT.text AS format FROM compilations c INNER JOIN entries e ON c.entry_id = e.id INNER JOIN downloads d ON e.id = d.entry_id AND d.release_seq = 0 INNER JOIN filetypes filet ON d.filetype_id = filet.id INNER JOIN formattypes FORMAT ON d.formattype_id = FORMAT.id WHERE d.filetype_id IN(1, 2) AND d.formattype_id = 53 AND c.compilation_id = ? UNION SELECT d.file_link AS url, file_size AS size, filet.text AS type, format.text AS format FROM downloads d INNER JOIN filetypes filet ON d.filetype_id = filet.id INNER JOIN formattypes FORMAT ON d.formattype_id = FORMAT.id WHERE d.machinetype_id IS NULL AND d.filetype_id IN(1, 2) AND d.formattype_id = 53 AND d.entry_id = ?', [id,id], function(error, results, fields) {
+        if (error) {
+            throw error;
+        }
+        var arr = [];
+        var i = 0;
+        for (; i < results.length; i++) {
+            if (results[i].url == undefined) {; // console.log(id + ": empty additionals: ");
+            } else {
+                var downloaditem = {
+                    filename: path.basename(results[i].url),
+                    url: results[i].url,
+                    size: results[i].size,
+                    type: results[i].type,
+                    format: results[i].format
+                }
+                arr.push(downloaditem);
+            }
+        }
+        deferred.resolve({ screens: arr });
+    });
+    return deferred.promise;
+  }
+
+/**
  * Get features
 
 -- (C)ompetition - Tron256(17819)
@@ -955,31 +1037,47 @@ var getDownloads = function(id) {
 }
 
 /**
- * Get additionals (Everything else that is not machine specific - simple output)
+ * Get additionals (Everything else that is not machine specific and not loading/in-game pictures- simple output)
 
 --
-SELECT d.file_link AS url,file_size AS size,filet.text AS type, format.text AS format
-FROM   downloads d
-       INNER JOIN filetypes filet
-               ON d.filetype_id = filet.id
-       INNER JOIN formattypes format
-             ON d.formattype_id = format.id
-WHERE  d.machinetype_id IS NULL
-   AND d.entry_id = 4010
+SELECT
+    d.file_link AS url,
+    file_size AS size,
+    filet.text AS type,
+    format.text AS format
+FROM
+    downloads d
+INNER JOIN filetypes filet ON
+    d.filetype_id = filet.id
+INNER JOIN formattypes format ON
+    d.formattype_id = format.id
+WHERE
+    d.machinetype_id IS NULL AND NOT(
+        d.filetype_id IN(1, 2) AND d.formattype_id = 53
+    ) AND d.entry_id = 4010
 
-+--------------------------------------------+------+----------------+-------------+
-| url                                        | size | type           | format      |
-+--------------------------------------------+------+----------------+-------------+
-| /pub/sinclair/screens/load/r/gif/Rambo.gif | 6007 | Loading screen | Picture     |
-| /pub/sinclair/screens/load/r/scr/Rambo.scr | 6912 | Loading screen | Screen dump |
-| /pub/sinclair/screens/in-game/r/Rambo.gif  | 3978 | In-game screen | Picture     |
-+--------------------------------------------+------+----------------+-------------+
++---------------------------------------------------------------------+--------+---------------------------+---------------+
+| url                                                                 | size   | type                      | format        |
++---------------------------------------------------------------------+--------+---------------------------+---------------+
+| /pub/sinclair/screens/load/r/scr/Rambo.scr                          | 6912   | Loading screen            | Screen dump   |
+| /pub/sinclair/games-info/r/Rambo.txt                                | 5663   | Instructions              | Text document |
+| /pub/sinclair/games-maps/r/Rambo.gif                                | 82755  | Game map                  | Picture       |
+| /pub/sinclair/games-maps/r/Rambo.jpg                                | 104522 | Game map                  | Picture       |
+| /pub/sinclair/games-maps/r/Rambo_3.jpg                              | 560044 | Game map                  | Picture       |
+| /pub/sinclair/games-inlays/r/Rambo.jpg                              | 70713  | Cassette inlay            | Picture       |
+| /pub/sinclair/games-adverts/r/Rambo.jpg                             | 160897 | Advertisement             | Picture       |
+| /pub/sinclair/games-info/r/Rambo(ErbeSoftwareS.A.).txt              | 4725   | Instructions              | Text document |
+| /pub/sinclair/games-inlays/Rereleases/r/Rambo(ErbeSoftwareS.A.).jpg | 109930 | Re-release cassette inlay | Picture       |
+| /pub/sinclair/games-adverts/r/Rambo(ErbeSoftwareS.A.).jpg           | 247901 | Advertisement             | Picture       |
+| /pub/sinclair/games-inlays/Rereleases/r/Rambo(IBSA).jpg             | 65197  | Re-release cassette inlay | Picture       |
+| /pub/sinclair/games-inlays/Rereleases/r/Rambo(TheHitSquad).jpg      | 65527  | Re-release cassette inlay | Picture       |
++---------------------------------------------------------------------+--------+---------------------------+---------------+
 
  */
 var getAdditionals = function(id) {
     var deferred = Q.defer();
     var connection = db.getConnection();
-    connection.query('SELECT d.file_link AS url,file_size AS size,filet.text AS type, format.text AS format FROM downloads d INNER JOIN filetypes filet ON d.filetype_id = filet.id INNER JOIN formattypes format ON d.formattype_id = format.id WHERE d.machinetype_id IS NULL AND d.entry_id = ?', [id], function(error, results, fields) {
+    connection.query('SELECT d.file_link AS url, file_size AS size, filet.text AS type, format.text AS format FROM downloads d INNER JOIN filetypes filet ON d.filetype_id = filet.id INNER JOIN formattypes format ON d.formattype_id = format.id WHERE d.machinetype_id IS NULL AND NOT( d.filetype_id IN(1, 2) AND d.formattype_id = 53 ) AND d.entry_id = ?', [id], function(error, results, fields) {
         if (error) {
             throw error;
         }
@@ -1199,6 +1297,7 @@ var zxdb_doc = function(id) {
         getSeries(id),
         getOtherSystems(id),
         getCompilationContent(id),
+        getScreens(id),
         getFeatures(id),
         getSites(id),
         getInCompilations(id),

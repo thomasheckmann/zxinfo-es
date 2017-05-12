@@ -117,7 +117,7 @@ convertScreens('mirror/spectrumcomputing.co.uk/new/sinclair/screens/load/scr/', 
 foreach ($scr_array as $key => $items) {
 	$json_file = str_pad($key, 7, '0', STR_PAD_LEFT) . ".json";
 	$json_items = json_encode($items, JSON_UNESCAPED_SLASHES);
-	$json_str = "{ \"additionals\": $json_items }";
+	$json_str = "{ \"screens\": $json_items }";
 
 	file_put_contents("json/" . $json_file, $json_str);
 
