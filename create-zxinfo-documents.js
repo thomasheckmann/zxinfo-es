@@ -681,7 +681,7 @@ WHERE  ecomp.compilation_id = 11869
 var getCompilationContent = function(id) {
     var deferred = Q.defer();
     var connection = db.getConnection();
-    connection.query('select ecomp.tape_side as tape_side, ecomp.tape_seq as tape_seq, ecomp.prog_seq as prog_seq, item.title as title, ll.name as publisher from compilations ecomp inner join entries item on ecomp.entry_id = item.id inner join variationtypes evart on ecomp.variationtype_id = evart.id inner join publishers p on p.entry_id = ecomp.entry_id left join labels ll on p.label_id = ll.id left join countries lc1 on ll.country_id = lc1.id where ecomp.compilation_id = ? and p.release_seq = 0', [id], function(error, results, fields) {
+    connection.query('SELECT ecomp.tape_side AS tape_side,ecomp.tape_seq AS tape_seq, ecomp.prog_seq AS prog_seq,item.title AS title,ll.name AS publisher FROM compilations ecomp INNER JOIN entries item ON ecomp.entry_id = item.id INNER JOIN variationtypes evart ON ecomp.variationtype_id = evart.id INNER JOIN publishers p ON p.entry_id = ecomp.entry_id LEFT JOIN labels ll ON p.label_id = ll.id LEFT JOIN countries lc1 ON ll.country_id = lc1.id WHERE ecomp.compilation_id = ? AND p.release_seq = 0', [id], function(error, results, fields) {
         if (error) {
             throw error;
         }
@@ -691,7 +691,7 @@ var getCompilationContent = function(id) {
             var item = {
                 side: 'Tape ' + results[i].tape_seq + ", side " + results[i].tape_side,
                 title: results[i].title,
-                publisher: results[0].publisher,
+                publisher: results[i].publisher,
                 sequence: results[i].prog_seq
             }
             arr.push(item);
