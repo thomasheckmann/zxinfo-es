@@ -208,35 +208,68 @@ var getPublisher = function(id) {
  * Get re-released by
 
 --
-SELECT pub.name AS name,pc1.text AS country, aka.title as as_title
-FROM   releases r 
-       LEFT JOIN aliases aka
-              ON aka.entry_id = r.entry_id
-                 AND aka.release_seq = r.release_seq
-       INNER JOIN publishers p 
-               ON p.entry_id = r.entry_id 
-                  AND p.release_seq = r.release_seq 
-       INNER JOIN labels pub 
-               ON p.label_id = pub.id 
-       LEFT JOIN countries pc1 
-              ON pub.country_id = pc1.id 
-WHERE  r.entry_id = 4010
-       AND r.release_seq > 0 
+SELECT
+    r.release_seq as seq,
+    e.title as title,
+    aka.title as as_title,
+    pub.name as name,
+    pc1.text AS country,
+    file_size AS size,
+    file_link AS url,
+    filet.text AS type,
+    format.text AS format,
+    origint.text AS origin,
+    d.file_code AS code,
+    d.file_barcode AS barcode,
+    d.file_dl AS dl,
+    schemet.text AS encodingscheme
+FROM
+    releases r
+LEFT JOIN aliases aka
+      ON aka.entry_id = r.entry_id
+      AND aka.release_seq = r.release_seq
+INNER JOIN entries e ON
+  e.id = r.entry_id
+INNER JOIN publishers p 
+       ON p.entry_id = r.entry_id AND p.release_seq = r.release_seq 
+INNER JOIN labels pub 
+       ON p.label_id = pub.id 
+LEFT JOIN countries pc1 
+        ON pub.country_id = pc1.id 
+LEFT JOIN downloads d ON
+    r.entry_id = d.entry_id AND r.release_seq = d.release_seq  AND d.machinetype_id IS NOT NULL
+LEFT JOIN filetypes filet ON
+    d.filetype_id = filet.id
+LEFT JOIN formattypes format ON
+    d.formattype_id = format.id
+LEFT JOIN origintypes origint ON
+    d.origintype_id = origint.id
+LEFT JOIN schemetypes schemet ON
+    d.schemetype_id = schemet.id
+WHERE
+    r.entry_id = 9408
+ORDER BY
+    r.release_seq,
+    d.id
 
 ID: 2000011 as title
-+--------------------+---------+----------+
-| name               | country | as_title |
-+--------------------+---------+----------+
-| Erbe Software S.A. | Spain   | NULL     |
-| IBSA               | Spain   | NULL     |
-| The Hit Squad      | UK      | NULL     |
-+--------------------+---------+----------+
++-----+------------+----------+------------------------+---------+------+------+--------+----------------------+--------+---------+--------------+----------------------------+
+| seq | title      | as_title | name                   | country | size | type | format | origin               | code   | barcode | dl           | encodingscheme             |
++-----+------------+----------+------------------------+---------+------+------+--------+----------------------+--------+---------+--------------+----------------------------+
+| 0   | Sabre Wulf | NULL     | Ultimate Play The Game | UK      | NULL | ?    | NULL   | Original release (O) | 481007 | NULL    | NULL         | None                       |
+| 0   | Sabre Wulf | NULL     | Ultimate Play The Game | UK      | NULL | ?    | NULL   | Original release (O) | 481007 | NULL    | NULL         | SpeedLock 1                |
+| 1   | Sabre Wulf | NULL     | ABC Soft               | Spain   | NULL | ?    | NULL   | Re-release (R)       | SP156  | NULL    | M-13947-1985 | None                       |
+| 2   | Sabre Wulf | NULL     | Dro Soft               | Spain   | NULL | ?    | NULL   | Re-release (R)       | 2MT157 | NULL    | M-11303-198? | Alkatraz Protection System |
+| 3   | Sabre Wulf | NULL     | Erbe Software S.A.     | Spain   | NULL | ?    | NULL   | Re-release (R)       | NULL   | NULL    | NULL         | None                       |
+| 4   | Sabre Wulf | NULL     | Iveson Software S.A.   | Spain   | NULL | ?    | NULL   | Re-release (R)       | 1004   | NULL    | NULL         | None                       |
+| 5   | Sabre Wulf | NULL     | Microbyte [1]          | Spain   | NULL | ?    | NULL   | Re-release (R)       | NULL   | NULL    | NULL         | None                       |
++-----+------------+----------+------------------------+---------+------+------+--------+----------------------+--------+---------+--------------+----------------------------+
 
  */
 var getReReleasedBy = function(id) {
     var deferred = Q.defer();
     var connection = db.getConnection();
-    connection.query('SELECT pub.name AS name,pc1.text AS country, aka.title as as_title FROM releases r LEFT JOIN aliases aka ON aka.entry_id = r.entry_id AND aka.release_seq = r.release_seq INNER JOIN publishers p ON p.entry_id = r.entry_id AND p.release_seq = r.release_seq INNER JOIN labels pub ON p.label_id = pub.id LEFT JOIN countries pc1 ON pub.country_id = pc1.id WHERE r.entry_id = ? AND r.release_seq > 0', [id], function(error, results, fields) {
+    connection.query('SELECT r.release_seq as seq, e.title as title, aka.title as as_title, pub.name as name, pc1.text AS country, file_size AS size, file_link AS url, filet.text AS type, format.text AS format, origint.text AS origin, d.file_code AS code, d.file_barcode AS barcode, d.file_dl AS dl, schemet.text AS encodingscheme FROM releases r LEFT JOIN aliases aka ON aka.entry_id = r.entry_id AND aka.release_seq = r.release_seq INNER JOIN entries e ON e.id = r.entry_id INNER JOIN publishers p ON p.entry_id = r.entry_id AND p.release_seq = r.release_seq INNER JOIN labels pub ON p.label_id = pub.id LEFT JOIN countries pc1 ON pub.country_id = pc1.id LEFT JOIN downloads d ON r.entry_id = d.entry_id AND r.release_seq = d.release_seq AND d.machinetype_id IS NOT NULL LEFT JOIN filetypes filet ON d.filetype_id = filet.id LEFT JOIN formattypes format ON d.formattype_id = format.id LEFT JOIN origintypes origint ON d.origintype_id = origint.id LEFT JOIN schemetypes schemet ON d.schemetype_id = schemet.id WHERE r.entry_id = ? ORDER BY r.release_seq, d.id', [id], function(error, results, fields) {
         if (error) {
             throw error;
         }
@@ -244,9 +277,22 @@ var getReReleasedBy = function(id) {
         var i = 0;
         for (; i < results.length; i++) {
             var item = {
+                seq: results[i].seq,
                 name: results[i].name,
                 country: results[i].country,
-                as_title: results[i].as_title
+                as_title: results[i].as_title,
+                // fileinfo                
+                filename: results[i].url == null ? null: path.basename(results[i].url),
+                url: results[i].url,
+                size: results[i].size,
+                type: results[i].type,
+                format: results[i].format,
+                origin: results[i].origin,
+                code: results[i].code,
+                barcode: results[i].barcode,
+                dl: results[i].dl,
+                encodingscheme: results[i].encodingscheme
+
             }
             arr.push(item);
         }
