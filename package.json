@@ -10,7 +10,8 @@
     "jsonfile": "^2.4.0",
     "lodash": "^4.17.4",
     "mysql": "^2.13.0",
-    "q": "^1.4.1"
+    "q": "^1.4.1",
+    "xmldoc": "^1.1.0"
   },
   "devDependencies": {},
   "scripts": {
