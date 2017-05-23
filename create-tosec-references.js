@@ -21,8 +21,10 @@ node create-tosec-references.js TOSEC/XML/ 2>t.err | tee output.txt
 
 */
 
+'use strict';
 
-var es = require('./esConfig');
+var tu = require('./tosecUtil');
+var fix = require('./tosecFix');
 
 var fs = require('fs');
 var jsonfile = require('jsonfile')
@@ -45,149 +47,6 @@ function addGame(id, filename, url, size, type) {
         //console.log("[ADD] - appeding, new size = ", TOSEC[id].length);
     }
 }
-
-var lookUp = function(tosec_rom, title, publisher) {
-    var found = null;
-    var done = false;
-    es.client.search({
-            index: es.zxinfo_index,
-            type: es.zxinfo_type,
-            body: {
-
-                "query": {
-                    "filtered": {
-                        "query": {
-                            "multi_match": {
-                                "query": title,
-                                "fields": [
-                                    "fulltitle.raw",
-                                    "alsoknownas"
-                                ]
-                            }
-                        },
-                        "filter": {
-                            "bool": {
-                                "should": [{
-                                    "nested": {
-                                        "path": "authors",
-                                        "query": {
-                                            "bool": {
-                                                "must": [{
-                                                    "match_phrase_prefix": {
-                                                        "authors.group.raw": publisher
-                                                    }
-                                                }]
-                                            }
-                                        }
-                                    }
-                                }, {
-                                    "nested": {
-                                        "path": "authors",
-                                        "query": {
-                                            "bool": {
-                                                "must": [{
-                                                    "match_phrase_prefix": {
-                                                        "authors.authors.raw": publisher
-                                                    }
-                                                }]
-                                            }
-                                        }
-                                    }
-                                }, {
-                                    "nested": {
-                                        "path": "publisher",
-                                        "query": {
-                                            "bool": {
-                                                "must": [{
-                                                    "match_phrase_prefix": {
-                                                        "publisher.name.raw": publisher
-                                                    }
-                                                }]
-                                            }
-                                        }
-                                    }
-                                }, {
-                                    "nested": {
-                                        "path": "rereleasedby",
-                                        "query": {
-                                            "bool": {
-                                                "must": [{
-                                                    "match_phrase_prefix": {
-                                                        "rereleasedby.as_title": title
-                                                    }
-                                                }],
-                                                "must_not": [{
-                                                    "match": {
-                                                        "seq": 0
-                                                    }
-                                                }]
-                                            }
-                                        }
-                                    }
-                                }, {
-                                    "nested": {
-                                        "path": "rereleasedby",
-                                        "query": {
-                                            "bool": {
-                                                "must": [{
-                                                    "match_phrase_prefix": {
-                                                        "rereleasedby.name": publisher
-                                                    }
-                                                }],
-                                                "must_not": [{
-                                                    "match": {
-                                                        "seq": 0
-                                                    }
-                                                }]
-                                            }
-                                        }
-                                    }
-                                }]
-                            }
-                        }
-                    }
-                }
-
-            }
-        },
-        function(error, response) {
-            if (error) {
-                throw error;
-            } else {
-                var hits = response.hits.total;
-                if (hits == 1) {
-                    var doc = response.hits.hits[0]._source;
-                    var p = doc.publisher[0] !== undefined ? doc.publisher[0].name : "";
-                    console.log("[EXACT]["+tosec_rom+"] -  FOUND: " + response.hits.hits[0]._id + ", [" + doc.fulltitle + "](" + p + ") USING: ["+title+"]("+publisher+")");
-                    found = { id: response.hits.hits[0]._id, title: response.hits.hits[0].fulltitle };
-                    done = true;
-                } else if (hits > 1) {
-                    done = true;
-                    //console.log("[MULTIPLE][" + title + "](" + publisher + ") FOUND: " + response.hits.total);
-                    found = [];
-                    var i = 0;
-                    for (; i < response.hits.hits.length; i++) {
-                        var doc = response.hits.hits[i]._source;
-                        var p = doc.publisher[i] !== undefined ? doc.publisher[i].name : "";
-                        found.push({ id: response.hits.hits[i]._id, title: response.hits.hits[i].fulltitle });
-                        console.log("[MULTIPLE]["+tosec_rom+"] -  FOUND: " + response.hits.hits[i]._id + ", [" + doc.fulltitle + "](" + p + ") USING: ["+title+"]("+publisher+")("+response.hits.hits[i]._score+")");
-
-                        //console.log("\t" + response.hits.hits[i]._id + ", " + response.hits.hits[i]._source.fulltitle + ", [" + response.hits.hits[i]._source.publisher[0].name + "](" + response.hits.hits[i]._score + ")");
-                    }
-                } else {
-                    done = true;
-                    console.log("[NOT FOUND]["+tosec_rom+"] USING: [" + title + "](" + publisher + ")");
-                }
-            }
-        });
-
-    require('deasync').loopWhile(function() {
-        return !done;
-    });
-
-    return found;
-}
-
 
 /**
 A Treat! (demo) (1985)(Firebird Software).tap
@@ -259,14 +118,20 @@ var processFile = function(filename) {
         for (; i < games.length; i++) {
             var game = games[i];
             var rom_name = game.childNamed("rom").attr.name;
+            var game_name = game.attr.name;
+            if(fix.gamename[game_name] !== undefined) {
+                game_name = fix.gamename[game_name];
+            }
 
-            var rObj = parseRomName(rom_name);
+            var rObj = parseRomName(game_name);
             if (rObj !== null) {
                 rObj.size = game.childNamed("rom").attr.size;
-                var found = lookUp(rom_name, rObj.fulltitle, rObj.publisher);
-                if (found !== null && found.length == 1) {
-                    addGame(found.id, rom_name, urlsb + rom_name, rObj.size, tosecType);
-                } else if (found !== null && found.length > 1) {
+
+                if(fix.publisher[rObj.publisher] !== undefined) {
+                    rObj.publisher = fix.publisher[rObj.publisher];
+                }
+                var found = tu.lookUp(game_name, rObj.fulltitle, rObj.publisher);
+                if (found !== null) {
                     for (var j = 0; j < found.length; j++) {
                         addGame(found[j].id, rom_name, urlsb + rom_name, rObj.size, tosecType);
                     }
