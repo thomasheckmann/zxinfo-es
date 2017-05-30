@@ -1,7 +1,7 @@
 /**
 
 RUN:
-node create-tosec-references.js TOSEC/XML/ 2>t.err | tee output.txt
+node create-tosec-references.js TOSEC/XML/ 2>stderr.txt | tee stdout.txt | grep "\"" >missing.txt
 
 <game name="Rambo (1985)(Ocean)">
     <description>Rambo (1985)(Ocean)</description>
@@ -25,6 +25,7 @@ node create-tosec-references.js TOSEC/XML/ 2>t.err | tee output.txt
 
 var tu = require('./tosecUtil');
 var fix = require('./tosecFix');
+var mia = require('./tosecMissing');
 
 var fs = require('fs');
 var jsonfile = require('jsonfile')
@@ -33,18 +34,40 @@ var json_output_dir = 'data/processed/tosec';
 
 var TOSEC = {}; // {filename: "", url: "", size: nnnn, type: ""}
 
+var gamesCount =   0;
+var gamesAdded =   0;
+var gamesMissing = 0;
+var gamesNotFound = 0;
+var tosecCount = 0;
+
+function gamesCountInc() {
+    gamesCount += 1;
+}
+
+function gamesAddedInc() {
+    gamesAdded += 1;
+}
+
+function gamesMissingInc() {
+    gamesMissing += 1;
+}
+
+function gamesNotFoundInc() {
+    gamesNotFound += 1;
+}
+
+function tosecCountInc() {
+    tosecCount += 1;
+}
+
 function addGame(id, filename, url, size, type) {
     console.error("[ADD][" + id + "][" + filename + "][" + url + "][" + size + "][" + type + "]");
     var toseclist = TOSEC[id];
 
     if (toseclist == undefined) {
-        // new
-        //console.log("[ADD] - creating new entry for: ", id);
         TOSEC[id] = [{ filename: filename, url: url, size: size, type: type }]
     } else {
-        // existing, append
         TOSEC[id].push({ filename: filename, url: url, size: size, type: type });
-        //console.log("[ADD] - appeding, new size = ", TOSEC[id].length);
     }
 }
 
@@ -113,27 +136,42 @@ var processFile = function(filename) {
         var games = xml.childrenNamed("game");
 
         console.log("found " + games.length + " game(s)");
-
         var i = 0;
         for (; i < games.length; i++) {
+            gamesCountInc();
+
             var game = games[i];
             var rom_name = game.childNamed("rom").attr.name;
             var game_name = game.attr.name;
-            if(fix.gamename[game_name] !== undefined) {
-                game_name = fix.gamename[game_name];
-            }
 
-            var rObj = parseRomName(game_name);
-            if (rObj !== null) {
-                rObj.size = game.childNamed("rom").attr.size;
-
-                if(fix.publisher[rObj.publisher] !== undefined) {
-                    rObj.publisher = fix.publisher[rObj.publisher];
+            if (mia.missing.indexOf(game_name) != -1) {
+                console.log("[MIA][" + game_name + "]");
+                gamesMissingInc();
+            } else {
+                if (fix.gamename[game_name] !== undefined) {
+                    var newGameName = fix.gamename[game_name];
+                    console.log("[ROMNAME]["+game_name+"]->["+newGameName+"]");
+                    game_name = newGameName;
                 }
-                var found = tu.lookUp(game_name, rObj.fulltitle, rObj.publisher);
-                if (found !== null) {
-                    for (var j = 0; j < found.length; j++) {
-                        addGame(found[j].id, rom_name, urlsb + rom_name, rObj.size, tosecType);
+
+                var rObj = parseRomName(game_name);
+                if (rObj !== null) {
+                    rObj.size = game.childNamed("rom").attr.size;
+
+                    if (fix.publisher[rObj.publisher] !== undefined) {
+                        var newPublisher = fix.publisher[rObj.publisher];
+                        console.log("[PUBLISHER]["+rObj.publisher+"]->["+newPublisher+"]");
+                        rObj.publisher = newPublisher;
+                    }
+                    // search for game
+                    var found = tu.lookUp(game_name, rObj.fulltitle, rObj.publisher);
+                    if (found !== null) {
+                        gamesAddedInc();
+                        for (var j = 0; j < found.length; j++) {
+                            addGame(found[j].id, rom_name, urlsb + rom_name, rObj.size, tosecType);
+                        }
+                    } else {
+                        gamesNotFoundInc();
                     }
                 }
             }
@@ -161,6 +199,7 @@ if (stats.isDirectory()) {
     fs.readdir(path, function(err, items) {
         for (var i = 0; i < items.length; i++) {
             if (items[i].endsWith(".dat")) {
+                tosecCountInc();
                 console.log("file: ", items[i]);
                 processFile(path + items[i])
             }
@@ -194,3 +233,12 @@ for (var j = 0; j < UpdatedID.length; j++) {
         return !savedone;
     });
 }
+
+console.log("Total added    : " + gamesAdded);
+console.log("Total missing  : " + gamesMissing);
+console.log("Total not found: " + gamesNotFound);
+console.log("-----------------------------------");
+console.log("Total processed: " + gamesCount);
+console.log("TOSEC processed: " + tosecCount);
+console.log("Entries updated: " + UpdatedID.length);
+

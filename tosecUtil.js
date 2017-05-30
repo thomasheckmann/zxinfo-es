@@ -9,16 +9,32 @@ var lookUp = function(tosec_rom, title, publisher) {
             index: es.zxinfo_index,
             type: es.zxinfo_type,
             body: {
-                "min_score": 2.0,
                 "query": {
                     "filtered": {
                         "query": {
-                            "multi_match": {
-                                "query": title,
-                                "fields": [
-                                    "fulltitle.raw",
-                                    "alsoknownas"
-                                ]
+                            "bool": {
+                                "should": [{
+                                    "multi_match": {
+                                        "query": title,
+                                        "fields": [
+                                            "fulltitle^4",
+                                            "alsoknownas"
+                                        ]
+                                    }
+                                }, {
+                                    "nested": {
+                                        "path": "rereleasedby",
+                                        "query": {
+                                            "bool": {
+                                                "must": [{
+                                                    "match_phrase_prefix": {
+                                                        "rereleasedby.as_title": title
+                                                    }
+                                                }]
+                                            }
+                                        }
+                                    }
+                                }]
                             }
                         },
                         "filter": {
@@ -68,24 +84,6 @@ var lookUp = function(tosec_rom, title, publisher) {
                                         "query": {
                                             "bool": {
                                                 "must": [{
-                                                    "match": {
-                                                        "rereleasedby.as_title.raw": title
-                                                    }
-                                                }],
-                                                "must_not": [{
-                                                    "match": {
-                                                        "seq": 0
-                                                    }
-                                                }]
-                                            }
-                                        }
-                                    }
-                                }, {
-                                    "nested": {
-                                        "path": "rereleasedby",
-                                        "query": {
-                                            "bool": {
-                                                "must": [{
                                                     "match_phrase_prefix": {
                                                         "rereleasedby.name": publisher
                                                     }
@@ -121,7 +119,7 @@ var lookUp = function(tosec_rom, title, publisher) {
                     //console.log("[MULTIPLE][" + title + "](" + publisher + ") FOUND: " + response.hits.total);
                     found = [];
                     var i = 0;
-                    // only show multiple within 80% of max score
+                    // only show multiple within 70% of max score
                     var min_score = response.hits.hits[0]._score * 0.70;
                     for (; i < response.hits.hits.length; i++) {
                         var doc = response.hits.hits[i]._source;
@@ -130,13 +128,14 @@ var lookUp = function(tosec_rom, title, publisher) {
                             found.push({ id: response.hits.hits[i]._id, title: response.hits.hits[i].fulltitle });
                             console.log("[MULTIPLE][" + tosec_rom + "] -  FOUND: " + response.hits.hits[i]._id + ", [" + doc.fulltitle + "](" + p + ") USING: [" + title + "](" + publisher + ")(" + response.hits.hits[i]._score + ")");
                         } else {
-                            console.log("---[MULTIPLE][" + tosec_rom + "] -  FOUND: " + response.hits.hits[i]._id + ", [" + doc.fulltitle + "](" + p + ") USING: [" + title + "](" + publisher + ")(" + response.hits.hits[i]._score + "),"+min_score);
+                            console.error("[MULTIGNORE][" + tosec_rom + "] -  FOUND: " + response.hits.hits[i]._id + ", [" + doc.fulltitle + "](" + p + ") USING: [" + title + "](" + publisher + ")(" + response.hits.hits[i]._score + ") < " + min_score);
                         }
                     }
                     done = true;
                 } else {
                     done = true;
                     console.log("[NOT FOUND][" + tosec_rom + "] USING: [" + title + "](" + publisher + ")");
+                    console.log("\"" + tosec_rom + "\", ");
                 }
             }
         });
