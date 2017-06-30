@@ -2,6 +2,7 @@ var es = require('./esConfig');
 
 var fs = require('fs');
 var jsonfile = require('jsonfile')
+var pathx = require('path');
 
 if (process.argv.length <= 2) {
     console.log("Usage: " + __filename + " [path/to/directory] [path/to/jsonfile]");
@@ -45,7 +46,7 @@ if (stats.isDirectory()) {
     var filename = path;
     console.log("PROCESSING file: " + filename);
     console.log("inserting: ", filename);
-    var id = filename.substr(0, 7);
+    var id = pathx.basename(filename).substr(0, 7);
     var body = jsonfile.readFileSync(filename);
     var done = false;
     es.client.index({

@@ -1,5 +1,8 @@
 /**
 
+MATCH (n) DETACH DELETE n
+
+
 DOCUMENTATION HELPER:
 docker exec -i zxdb mysql -uroot -pzxdb1234 zxdb -e "select * from controltypes;"
 
@@ -1248,8 +1251,15 @@ var getAdverts = function(id) {
 
 /**
 Reviews: referencetype = 10
-SELECT m.name AS magazine,i.date_year AS issueyear,i.date_month AS issueno,
-       ref.page AS pageno,reft.text AS magazine_type,f.name AS magazine_text,
+SELECT m.name AS magazine,
+       i.date_year AS issueyear,
+       i.date_month AS issuemonth,
+       i.date_day AS issueday, 
+       i.volume as issuevolume, 
+       i.number AS issueno,
+       ref.page AS pageno,
+       reft.text AS magazine_type,
+       f.name AS magazine_text,
        m.link_mask, ref.link as link
 FROM   entries e
        INNER JOIN magrefs ref
@@ -1262,15 +1272,31 @@ FROM   entries e
                ON ref.issue_id = i.id
        INNER JOIN magazines m
                ON i.magazine_id = m.id
-WHERE  e.id = 4010
+WHERE  e.id = 9362
    AND ref.referencetype_id IN ( 10 )
-ORDER  BY date_year,date_month,pageno
+ORDER  BY date_year,date_month,date_day,pageno
+
++--------------------------+-----------+------------+----------+-------------+---------+--------+---------------+----------------------------------------------+-----------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------+
+|         magazine         | issueyear | issuemonth | issueday | issuevolume | issueno | pageno | magazine_type |                magazine_text                 |                                                 link_mask                                                 |                               link                                |
++--------------------------+-----------+------------+----------+-------------+---------+--------+---------------+----------------------------------------------+-----------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------+
+| Home Computing Weekly    |      1983 |          6 | NULL     | NULL        | NULL    |    315 | Review        |                                              | /pub/sinclair/magazines/HomeComputingWeekly/Issue{i3}/Pages/HomeComputingWeekly{i3}{p5}.jpg               | NULL                                                              |
+| Computer & Video Games   |      1983 |          7 | NULL     | NULL        | 21      |    136 | Review        |                                              | /pub/sinclair/magazines/C+VG/Issue{i3}/Pages/CVG{i3}{p5}.jpg                                              | NULL                                                              |
+| Personal Computing Today |      1983 |          8 | NULL     | NULL        | NULL    |     49 | Review        |                                              | /pub/sinclair/magazines/PersonalComputingToday/Issue{y2}{m2}/Pages/PersonalComputingToday{y2}{m2}{p5}.jpg | NULL                                                              |
+| ZX Computing             |      1983 |          8 | NULL     | NULL        | 8       |    106 | Review        |                                              | /pub/sinclair/magazines/ZXComputing/Issue{y2}{m2}/Pages/ZXComputing{y2}{m2}{p5}.jpg                       | NULL                                                              |
+| Crash                    |      1984 |          2 | NULL     | NULL        | 1       |     47 | Review        |                                              | /pub/sinclair/magazines/Crash/Issue{i2}/Pages/Crash{i2}{p5}.jpg                                           | http://www.zxspectrumreviews.co.uk/review.aspx?gid=2811&rid=12097 |
+| TV Gamer                 |      1984 |          3 | NULL     | NULL        | NULL    |     15 | Review        |                                              | NULL                                                                                                      | NULL                                                              |
+| Crash                    |      1984 |          3 | NULL     | NULL        | 2       |     47 | Review        |                                              | /pub/sinclair/magazines/Crash/Issue{i2}/Pages/Crash{i2}{p5}.jpg                                           | http://www.zxspectrumreviews.co.uk/review.aspx?gid=2811&rid=12359 |
+| Sinclair User            |      1984 |          3 | NULL     | NULL        | 24      |     54 | Review        |                                              | /pub/sinclair/magazines/SinclairUser/Issue{i3}/Pages/SinclairUser{i3}{p5}.jpg                             | http://www.zxspectrumreviews.co.uk/review.aspx?gid=2811&rid=14044 |
+| Crash                    |      1984 |          4 | NULL     | NULL        | 3       |     64 | Review        |                                              | /pub/sinclair/magazines/Crash/Issue{i2}/Pages/Crash{i2}{p5}.jpg                                           | http://www.zxspectrumreviews.co.uk/review.aspx?gid=2811&rid=12676 |
+| Crash                    |      1984 |          5 | NULL     | NULL        | 4       |     56 | Review        | http://www.crashonline.org.uk/04/reviews.htm | /pub/sinclair/magazines/Crash/Issue{i2}/Pages/Crash{i2}{p5}.jpg                                           | NULL                                                              |
+| Sinclair User            |      1987 |         12 | NULL     | NULL        | 69      |     48 | Review        |                                              | /pub/sinclair/magazines/SinclairUser/Issue{i3}/Pages/SinclairUser{i3}{p5}.jpg                             | http://www.zxspectrumreviews.co.uk/review.aspx?gid=2811&rid=15981 |
++--------------------------+-----------+------------+----------+-------------+---------+--------+---------------+----------------------------------------------+-----------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------+
 
 */
 var getMagazineReviews = function(id) {
     var deferred = Q.defer();
     var connection = db.getConnection();
-    connection.query('select m.name as magazine, i.date_year as issueyear, i.date_month as issueno, ref.page as pageno, reft.text as magazine_type, f.name as magazine_text, m.link_mask, ref.link as link from entries e inner join magrefs ref on ref.entry_id = e.id inner join features f on ref.feature_id = f.id inner join referencetypes reft on ref.referencetype_id = reft.id inner join issues i on ref.issue_id = i.id inner join magazines m on i.magazine_id = m.id where e.id = ? and ref.referencetype_id in (10) order by date_year, date_month, pageno', [id], function(error, results, fields) {
+    connection.query('SELECT m.name AS magazine,i.date_year AS issueyear,i.date_month AS issuemonth,i.date_day AS issueday, i.volume as issuevolume, i.number AS issueno, ref.page AS pageno,reft.text AS magazine_type,f.name AS magazine_text, m.link_mask, ref.link as link FROM entries e INNER JOIN magrefs ref ON ref.entry_id = e.id INNER JOIN features f ON ref.feature_id = f.id INNER JOIN referencetypes reft ON ref.referencetype_id = reft.id INNER JOIN issues i ON ref.issue_id = i.id INNER JOIN magazines m ON i.magazine_id = m.id WHERE e.id = ? AND ref.referencetype_id IN ( 10 ) ORDER BY date_year,date_month,pageno', [id], function(error, results, fields) {
         if (error) {
             throw error;
         }
@@ -1279,9 +1305,12 @@ var getMagazineReviews = function(id) {
         for (; i < results.length; i++) {
             var item = {
                 magazine: results[i].magazine,
-                issue: results[i].issueno + "." + results[i].issueyear,
                 issueyear: results[i].issueyear,
+                issuemonth: results[i].issuemonth,
+                issueday: results[i].issueday,
                 issueno: results[i].issueno,
+                issuevolume: results[i].issuevolume,
+                issue: results[i].issuemonth + "." + results[i].issueyear,
                 page: results[i].pageno + "",
                 pageno: results[i].pageno,
                 magazine_type: results[i].magazine_type,
