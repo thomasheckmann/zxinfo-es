@@ -269,7 +269,7 @@ ID: 2000011 as title
 +-----+------------+----------+------------------------+---------+------+------+--------+----------------------+--------+---------+--------------+----------------------------+
 
  */
-var getReReleasedBy = function(id) {
+var getReleases = function(id) {
     var deferred = Q.defer();
     var connection = db.getConnection();
     connection.query('SELECT r.release_seq as seq, e.title as title, aka.title as as_title, pub.name as name, pc1.text AS country, file_size AS size, file_link AS url, filet.text AS type, format.text AS format, origint.text AS origin, d.file_code AS code, d.file_barcode AS barcode, d.file_dl AS dl, schemet.text AS encodingscheme FROM releases r LEFT JOIN aliases aka ON aka.entry_id = r.entry_id AND aka.release_seq = r.release_seq INNER JOIN entries e ON e.id = r.entry_id INNER JOIN publishers p ON p.entry_id = r.entry_id AND p.release_seq = r.release_seq INNER JOIN labels pub ON p.label_id = pub.id LEFT JOIN countries pc1 ON pub.country_id = pc1.id LEFT JOIN downloads d ON r.entry_id = d.entry_id AND r.release_seq = d.release_seq AND d.machinetype_id IS NOT NULL LEFT JOIN filetypes filet ON d.filetype_id = filet.id LEFT JOIN formattypes format ON d.formattype_id = format.id LEFT JOIN origintypes origint ON d.origintype_id = origint.id LEFT JOIN schemetypes schemet ON d.schemetype_id = schemet.id WHERE r.entry_id = ? ORDER BY r.release_seq, d.id', [id], function(error, results, fields) {
@@ -299,7 +299,7 @@ var getReReleasedBy = function(id) {
             }
             arr.push(item);
         }
-        deferred.resolve({ rereleasedby: arr });
+        deferred.resolve({ releases: arr });
     });
     return deferred.promise;
 }
@@ -1021,6 +1021,7 @@ var getBookTypeIns = function(id) {
 }
 
 /**
+ * DEPRECATED - ALL INFO AVAILABLE IN RELEASES
  * Get Downloads - game files, does not have a machinetype_id
 
 --
@@ -1058,7 +1059,6 @@ WHERE  d.file_link IS NOT NULL
 | /pub/sinclair/games/r/Rambo(TheHitSquad).tzx.zip      | 32438 | Tape image        | Perfect TZX tape   | Re-release (R)       | MC01 | 5013156410000 | NULL         | SpeedLock 7               |
 +-------------------------------------------------------+-------+-------------------+--------------------+----------------------+------+---------------+--------------+---------------------------+
 
- */
 var getDownloads = function(id) {
     var deferred = Q.defer();
     var connection = db.getConnection();
@@ -1087,6 +1087,7 @@ var getDownloads = function(id) {
     });
     return deferred.promise;
 }
+ */
 
 /**
  * Get additionals (Everything else that is not machine specific and not loading/in-game pictures- simple output)
@@ -1365,7 +1366,7 @@ var zxdb_doc = function(id) {
     var done = false;
     Q.all([getBasicInfo(id),
         getPublisher(id),
-        getReReleasedBy(id),
+        getReleases(id),
         getAuthors(id),
         getRoles(id),
         getAuthored(id),
@@ -1380,7 +1381,7 @@ var zxdb_doc = function(id) {
         getSites(id),
         getInCompilations(id),
         getBookTypeIns(id),
-        getDownloads(id),
+/*        getDownloads(id),*/
         getMagazineReviews(id),
         getAdditionals(id),
         getMagazineRefs(id),

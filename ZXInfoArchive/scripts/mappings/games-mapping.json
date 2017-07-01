@@ -209,60 +209,6 @@
             }
           }
         },
-        "downloads": {
-          "type": "nested",
-          "properties": {
-            "barcode": {
-              "type": "string",
-              "index": "not_analyzed"
-            },
-            "code": {
-              "type": "string",
-              "index": "not_analyzed"
-            },
-            "dl": {
-              "type": "string",
-              "index": "not_analyzed"
-            },
-            "encodingscheme": {
-              "type": "string",
-              "index": "not_analyzed"
-            },
-            "filename": {
-              "type": "string",
-              "index": "not_analyzed"
-            },
-            "format": {
-              "type": "string"
-            },
-            "language": {
-              "type": "string",
-              "index": "not_analyzed"
-            },
-            "missingurl": {
-              "type": "string",
-              "index": "not_analyzed"
-            },
-            "origin": {
-              "type": "string",
-              "index": "not_analyzed"
-            },
-            "size": {
-              "type": "long"
-            },
-            "type": {
-              "type": "string",
-              "index": "not_analyzed"
-            },
-            "url": {
-              "type": "string",
-              "index": "not_analyzed"
-            },
-            "year": {
-              "type": "string"
-            }
-          }
-        },
         "features": {
           "type": "nested",
           "properties": {
@@ -489,7 +435,7 @@
         "remarks": {
           "type": "string"
         },
-        "rereleasedby": {
+        "releases": {
           "type": "nested",
           "properties": {
             "as": {
