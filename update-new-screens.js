@@ -31,37 +31,33 @@ fs.readdir(path, function(err, items) {
                 },
                 function(error, response) {
                     if (error) {
-                        console.error("ERR: ", error);
-                        throw error;
+                        console.error("[WARNING] " + id + ": NOT FOUND");
+                        done = true;
+                    } else {
+                        body = response._source;
+
+                        var j = 0;
+                        for (; j < screens_new.screens.length; j++) {
+                            body.screens.push(screens_new.screens[j]);
+                        }
+                        // remove duplicates
+                        body.screens = _.uniqWith(body.screens, _.isEqual);
+
+                        es.client.index({
+                                index: es.zxinfo_index,
+                                type: es.zxinfo_type,
+                                id: id,
+                                body: body
+                            },
+                            function(error, response) {
+                                if (error) {
+                                    throw error;
+                                }
+                                done = true;
+                            });
                     }
-                    body = response._source;
-                    done = true;
                 });
 
-            require('deasync').loopWhile(function() {
-                return !done;
-            });
-
-            var j = 0;
-            for (; j < screens_new.screens.length; j++) {
-                body.screens.push(screens_new.screens[j]);
-            }
-            // remove duplicates
-            body.screens = _.uniqWith(body.screens, _.isEqual);
-
-            done = false;
-            es.client.index({
-                    index: es.zxinfo_index,
-                    type: es.zxinfo_type,
-                    id: id,
-                    body: body
-                },
-                function(error, response) {
-                    if (error) {
-                        throw error;
-                    }
-                    done = true;
-                });
             require('deasync').loopWhile(function() {
                 return !done;
             });
