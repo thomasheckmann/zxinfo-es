@@ -285,7 +285,7 @@ var getReleases = function(id) {
                 country: results[i].country,
                 as_title: results[i].as_title,
                 // fileinfo                
-                filename: results[i].url == null ? null: path.basename(results[i].url),
+                filename: results[i].url == null ? null : path.basename(results[i].url),
                 url: results[i].url,
                 size: results[i].size,
                 type: results[i].type,
@@ -771,7 +771,7 @@ INNER JOIN filetypes filet ON
 INNER JOIN formattypes FORMAT ON
     d.formattype_id = FORMAT.id
 WHERE
-    d.filetype_id IN(1, 2) AND d.formattype_id = 53 AND c.compilation_id = 11196
+    d.filetype_id IN(1, 2) AND d.formattype_id IN (52, 53) AND c.compilation_id = 11196
 UNION 
 SELECT
     d.file_link AS url,
@@ -786,7 +786,7 @@ INNER JOIN filetypes filet ON
 INNER JOIN formattypes FORMAT ON
     d.formattype_id = FORMAT.id
 WHERE
-    d.machinetype_id IS NULL AND d.filetype_id IN(1, 2) AND d.formattype_id = 53 AND d.entry_id = 11196
+    d.machinetype_id IS NULL AND d.filetype_id IN(1, 2) AND d.formattype_id IN (52, 53) AND d.entry_id = 11196
 
 +----------------------------------------------------------+-------+----------------+---------+
 | url                                                      | size  | type           | format  |
@@ -801,39 +801,76 @@ WHERE
 | /pub/sinclair/screens/in-game/a/AufWiedersehenMonty.gif  | 5878  | In-game screen | Picture |
 | /pub/sinclair/screens/load/s/gif/SuperCycle.gif          | 3068  | Loading screen | Picture |
 | /pub/sinclair/screens/in-game/s/SuperCycle.gif           | 4944  | In-game screen | Picture |
-| /pub/sinclair/screens/load/g/gif/Gauntlet.gif            | 6469  | Loading screen | Picture |
+| /pub/sinclair/screens/load/g/gif/Gauntlet.scr            | 6912  | Loading screen | Screen dump |
 | /pub/sinclair/screens/in-game/g/Gauntlet.gif             | 4252  | In-game screen | Picture |
 | /pub/sinclair/screens/in-game/123/6GameActionPack.gif    | 23915 | In-game screen | Picture |
 +----------------------------------------------------------+-------+----------------+---------+
+
+ZXDB Update:
+If Screen Dump and Picture both exists, Picture is removed(only scr + ifl references), need to convert to Picture
+    {
+      "filename": "TopGun.scr",
+      "url": "/pub/sinclair/screens/load/t/scr/TopGun.scr",
+      "size": 6912,
+      "type": "Loading screen",
+      "format": "Screen dump",
+      "title": "Top Gun"
+    },
+=>
+    {
+      "filename": "TopGun.gif",
+      "url": "/zxscreens/0011196/TopGun-load.gif", //TopGun-game.gif
+      "size": 6912,
+      "type": "Loading screen", //In-game screen
+      "format": "Picture",
+      "title": "Top Gun"
+    },
+
+More screens: 0030237
 
 */
 var getScreens = function(id) {
     var deferred = Q.defer();
     var connection = db.getConnection();
-    connection.query('SELECT d.file_link AS url, d.file_size AS size, filet.text AS type, FORMAT.text AS format, e.title as title FROM compilations c INNER JOIN entries e ON c.entry_id = e.id INNER JOIN downloads d ON e.id = d.entry_id AND d.release_seq = 0 INNER JOIN filetypes filet ON d.filetype_id = filet.id INNER JOIN formattypes FORMAT ON d.formattype_id = FORMAT.id WHERE d.filetype_id IN(1, 2) AND d.formattype_id = 53 AND c.compilation_id = ? UNION SELECT d.file_link AS url, file_size AS size, filet.text AS type, format.text AS format, null as title FROM downloads d INNER JOIN filetypes filet ON d.filetype_id = filet.id INNER JOIN formattypes FORMAT ON d.formattype_id = FORMAT.id WHERE d.machinetype_id IS NULL AND d.filetype_id IN(1, 2) AND d.formattype_id = 53 AND d.entry_id = ?', [id,id], function(error, results, fields) {
+    connection.query('SELECT d.file_link AS url, d.file_size AS size, filet.text AS type, FORMAT.text AS format, e.title as title FROM compilations c INNER JOIN entries e ON c.entry_id = e.id INNER JOIN downloads d ON e.id = d.entry_id AND d.release_seq = 0 INNER JOIN filetypes filet ON d.filetype_id = filet.id INNER JOIN formattypes FORMAT ON d.formattype_id = FORMAT.id WHERE d.filetype_id IN(1, 2) AND d.formattype_id IN (52, 53) AND c.compilation_id = ? UNION SELECT d.file_link AS url, file_size AS size, filet.text AS type, format.text AS format, null as title FROM downloads d INNER JOIN filetypes filet ON d.filetype_id = filet.id INNER JOIN formattypes FORMAT ON d.formattype_id = FORMAT.id WHERE d.machinetype_id IS NULL AND d.filetype_id IN(1, 2) AND d.formattype_id IN (52, 53) AND d.entry_id = ?', [id, id], function(error, results, fields) {
         if (error) {
             throw error;
         }
         var arr = [];
         var i = 0;
         for (; i < results.length; i++) {
-            if (results[i].url == undefined) {; // console.log(id + ": empty additionals: ");
+            if (results[i].url == undefined) {;
             } else {
-                var downloaditem = {
-                    filename: path.basename(results[i].url),
-                    url: results[i].url,
-                    size: results[i].size,
-                    type: results[i].type,
-                    format: results[i].format,
-                    title: results[i].title
+                if (results[i].format == 'Picture') {
+                    var downloaditem = {
+                        filename: path.basename(results[i].url),
+                        url: results[i].url,
+                        size: results[i].size,
+                        type: results[i].type,
+                        format: results[i].format,
+                        title: results[i].title
+                    }
+                    arr.push(downloaditem);
+                } else {
+                    var zerofilled = ('0000000' + id).slice(-7);
+                    var screen_type;
+                    if(results[i].type == 'Loading screen') {
+                      screen_type = 'load';
+                    } else {
+                      screen_type = 'game';
+                    }
+                    var new_filename = path.basename(results[i].url, path.extname(results[i].url));
+                    if(path.basename(results[i].url).indexOf("-"+screen_type+".") == -1) {
+                      new_filename = new_filename + '-' + screen_type;
+                    }
+                    console.error(screen_type + "\t" + zerofilled + "\t" + results[i].url + "\t" + ('/zxscreens/' + zerofilled + "/") + "\t" + new_filename + "\t" + results[i].title);
                 }
-                arr.push(downloaditem);
             }
         }
         deferred.resolve({ screens: arr });
     });
     return deferred.promise;
-  }
+}
 
 /**
  * Get features
@@ -1381,7 +1418,7 @@ var zxdb_doc = function(id) {
         getSites(id),
         getInCompilations(id),
         getBookTypeIns(id),
-/*        getDownloads(id),*/
+        /*        getDownloads(id),*/
         getMagazineReviews(id),
         getAdditionals(id),
         getMagazineRefs(id),

@@ -1,45 +1,17 @@
 <?php
-/*
-	File structure:
-	===============
-	zxdb
-	    └── sinclair
-	        └── entries
-	            ├── 0000461
-	            │   ├── BattleShips.gif
-	            │   └── BattleShips.tap.zip
-	            ├── 0000557
-	            │   └── Blackjack_3.gif
-	            ├── 0000690
-	            │   └── Breakout.tzx.zip
-				├── 0030028
-	            │   ├── 0030028-1-game.scr
-	            │   ├── 0030028-1-load.scr
-	            │   ├── Speccies2.tap.zip
-	            │   └── Speccies2.tzx.zip            
-
-	Screen dump: .scr, .ifl (multicolor)
-*/
 include_once('src/ZxImage/Converter.php');
 include_once('src/GifCreator/GifCreator.php');
 
 $scr_array = array();
 
-function convertScreens($id, $in_dir, $out_dir) {
-	echo "Scanning $in_dir, output $out_dir\n";
-
-	$scr_files = glob($in_dir . DIRECTORY_SEPARATOR . '*.{scr,ifl}', GLOB_BRACE);
-
-	foreach ($scr_files as &$filename) {
+function convertScreen($id, $scr_file, $out_dir, $out_file, $title) {
 		global $scr_array;
-		$fullpath = $filename;
-		$size = filesize($fullpath);
+		$size = filesize($scr_file);
 
-		$info = pathinfo($fullpath);
-		$file_name =  basename($fullpath,'.'.$info['extension']);
+		$info = pathinfo($scr_file);
+		$src_filename =  basename($scr_file,'.'.$info['extension']);
 
-		echo "processing file: $file_name\n";
-
+		echo "processing file: $src_filename\n";
 		$scrType = 'standard';
 		switch ($size) {
 		case 6912:
@@ -88,82 +60,89 @@ function convertScreens($id, $in_dir, $out_dir) {
 				$scrType = 'unknown';
 		        break;
 	    }
-		if (strpos($filename, 'load.') !== false) {
+		if (strpos($out_file, '-load') !== false) {
 			$type = 'Loading screen';
 			$format = 'Picture';
-		} else if (strpos($filename, 'game.') !== false) {
+		} else if (strpos($out_file, '-game') !== false) {
 			$type = 'In-game screen';
 			$format = 'Picture';
 		}
 
 		$converter = new \ZxImage\Converter();
 		$converter->setType($scrType);
-		$converter->setPath($fullpath);
+		$converter->setPath($scr_file);
 
 		if ($binary = $converter->getBinary()) {
 		    //after conversion we can ask for a mime type of last operation and send it to browser
 		    $imageType = $converter->getResultMime();
+		    $outdir_converted = substr($out_dir, 1);
 		    switch($imageType) {
 		    	case 'image/png':
-				    $outfile = $out_dir . $file_name . ".png";
-				    $newfilename = $file_name . ".png";
-		    		// echo "saving to $outfile\n";
+		    		$outfile_converted = $outdir_converted . $out_file . ".png";
+				    $newfilename = $out_file . ".png";
 		    		break;
 		    	case 'image/gif':
-				    $outfile = $out_dir . $file_name . ".gif";
-				    $newfilename = $file_name . ".gif";
-		    		// echo "saving to $outfile\n";
+				    $outfile_converted =  $outdir_converted . $out_file . ".gif";
+				    $newfilename = $out_file . ".gif";
 		    		break;
 		    	default:
 		    		echo "unkown format: $imageType\n";
 		    		break;
 		    }
 
-		    echo "writing content to $out_dir \n";
-			if (!is_dir($out_dir)) {
+		    echo "converting $src_filename to $outdir_converted";
+			if (!is_dir($outdir_converted)) {
 				// dir doesn't exist, make it
-				mkdir($out_dir, 0777, true);
+				mkdir($outdir_converted, 0777, true);
 			}
-			file_put_contents($outfile, $binary);
-			$newfilesize = filesize($outfile);			
-			echo "$outfile, size: $newfilesize($size, $scrType)\n";
-			$object = (object) ['filename' => $newfilename, 'url' => '/' . $outfile, 'size' => $newfilesize, 'type' => $type, 'format' => $format];
+			file_put_contents($outfile_converted, $binary);
+			$newfilesize = filesize($outfile_converted);
+			echo "$out_file, size: $newfilesize($size, $scrType)\n";
+			$object = (object) ['filename' => $newfilename, 'url' => '/' . $outfile_converted, 'size' => $newfilesize, 'type' => $type, 'format' => $format, 'title' => $title];
 
 			if(is_null($scr_array[$id])) {
 				$scr_array[$id] = array();
 			}
 			array_push($scr_array[$id], $object);
 		}
-	}
+
 }
 
 
-function scanFolder($in_dir, $out_dir) {
-	echo "Scanning $in_dir\n";
-	$files = array_diff(scandir($in_dir), array('..', '.'));
 
-	foreach ($files as &$filename) {
-		if(is_dir($in_dir . DIRECTORY_SEPARATOR . $filename)) {
-			convertScreens($filename, $in_dir . $filename, 'zxdb/sinclair/entries/' . $filename . DIRECTORY_SEPARATOR);
-		} else {
-		}
+$delimiter = "\t";
+
+$fp = fopen('../zxscreens.txt', 'r');
+
+while ( !feof($fp) )
+{
+    $line = fgets($fp, 2048);
+
+    $data = str_getcsv($line, $delimiter);
+
+    $screen_type = $data[0];
+    $id = $data[1];
+    $from_url = $data[2];
+    $to_path = $data[3];
+    $to_filename = $data[4];
+    $title = $data[5];
+
+    if($screen_type == 'load' || $screen_type == 'game') {
+    	$fullpath = '/Users/dkthahko/Public/github_thomas/zxinfo-es/UpdateScreens/mirror/spectrumcomputing.co.uk'.$from_url;
+    	convertScreen($id, $fullpath, $to_path, $to_filename, $title);
 	}
-}
+}                              
+fclose($fp);
 
-
-scanFolder('mirror/spectrumcomputing.co.uk/zxdb/sinclair/entries/', 'zxdb/sinclair/entries/');
-
-//convertScreens('mirror/spectrumcomputing.co.uk/new/sinclair/screens/in-game/scr/', 'new/sinclair/screens/in-game/scr/');
-// convertScreens('mirror/spectrumcomputing.co.uk/zxdb/sinclair/entries/', 'zxdb/sinclair/entries/');
-// convertScreens('img/', 'img/');
-// print_r($scr_array);
 foreach ($scr_array as $key => $items) {
 	$json_file = str_pad($key, 7, '0', STR_PAD_LEFT) . ".json";
 	$json_items = json_encode($items, JSON_UNESCAPED_SLASHES);
 	$json_str = "{ \"screens\": $json_items }";
 
+	// echo "$json_file => $json_str\n";
+
 	file_put_contents("json/" . $json_file, $json_str);
 
 }
 
-
+?>
