@@ -211,7 +211,7 @@ var getPublisher = function(id) {
  * Get re-released by
 
 --
-SELECT
+SELECT DISTINCT
     r.release_seq as seq,
     e.title as title,
     aka.title as as_title,
@@ -272,7 +272,7 @@ ID: 2000011 as title
 var getReleases = function(id) {
     var deferred = Q.defer();
     var connection = db.getConnection();
-    connection.query('SELECT r.release_seq as seq, e.title as title, aka.title as as_title, pub.name as name, pc1.text AS country, file_size AS size, file_link AS url, filet.text AS type, format.text AS format, origint.text AS origin, d.file_code AS code, d.file_barcode AS barcode, d.file_dl AS dl, schemet.text AS encodingscheme FROM releases r LEFT JOIN aliases aka ON aka.entry_id = r.entry_id AND aka.release_seq = r.release_seq INNER JOIN entries e ON e.id = r.entry_id INNER JOIN publishers p ON p.entry_id = r.entry_id AND p.release_seq = r.release_seq INNER JOIN labels pub ON p.label_id = pub.id LEFT JOIN countries pc1 ON pub.country_id = pc1.id LEFT JOIN downloads d ON r.entry_id = d.entry_id AND r.release_seq = d.release_seq AND d.machinetype_id IS NOT NULL LEFT JOIN filetypes filet ON d.filetype_id = filet.id LEFT JOIN formattypes format ON d.formattype_id = format.id LEFT JOIN origintypes origint ON d.origintype_id = origint.id LEFT JOIN schemetypes schemet ON d.schemetype_id = schemet.id WHERE r.entry_id = ? ORDER BY r.release_seq, d.id', [id], function(error, results, fields) {
+    connection.query('SELECT DISTINCT r.release_seq as seq, e.title as title, aka.title as as_title, pub.name as name, pc1.text AS country, file_size AS size, file_link AS url, filet.text AS type, format.text AS format, origint.text AS origin, d.file_code AS code, d.file_barcode AS barcode, d.file_dl AS dl, schemet.text AS encodingscheme FROM releases r LEFT JOIN aliases aka ON aka.entry_id = r.entry_id AND aka.release_seq = r.release_seq INNER JOIN entries e ON e.id = r.entry_id INNER JOIN publishers p ON p.entry_id = r.entry_id AND p.release_seq = r.release_seq INNER JOIN labels pub ON p.label_id = pub.id LEFT JOIN countries pc1 ON pub.country_id = pc1.id LEFT JOIN downloads d ON r.entry_id = d.entry_id AND r.release_seq = d.release_seq AND d.machinetype_id IS NOT NULL LEFT JOIN filetypes filet ON d.filetype_id = filet.id LEFT JOIN formattypes format ON d.formattype_id = format.id LEFT JOIN origintypes origint ON d.origintype_id = origint.id LEFT JOIN schemetypes schemet ON d.schemetype_id = schemet.id WHERE r.entry_id = ? ORDER BY r.release_seq, d.id', [id], function(error, results, fields) {
         if (error) {
             throw error;
         }
@@ -860,8 +860,11 @@ var getScreens = function(id) {
                       screen_type = 'game';
                     }
                     var new_filename = path.basename(results[i].url, path.extname(results[i].url));
-                    if(path.basename(results[i].url).indexOf("-"+screen_type+".") == -1) {
+                    if(path.basename(results[i].url).indexOf("-"+screen_type+"-") == -1) {
                       new_filename = new_filename + '-' + screen_type;
+                    }
+                    if(results[i].title == null) {
+                      results[i].title = '';
                     }
                     console.error(screen_type + "\t" + zerofilled + "\t" + results[i].url + "\t" + ('/zxscreens/' + zerofilled + "/") + "\t" + new_filename + "\t" + results[i].title);
                 }
