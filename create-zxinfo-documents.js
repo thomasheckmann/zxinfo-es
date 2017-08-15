@@ -1,5 +1,10 @@
 /**
 
+dd.mm.yyyy
+
+Changelog:
+15.08.2017 - Table "authorings" was renamed to "bases". This table associates games with the tools used to build it (like PAW, AGD, NIRVANA, etc).
+
 MATCH (n) DETACH DELETE n
 
 
@@ -414,7 +419,7 @@ var getRoles = function(id) {
 -- This program was authored with the following tools...
 SELECT tool.title, 
        pub.NAME AS publisher 
-FROM   authorings iaut 
+FROM   bases iaut 
        INNER JOIN entries tool 
                ON iaut.util_id = tool.id 
        LEFT JOIN publishers p 
@@ -434,7 +439,7 @@ WHERE  p.release_seq = 0
 var getAuthored = function(id) {
     var deferred = Q.defer();
     var connection = db.getConnection();
-    connection.query('select tool.title, pub.name as publisher from authorings iaut inner join entries tool on iaut.util_id = tool.id left join publishers p on p.entry_id = tool.id left join labels pub on p.label_id = pub.id where iaut.entry_id = ? and p.release_seq = 0', [id], function(error, results, fields) {
+    connection.query('select tool.title, pub.name as publisher from bases iaut inner join entries tool on iaut.util_id = tool.id left join publishers p on p.entry_id = tool.id left join labels pub on p.label_id = pub.id where iaut.entry_id = ? and p.release_seq = 0', [id], function(error, results, fields) {
         if (error) {
             throw error;
         }
@@ -458,7 +463,7 @@ var getAuthored = function(id) {
 -- The following programs are known to have been authored with this tool...
 SELECT prog.title AS title, 
        pub.NAME   AS publisher 
-FROM   authorings eaut 
+FROM   bases eaut 
        INNER JOIN entries prog 
                ON eaut.entry_id = prog.id 
        LEFT JOIN publishers p 
@@ -478,7 +483,7 @@ WHERE  eaut.util_id = 30002;
 var getAuthoring = function(id) {
     var deferred = Q.defer();
     var connection = db.getConnection();
-    connection.query('select prog.title as title, pub.name as publisher from authorings eaut inner join entries prog on eaut.entry_id = prog.id left join publishers p on p.entry_id = prog.id left join labels pub on p.label_id = pub.id where eaut.util_id = ?', [id], function(error, results, fields) {
+    connection.query('select prog.title as title, pub.name as publisher from bases eaut inner join entries prog on eaut.entry_id = prog.id left join publishers p on p.entry_id = prog.id left join labels pub on p.label_id = pub.id where eaut.util_id = ?', [id], function(error, results, fields) {
         if (error) {
             throw error;
         }
