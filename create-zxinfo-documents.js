@@ -3,6 +3,7 @@
 dd.mm.yyyy
 
 Changelog:
+24.08.2017 - Table "bases" was renamed to "frameworks". This table associates games with the tools used to build it (like PAW, AGD, NIRVANA, etc).
 15.08.2017 - Table "authorings" was renamed to "bases". This table associates games with the tools used to build it (like PAW, AGD, NIRVANA, etc).
 
 MATCH (n) DETACH DELETE n
@@ -79,6 +80,29 @@ var priceHelper = function(price, id) {
 }
 
 /**
+  Returns content type based on genre type (e.g. Book, Covertape etc...)
+
+  * Software
+  * Hardware
+  * Books
+
+ */
+var contenttype = function(genretype) {
+    var result = "SOFTWARE";
+    if (genretype < 84) {
+        result = "SOFTWARE";
+    } else if (genretype < 91) {
+        result = "BOOK";
+    } else if (genretype < 109) {
+        result = "HARDWARE";
+    } else {
+        result = "SOFTWARE";
+    }
+
+    return result;
+}
+
+/**
  * Get basic info
 
 --
@@ -86,7 +110,7 @@ SELECT e.title AS fulltitle,aka.title AS alsoknownas,
        r.release_year AS yearofrelease,
        machinet.text AS machinetype,e.max_players AS numberofplayers,
        turnt.text AS multiplayermode,multipl.text AS multiplayertype,
-       entryt.text AS type, e.book_isbn as isbn, idm.text AS messagelanguage,
+       e.genretype_id as genretype, entryt.text AS type, e.book_isbn as isbn, idm.text AS messagelanguage,
        pubt.text AS originalpublication,r.release_price AS originalprice,
        availt.text AS availability,e.known_errors as known_errors,e.comments AS remarks,sc.score AS score,
        sc.votes AS votes
@@ -125,7 +149,7 @@ WHERE  e.id = 4010
 var getBasicInfo = function(id) {
     var deferred = Q.defer();
     var connection = db.getConnection();
-    connection.query('select e.title as fulltitle, aka.title as alsoknownas, r.release_year as yearofrelease, machinet.text as machinetype, e.max_players as numberofplayers, turnt.text as multiplayermode, multipl.text as multiplayertype, entryt.text as type, e.book_isbn as isbn, idm.text as messagelanguage, pubt.text as originalpublication, r.release_price as originalprice, availt.text as availability, e.known_errors as known_errors, e.comments as remarks, e.spot_comments as spotcomments, sc.score as score, sc.votes as votes from entries e inner join releases r on r.entry_id = e.id left join aliases aka on aka.entry_id = r.entry_id and aka.release_seq = r.release_seq left join availabletypes availt on e.availabletype_id = availt.id left join machinetypes machinet on e.machinetype_id = machinet.id left join turntypes turnt on e.turntype_id = turnt.id left join multiplaytypes multipl on e.multiplaytype_id = multipl.id left join genretypes entryt on e.genretype_id = entryt.id left join publicationtypes pubt on e.publicationtype_id = pubt.id left join idioms idm on e.idiom_id = idm.id left join scores sc on sc.entry_id = e.id where e.id = ? and r.release_seq = 0', [id], function(error, results, fields) {
+    connection.query('select e.title as fulltitle, aka.title as alsoknownas, r.release_year as yearofrelease, machinet.text as machinetype, e.max_players as numberofplayers, turnt.text as multiplayermode, multipl.text as multiplayertype, e.genretype_id as genretype, entryt.text as type, e.book_isbn as isbn, idm.text as messagelanguage, pubt.text as originalpublication, r.release_price as originalprice, availt.text as availability, e.known_errors as known_errors, e.comments as remarks, e.spot_comments as spotcomments, sc.score as score, sc.votes as votes from entries e inner join releases r on r.entry_id = e.id left join aliases aka on aka.entry_id = r.entry_id and aka.release_seq = r.release_seq left join availabletypes availt on e.availabletype_id = availt.id left join machinetypes machinet on e.machinetype_id = machinet.id left join turntypes turnt on e.turntype_id = turnt.id left join multiplaytypes multipl on e.multiplaytype_id = multipl.id left join genretypes entryt on e.genretype_id = entryt.id left join publicationtypes pubt on e.publicationtype_id = pubt.id left join idioms idm on e.idiom_id = idm.id left join scores sc on sc.entry_id = e.id where e.id = ? and r.release_seq = 0', [id], function(error, results, fields) {
         if (error) {
             throw error;
         }
@@ -142,6 +166,7 @@ var getBasicInfo = function(id) {
             subtype = entrytypes[1];
         }
         var doc = {
+            contenttype: contenttype(results[0].genretype),
             fulltitle: results[0].fulltitle,
             alsoknownas: results[0].alsoknownas,
             yearofrelease: results[0].yearofrelease,
@@ -419,7 +444,7 @@ var getRoles = function(id) {
 -- This program was authored with the following tools...
 SELECT tool.title, 
        pub.NAME AS publisher 
-FROM   bases iaut 
+FROM   frameworks iaut 
        INNER JOIN entries tool 
                ON iaut.util_id = tool.id 
        LEFT JOIN publishers p 
@@ -439,7 +464,7 @@ WHERE  p.release_seq = 0
 var getAuthored = function(id) {
     var deferred = Q.defer();
     var connection = db.getConnection();
-    connection.query('select tool.title, pub.name as publisher from bases iaut inner join entries tool on iaut.util_id = tool.id left join publishers p on p.entry_id = tool.id left join labels pub on p.label_id = pub.id where iaut.entry_id = ? and p.release_seq = 0', [id], function(error, results, fields) {
+    connection.query('select tool.title, pub.name as publisher from frameworks iaut inner join entries tool on iaut.util_id = tool.id left join publishers p on p.entry_id = tool.id left join labels pub on p.label_id = pub.id where iaut.entry_id = ? and p.release_seq = 0', [id], function(error, results, fields) {
         if (error) {
             throw error;
         }
@@ -463,7 +488,7 @@ var getAuthored = function(id) {
 -- The following programs are known to have been authored with this tool...
 SELECT prog.title AS title, 
        pub.NAME   AS publisher 
-FROM   bases eaut 
+FROM   frameworks eaut 
        INNER JOIN entries prog 
                ON eaut.entry_id = prog.id 
        LEFT JOIN publishers p 
@@ -483,7 +508,7 @@ WHERE  eaut.util_id = 30002;
 var getAuthoring = function(id) {
     var deferred = Q.defer();
     var connection = db.getConnection();
-    connection.query('select prog.title as title, pub.name as publisher from bases eaut inner join entries prog on eaut.entry_id = prog.id left join publishers p on p.entry_id = prog.id left join labels pub on p.label_id = pub.id where eaut.util_id = ?', [id], function(error, results, fields) {
+    connection.query('select prog.title as title, pub.name as publisher from frameworks eaut inner join entries prog on eaut.entry_id = prog.id left join publishers p on p.entry_id = prog.id left join labels pub on p.label_id = pub.id where eaut.util_id = ?', [id], function(error, results, fields) {
         if (error) {
             throw error;
         }
@@ -759,6 +784,11 @@ var getCompilationContent = function(id) {
 * If compilation, get loading + in-game screens from content.
   Get rid of animated GIF with screens
 
+COMPILATIONS
+GAME
+HARDWARE
+BOOKS
+
 SELECT
     d.file_link AS url,
     d.file_size AS size,
@@ -792,6 +822,38 @@ INNER JOIN formattypes FORMAT ON
     d.formattype_id = FORMAT.id
 WHERE
     d.machinetype_id IS NULL AND d.filetype_id IN(1, 2) AND d.formattype_id IN (52, 53) AND d.entry_id = 11196
+UNION 
+SELECT
+    d.file_link AS url,
+    file_size AS size,
+    filet.text AS type,
+    format.text AS format,
+    null AS title
+FROM
+    downloads d
+INNER JOIN filetypes filet ON
+    d.filetype_id = filet.id
+INNER JOIN formattypes FORMAT ON
+    d.formattype_id = FORMAT.id
+INNER JOIN entries e ON
+    d.entry_id = e.id
+WHERE
+    (e.genretype_id BETWEEN 91 AND 108) AND d.filetype_id IN(53) AND d.formattype_id IN (53) AND d.entry_id = 1000192
+UNION
+SELECT
+    d.file_link AS url,
+    file_size AS size,
+    "Loading screen" as type,
+    format.text AS format,
+    null AS title
+FROM
+    downloads d
+INNER JOIN formattypes FORMAT ON
+    d.formattype_id = FORMAT.id
+INNER JOIN entries e ON
+    d.entry_id = e.id
+WHERE
+    (e.genretype_id BETWEEN 83 AND 90) AND d.filetype_id IN(45) AND d.formattype_id IN (53) AND d.entry_id = 2000237
 
 +----------------------------------------------------------+-------+----------------+---------+
 | url                                                      | size  | type           | format  |
@@ -837,7 +899,7 @@ More screens: 0030237
 var getScreens = function(id) {
     var deferred = Q.defer();
     var connection = db.getConnection();
-    connection.query('SELECT d.file_link AS url, d.file_size AS size, filet.text AS type, FORMAT.text AS format, e.title as title FROM compilations c INNER JOIN entries e ON c.entry_id = e.id INNER JOIN downloads d ON e.id = d.entry_id AND d.release_seq = 0 INNER JOIN filetypes filet ON d.filetype_id = filet.id INNER JOIN formattypes FORMAT ON d.formattype_id = FORMAT.id WHERE d.filetype_id IN(1, 2) AND d.formattype_id IN (52, 53) AND c.compilation_id = ? UNION SELECT d.file_link AS url, file_size AS size, filet.text AS type, format.text AS format, null as title FROM downloads d INNER JOIN filetypes filet ON d.filetype_id = filet.id INNER JOIN formattypes FORMAT ON d.formattype_id = FORMAT.id WHERE d.machinetype_id IS NULL AND d.filetype_id IN(1, 2) AND d.formattype_id IN (52, 53) AND d.entry_id = ?', [id, id], function(error, results, fields) {
+    connection.query('SELECT d.file_link AS url, d.file_size AS size, filet.text AS type, FORMAT.text AS format, e.title as title FROM compilations c INNER JOIN entries e ON c.entry_id = e.id INNER JOIN downloads d ON e.id = d.entry_id AND d.release_seq = 0 INNER JOIN filetypes filet ON d.filetype_id = filet.id INNER JOIN formattypes FORMAT ON d.formattype_id = FORMAT.id WHERE d.filetype_id IN(1, 2) AND d.formattype_id IN (52, 53) AND c.compilation_id = ? UNION SELECT d.file_link AS url, file_size AS size, filet.text AS type, format.text AS format, null as title FROM downloads d INNER JOIN filetypes filet ON d.filetype_id = filet.id INNER JOIN formattypes FORMAT ON d.formattype_id = FORMAT.id WHERE d.machinetype_id IS NULL AND d.filetype_id IN(1, 2) AND d.formattype_id IN (52, 53) AND d.entry_id = ? UNION SELECT d.file_link AS url, file_size AS size, "Loading screen" AS type, format.text AS format, null AS title FROM downloads d INNER JOIN formattypes FORMAT ON d.formattype_id = FORMAT.id INNER JOIN entries e ON d.entry_id = e.id WHERE (e.genretype_id BETWEEN 91 AND 108) AND d.filetype_id IN(53) AND d.formattype_id IN (53) AND d.entry_id = ? UNION SELECT d.file_link AS url, file_size AS size, "Loading screen" as type, format.text AS format, null AS title FROM downloads d INNER JOIN formattypes FORMAT ON d.formattype_id = FORMAT.id INNER JOIN entries e ON d.entry_id = e.id WHERE (e.genretype_id BETWEEN 83 AND 90) AND d.filetype_id IN(45) AND d.formattype_id IN (53) AND d.entry_id = ?', [id, id, id, id], function(error, results, fields) {
         if (error) {
             throw error;
         }
@@ -857,19 +919,20 @@ var getScreens = function(id) {
                     }
                     arr.push(downloaditem);
                 } else {
+                    /** screen dump, write info to file (to be processed later) **/
                     var zerofilled = ('0000000' + id).slice(-7);
                     var screen_type;
-                    if(results[i].type == 'Loading screen') {
-                      screen_type = 'load';
+                    if (results[i].type == 'Loading screen') {
+                        screen_type = 'load';
                     } else {
-                      screen_type = 'game';
+                        screen_type = 'game';
                     }
                     var new_filename = path.basename(results[i].url, path.extname(results[i].url));
-                    if(path.basename(results[i].url).indexOf("-"+screen_type+"-") == -1) {
-                      new_filename = new_filename + '-' + screen_type;
+                    if (path.basename(results[i].url).indexOf("-" + screen_type + "-") == -1) {
+                        new_filename = new_filename + '-' + screen_type;
                     }
-                    if(results[i].title == null) {
-                      results[i].title = '';
+                    if (results[i].title == null) {
+                        results[i].title = '';
                     }
                     console.error(screen_type + "\t" + zerofilled + "\t" + results[i].url + "\t" + ('/zxscreens/' + zerofilled + "/") + "\t" + new_filename + "\t" + results[i].title);
                 }
@@ -1376,35 +1439,35 @@ var getMagazineReviews = function(id) {
 The rest, not IN (1, 2, 3, 10, 15)
  */
 var getMagazineRefs = function(id) {
-        var deferred = Q.defer();
-        var connection = db.getConnection();
-        connection.query('select m.name as magazine, i.date_year as issueyear, i.date_month as issueno, ref.page as pageno, reft.text as magazine_type, f.name as magazine_text, m.link_mask, ref.link as link from entries e inner join magrefs ref on ref.entry_id = e.id inner join features f on ref.feature_id = f.id inner join referencetypes reft on ref.referencetype_id = reft.id inner join issues i on ref.issue_id = i.id inner join magazines m on i.magazine_id = m.id where e.id = ? and ref.referencetype_id not in (1, 2, 3, 10, 15) order by magazine_type, date_year, date_month', [id], function(error, results, fields) {
-            if (error) {
-                throw error;
+    var deferred = Q.defer();
+    var connection = db.getConnection();
+    connection.query('select m.name as magazine, i.date_year as issueyear, i.date_month as issueno, ref.page as pageno, reft.text as magazine_type, f.name as magazine_text, m.link_mask, ref.link as link from entries e inner join magrefs ref on ref.entry_id = e.id inner join features f on ref.feature_id = f.id inner join referencetypes reft on ref.referencetype_id = reft.id inner join issues i on ref.issue_id = i.id inner join magazines m on i.magazine_id = m.id where e.id = ? and ref.referencetype_id not in (1, 2, 3, 10, 15) order by magazine_type, date_year, date_month', [id], function(error, results, fields) {
+        if (error) {
+            throw error;
+        }
+        var arr = [];
+        var i = 0;
+        for (; i < results.length; i++) {
+            var item = {
+                magazine: results[i].magazine,
+                issue: results[i].issueno + "." + results[i].issueyear,
+                issueyear: results[i].issueyear,
+                issueno: results[i].issueno,
+                page: results[i].pageno + "",
+                pageno: results[i].pageno,
+                magazine_type: results[i].magazine_type + ' - ' + results[i].magazine_text,
+                link_mask: results[i].link_mask,
+                link: results[i].link
             }
-            var arr = [];
-            var i = 0;
-            for (; i < results.length; i++) {
-                var item = {
-                    magazine: results[i].magazine,
-                    issue: results[i].issueno + "." + results[i].issueyear,
-                    issueyear: results[i].issueyear,
-                    issueno: results[i].issueno,
-                    page: results[i].pageno + "",
-                    pageno: results[i].pageno,
-                    magazine_type: results[i].magazine_type + ' - ' + results[i].magazine_text,
-                    link_mask: results[i].link_mask,
-                    link: results[i].link
-                }
-                arr.push(item);
-            }
-            deferred.resolve({ magrefs: arr });
-        });
-        return deferred.promise;
-    }
-    /*
-     * #############################################
-     */
+            arr.push(item);
+        }
+        deferred.resolve({ magrefs: arr });
+    });
+    return deferred.promise;
+}
+/*
+ * #############################################
+ */
 
 
 var zxdb_doc = function(id) {

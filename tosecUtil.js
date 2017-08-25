@@ -23,12 +23,12 @@ var lookUp = function(tosec_rom, title, publisher) {
                                     }
                                 }, {
                                     "nested": {
-                                        "path": "rereleasedby",
+                                        "path": "releases",
                                         "query": {
                                             "bool": {
                                                 "must": [{
                                                     "match_phrase_prefix": {
-                                                        "rereleasedby.as_title": title
+                                                        "releases.as_title": title
                                                     }
                                                 }]
                                             }
@@ -80,12 +80,12 @@ var lookUp = function(tosec_rom, title, publisher) {
                                     }
                                 }, {
                                     "nested": {
-                                        "path": "rereleasedby",
+                                        "path": "releases",
                                         "query": {
                                             "bool": {
                                                 "must": [{
                                                     "match_phrase_prefix": {
-                                                        "rereleasedby.name": publisher
+                                                        "releases.name": publisher
                                                     }
                                                 }],
                                                 "must_not": [{

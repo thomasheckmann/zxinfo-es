@@ -2,6 +2,10 @@
   "mappings": {
     "zxinfo_games": {
       "properties": {
+        "contenttype": {
+          "type": "string",
+          "index": "not_analyzed"
+        },
         "additionals": {
           "type": "nested",
           "properties": {
