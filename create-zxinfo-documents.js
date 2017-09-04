@@ -727,21 +727,27 @@ var getOtherSystems = function(id) {
  * Get contents - content of compilation
 
 -- This compilation content
-SELECT ecomp.tape_side AS tape_side,ecomp.tape_seq AS tape_seq,
-       ecomp.prog_seq AS prog_seq,item.title AS title,ll.name AS publisher
-FROM   compilations ecomp
-       INNER JOIN entries item
-               ON ecomp.entry_id = item.id
-       INNER JOIN variationtypes evart
-               ON ecomp.variationtype_id = evart.id
-       INNER JOIN publishers p
-               ON p.entry_id = ecomp.entry_id
-       LEFT JOIN labels ll
-              ON p.label_id = ll.id
-       LEFT JOIN countries lc1
-              ON ll.country_id = lc1.id
-WHERE  ecomp.compilation_id = 11869
-   AND p.release_seq = 0 
+SELECT
+    ecomp.tape_side AS tape_side,
+    ecomp.tape_seq AS tape_seq,
+    ecomp.prog_seq AS prog_seq,
+    item.title AS title,
+    ll.name AS publisher,
+    evart.text as variation
+FROM
+    compilations ecomp
+INNER JOIN entries item ON
+    ecomp.entry_id = item.id
+INNER JOIN variationtypes evart ON
+    ecomp.variationtype_id = evart.id
+INNER JOIN publishers p ON
+    p.entry_id = ecomp.entry_id
+LEFT JOIN labels ll ON
+    p.label_id = ll.id
+LEFT JOIN countries lc1 ON
+    ll.country_id = lc1.id
+WHERE
+    ecomp.compilation_id = 13510 AND p.release_seq = 0
 
 +-----------+----------+----------+---------------------------+----------------------+
 | tape_side | tape_seq | prog_seq | title                     | publisher            |
@@ -760,7 +766,7 @@ WHERE  ecomp.compilation_id = 11869
 var getCompilationContent = function(id) {
     var deferred = Q.defer();
     var connection = db.getConnection();
-    connection.query('SELECT ecomp.tape_side AS tape_side,ecomp.tape_seq AS tape_seq, ecomp.prog_seq AS prog_seq,item.title AS title,ll.name AS publisher FROM compilations ecomp INNER JOIN entries item ON ecomp.entry_id = item.id INNER JOIN variationtypes evart ON ecomp.variationtype_id = evart.id INNER JOIN publishers p ON p.entry_id = ecomp.entry_id LEFT JOIN labels ll ON p.label_id = ll.id LEFT JOIN countries lc1 ON ll.country_id = lc1.id WHERE ecomp.compilation_id = ? AND p.release_seq = 0', [id], function(error, results, fields) {
+    connection.query('SELECT ecomp.tape_side AS tape_side, ecomp.tape_seq AS tape_seq, ecomp.prog_seq AS prog_seq, item.title AS title, ll.name AS publisher, evart.text as variation FROM compilations ecomp INNER JOIN entries item ON ecomp.entry_id = item.id INNER JOIN variationtypes evart ON ecomp.variationtype_id = evart.id INNER JOIN publishers p ON p.entry_id = ecomp.entry_id LEFT JOIN labels ll ON p.label_id = ll.id LEFT JOIN countries lc1 ON ll.country_id = lc1.id WHERE ecomp.compilation_id = ? AND p.release_seq = 0', [id], function(error, results, fields) {
         if (error) {
             throw error;
         }
@@ -771,7 +777,8 @@ var getCompilationContent = function(id) {
                 side: 'Tape ' + results[i].tape_seq + ", side " + results[i].tape_side,
                 title: results[i].title,
                 publisher: results[i].publisher,
-                sequence: results[i].prog_seq
+                sequence: results[i].prog_seq,
+                variation: results[i].variation
             }
             arr.push(item);
         }
@@ -1214,7 +1221,7 @@ INNER JOIN formattypes format ON
     d.formattype_id = format.id
 WHERE
     d.machinetype_id IS NULL AND NOT(
-        d.filetype_id IN(1, 2) AND d.formattype_id = 53
+        d.filetype_id IN(-1, 1, 2) AND d.formattype_id = 53
     ) AND d.entry_id = 4010
 
 +---------------------------------------------------------------------+--------+---------------------------+---------------+
@@ -1238,7 +1245,7 @@ WHERE
 var getAdditionals = function(id) {
     var deferred = Q.defer();
     var connection = db.getConnection();
-    connection.query('SELECT d.file_link AS url, file_size AS size, filet.text AS type, format.text AS format FROM downloads d INNER JOIN filetypes filet ON d.filetype_id = filet.id INNER JOIN formattypes format ON d.formattype_id = format.id WHERE d.machinetype_id IS NULL AND NOT( d.filetype_id IN(1, 2) AND d.formattype_id = 53 ) AND d.entry_id = ?', [id], function(error, results, fields) {
+    connection.query('SELECT d.file_link AS url, file_size AS size, filet.text AS type, format.text AS format FROM downloads d INNER JOIN filetypes filet ON d.filetype_id = filet.id INNER JOIN formattypes format ON d.formattype_id = format.id WHERE d.machinetype_id IS NULL AND NOT( d.filetype_id IN(-1, 1, 2) AND d.formattype_id = 53 ) AND d.entry_id = ?', [id], function(error, results, fields) {
         if (error) {
             throw error;
         }
