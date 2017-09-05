@@ -3,6 +3,8 @@
 dd.mm.yyyy
 
 Changelog:
+06.09.2017 - sites -> relatedlinks (and remove site if it exits as a general ZXDB integrated website)
+05.09.2017 - Variations (on Compilations) added to document
 24.08.2017 - Table "bases" was renamed to "frameworks". This table associates games with the tools used to build it (like PAW, AGD, NIRVANA, etc).
 15.08.2017 - Table "authorings" was renamed to "bases". This table associates games with the tools used to build it (like PAW, AGD, NIRVANA, etc).
 
@@ -1010,14 +1012,21 @@ var getFeatures = function(id) {
 }
 
 /**
- * Get sites
+ * Get relatedlinks
 
 -- This program is also listed in the following sites...
-SELECT relw.name AS sitename,rel.link
-FROM   relatedlinks rel
-       INNER JOIN websites relw
-               ON rel.website_id = relw.id
-WHERE  rel.entry_id = 4010; 
+-- * exclude sites integrated with ZXDB
+SELECT
+    relw.name AS sitename,
+    rel.link
+FROM
+    relatedlinks rel
+INNER JOIN websites relw ON
+    rel.website_id = relw.id
+WHERE
+    relw.name NOT IN('Freebase', 'The Tipshop') AND rel.entry_id = 4010
+ORDER BY
+    sitename;
 
 +-----------+-----------------------------------------------------------------+
 | sitename  | link                                                            |
@@ -1027,10 +1036,10 @@ WHERE  rel.entry_id = 4010;
 +-----------+-----------------------------------------------------------------+
 
  */
-var getSites = function(id) {
+var getRelatedLinks = function(id) {
     var deferred = Q.defer();
     var connection = db.getConnection();
-    connection.query('select relw.name as sitename, rel.link from relatedlinks rel inner join websites relw on rel.website_id = relw.id where rel.entry_id = ?', [id], function(error, results, fields) {
+    connection.query('SELECT relw.name AS sitename,rel.link FROM relatedlinks rel INNER JOIN websites relw ON rel.website_id = relw.id WHERE relw.name NOT IN ("Freebase","The Tipshop") AND rel.entry_id = ? ORDER BY sitename', [id], function(error, results, fields) {
         if (error) {
             throw error;
         }
@@ -1043,7 +1052,28 @@ var getSites = function(id) {
             }
             arr.push(item);
         }
-        deferred.resolve({ sites: arr });
+        deferred.resolve({ relatedlinks: arr });
+    });
+    return deferred.promise;
+}
+
+var getRelatedSites = function() {
+    var deferred = Q.defer();
+    var connection = db.getConnection();
+    connection.query('SELECT name as sitename, link_mask FROM websites WHERE name NOT IN ("ZXInfo") AND link_mask is NOT NULL ORDER BY sitename', function(error, results, fields) {
+        if (error) {
+            throw error;
+        }
+        var arr = [];
+        var i = 0;
+        for (; i < results.length; i++) {
+            var item = {
+                sitename: results[i].sitename,
+                link_mask: results[i].link_mask
+            }
+            arr.push(item);
+        }
+        deferred.resolve({ relatedsites: arr });
     });
     return deferred.promise;
 }
@@ -1493,7 +1523,8 @@ var zxdb_doc = function(id) {
         getCompilationContent(id),
         getScreens(id),
         getFeatures(id),
-        getSites(id),
+        getRelatedLinks(id),
+        getRelatedSites(),
         getInCompilations(id),
         getBookTypeIns(id),
         /*        getDownloads(id),*/
