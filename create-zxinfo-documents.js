@@ -1015,7 +1015,7 @@ var getFeatures = function(id) {
  * Get relatedlinks
 
 -- This program is also listed in the following sites...
--- * exclude sites integrated with ZXDB
+-- * exclude sites integrated with ZXDB and YouTube
 SELECT
     relw.name AS sitename,
     rel.link
@@ -1024,7 +1024,7 @@ FROM
 INNER JOIN websites relw ON
     rel.website_id = relw.id
 WHERE
-    relw.name NOT IN('Freebase', 'The Tipshop') AND rel.entry_id = 4010
+    relw.name NOT IN('Freebase', 'The Tipshop', 'RZX Archive Channel (YouTube)', 'RZX Archive Channel (YouTube)') AND rel.entry_id = 4010
 ORDER BY
     sitename;
 
@@ -1039,7 +1039,7 @@ ORDER BY
 var getRelatedLinks = function(id) {
     var deferred = Q.defer();
     var connection = db.getConnection();
-    connection.query('SELECT relw.name AS sitename,rel.link FROM relatedlinks rel INNER JOIN websites relw ON rel.website_id = relw.id WHERE relw.name NOT IN ("Freebase","The Tipshop") AND rel.entry_id = ? ORDER BY sitename', [id], function(error, results, fields) {
+    connection.query('SELECT relw.name AS sitename,rel.link FROM relatedlinks rel INNER JOIN websites relw ON rel.website_id = relw.id WHERE relw.name NOT IN ("Freebase","The Tipshop","RZX Archive Channel (YouTube)") AND rel.entry_id = ? ORDER BY sitename', [id], function(error, results, fields) {
         if (error) {
             throw error;
         }
@@ -1057,6 +1057,11 @@ var getRelatedLinks = function(id) {
     return deferred.promise;
 }
 
+/**
+
+  Other sites integrated with ZXDB
+
+*/
 var getRelatedSites = function() {
     var deferred = Q.defer();
     var connection = db.getConnection();
@@ -1074,6 +1079,32 @@ var getRelatedSites = function() {
             arr.push(item);
         }
         deferred.resolve({ relatedsites: arr });
+    });
+    return deferred.promise;
+}
+
+/**
+
+  YouTube Links
+
+*/
+var getYouTubeLinks = function(id) {
+    var deferred = Q.defer();
+    var connection = db.getConnection();
+    connection.query('SELECT relw.name AS sitename,rel.link FROM relatedlinks rel INNER JOIN websites relw ON rel.website_id = relw.id WHERE relw.name IN ("RZX Archive Channel (YouTube)") AND rel.entry_id = ? ORDER BY sitename', [id], function(error, results, fields) {
+        if (error) {
+            throw error;
+        }
+        var arr = [];
+        var i = 0;
+        for (; i < results.length; i++) {
+            var item = {
+                sitename: results[i].sitename,
+                link: results[i].link
+            }
+            arr.push(item);
+        }
+        deferred.resolve({ youtubelinks: arr });
     });
     return deferred.promise;
 }
@@ -1525,6 +1556,7 @@ var zxdb_doc = function(id) {
         getFeatures(id),
         getRelatedLinks(id),
         getRelatedSites(),
+        getYouTubeLinks(id),
         getInCompilations(id),
         getBookTypeIns(id),
         /*        getDownloads(id),*/
