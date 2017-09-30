@@ -847,7 +847,7 @@ INNER JOIN formattypes FORMAT ON
 INNER JOIN entries e ON
     d.entry_id = e.id
 WHERE
-    (e.genretype_id BETWEEN 91 AND 108) AND d.filetype_id IN(53) AND d.formattype_id IN (53) AND d.entry_id = 1000192
+    (e.genretype_id BETWEEN 91 AND 108) AND d.filetype_id IN(53) AND d.formattype_id IN (53) AND d.entry_id = 1000192 -- 91-108=hardware, 53=hardware thumb
 UNION
 SELECT
     d.file_link AS url,
@@ -931,6 +931,8 @@ var getScreens = function(id) {
                     /** screen dump, write info to file (to be processed later) **/
                     var zerofilled = ('0000000' + id).slice(-7);
                     var screen_type;
+
+                    /** In-game renamed to Running screen **/
                     if (results[i].type == 'Loading screen') {
                         screen_type = 'load';
                     } else {
