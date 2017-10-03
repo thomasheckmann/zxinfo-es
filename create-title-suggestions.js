@@ -133,11 +133,10 @@ var creageSuggestionsForAlsoKnownAs = function() {
         return !done;
     });
     console.log("Finished!");
-    db.closeConnection(connection);
 }
 
 var creageSuggestionsForZXDBSearchByTitles = function() {
-    console.log('CREATE SUGGESTIONS FOR ALSO KNOWN AS');
+    console.log('CREATE SUGGESTIONS FOR ZXDB Search_By_Titles');
     var connection = db.getConnection();
     var done = false;
     // connection.query('select id, title from entries where 1 order by id asc', function(error, results, fields) {
