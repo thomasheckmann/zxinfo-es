@@ -162,6 +162,6 @@ var creageSuggestionsForZXDBSearchByTitles = function() {
     db.closeConnection(connection);
 }
 
-// createSuggestionsForFulltitle();
-// creageSuggestionsForAlsoKnownAs();
+createSuggestionsForFulltitle();
+creageSuggestionsForAlsoKnownAs();
 creageSuggestionsForZXDBSearchByTitles();
