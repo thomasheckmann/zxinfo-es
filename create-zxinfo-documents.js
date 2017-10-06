@@ -243,49 +243,49 @@ var getPublisher = function(id) {
  * Get re-released by
 
 --
-SELECT DISTINCT
-    r.release_seq as seq,
-    e.title as title,
-    aka.title as as_title,
-    pub.name as name,
-    pc1.text AS country,
-    file_size AS size,
-    file_link AS url,
-    filet.text AS type,
-    format.text AS format,
-    origint.text AS origin,
-    d.file_code AS code,
-    d.file_barcode AS barcode,
-    d.file_dl AS dl,
-    schemet.text AS encodingscheme
-FROM
-    releases r
-LEFT JOIN aliases aka
-      ON aka.entry_id = r.entry_id
-      AND aka.release_seq = r.release_seq
-INNER JOIN entries e ON
-  e.id = r.entry_id
-INNER JOIN publishers p 
-       ON p.entry_id = r.entry_id AND p.release_seq = r.release_seq 
-INNER JOIN labels pub 
-       ON p.label_id = pub.id 
-LEFT JOIN countries pc1 
-        ON pub.country_id = pc1.id 
-LEFT JOIN downloads d ON
-    r.entry_id = d.entry_id AND r.release_seq = d.release_seq  AND d.machinetype_id IS NOT NULL
-LEFT JOIN filetypes filet ON
-    d.filetype_id = filet.id
-LEFT JOIN formattypes format ON
-    d.formattype_id = format.id
-LEFT JOIN origintypes origint ON
-    d.origintype_id = origint.id
-LEFT JOIN schemetypes schemet ON
-    d.schemetype_id = schemet.id
-WHERE
-    r.entry_id = 9408
-ORDER BY
-    r.release_seq,
-    d.id
+select distinct r.release_seq  as seq,
+                e.title        as title,
+                aka.title      as as_title,
+                pub.name       as name,
+                pc1.text       as country,
+                r.release_year as yearofrelease,
+                file_size      as size,
+                file_link      as url,
+                filet.text     as type,
+                format.text    as format,
+                origint.text   as origin,
+                d.file_code    as code,
+                d.file_barcode as barcode,
+                d.file_dl      as dl,
+                schemet.text   as encodingscheme
+from   releases r
+       left join aliases aka
+              on aka.entry_id = r.entry_id
+                 and aka.release_seq = r.release_seq
+       inner join entries e
+               on e.id = r.entry_id
+       inner join publishers p
+               on p.entry_id = r.entry_id
+                  and p.release_seq = r.release_seq
+       inner join labels pub
+               on p.label_id = pub.id
+       left join countries pc1
+              on pub.country_id = pc1.id
+       left join downloads d
+              on r.entry_id = d.entry_id
+                 and r.release_seq = d.release_seq
+                 and d.machinetype_id is not null
+       left join filetypes filet
+              on d.filetype_id = filet.id
+       left join formattypes format
+              on d.formattype_id = format.id
+       left join origintypes origint
+              on d.origintype_id = origint.id
+       left join schemetypes schemet
+              on d.schemetype_id = schemet.id
+where  r.entry_id = 9408
+order  by r.release_seq,
+          d.id 
 
 ID: 2000011 as title
 +-----+------------+----------+------------------------+---------+------+------+--------+----------------------+--------+---------+--------------+----------------------------+
@@ -304,7 +304,7 @@ ID: 2000011 as title
 var getReleases = function(id) {
     var deferred = Q.defer();
     var connection = db.getConnection();
-    connection.query('SELECT DISTINCT r.release_seq as seq, e.title as title, aka.title as as_title, pub.name as name, pc1.text AS country, file_size AS size, file_link AS url, filet.text AS type, format.text AS format, origint.text AS origin, d.file_code AS code, d.file_barcode AS barcode, d.file_dl AS dl, schemet.text AS encodingscheme FROM releases r LEFT JOIN aliases aka ON aka.entry_id = r.entry_id AND aka.release_seq = r.release_seq INNER JOIN entries e ON e.id = r.entry_id INNER JOIN publishers p ON p.entry_id = r.entry_id AND p.release_seq = r.release_seq INNER JOIN labels pub ON p.label_id = pub.id LEFT JOIN countries pc1 ON pub.country_id = pc1.id LEFT JOIN downloads d ON r.entry_id = d.entry_id AND r.release_seq = d.release_seq AND d.machinetype_id IS NOT NULL LEFT JOIN filetypes filet ON d.filetype_id = filet.id LEFT JOIN formattypes format ON d.formattype_id = format.id LEFT JOIN origintypes origint ON d.origintype_id = origint.id LEFT JOIN schemetypes schemet ON d.schemetype_id = schemet.id WHERE r.entry_id = ? ORDER BY r.release_seq, d.id', [id], function(error, results, fields) {
+    connection.query('select distinct r.release_seq as seq, e.title as title, aka.title as as_title, pub.name as name, pc1.text as country, r.release_year as yearofrelease, file_size as size, file_link as url, filet.text as type, format.text as format, origint.text as origin, d.file_code as code, d.file_barcode as barcode, d.file_dl as dl, schemet.text as encodingscheme from releases r left join aliases aka on aka.entry_id = r.entry_id and aka.release_seq = r.release_seq inner join entries e on e.id = r.entry_id inner join publishers p on p.entry_id = r.entry_id and p.release_seq = r.release_seq inner join labels pub on p.label_id = pub.id left join countries pc1 on pub.country_id = pc1.id left join downloads d on r.entry_id = d.entry_id and r.release_seq = d.release_seq and d.machinetype_id is not null left join filetypes filet on d.filetype_id = filet.id left join formattypes format on d.formattype_id = format.id left join origintypes origint on d.origintype_id = origint.id left join schemetypes schemet on d.schemetype_id = schemet.id where r.entry_id = ? order by r.release_seq, d.id', [id], function(error, results, fields) {
         if (error) {
             throw error;
         }
@@ -313,9 +313,10 @@ var getReleases = function(id) {
         for (; i < results.length; i++) {
             var item = {
                 seq: results[i].seq,
-                name: results[i].name,
+                publisher: results[i].name,
                 country: results[i].country,
                 as_title: results[i].as_title,
+                yearofrelease: results[i].yearofrelease,
                 // fileinfo                
                 filename: results[i].url == null ? null : path.basename(results[i].url),
                 url: results[i].url,
