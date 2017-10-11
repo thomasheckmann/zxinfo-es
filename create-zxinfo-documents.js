@@ -288,6 +288,7 @@ order  by r.release_seq,
           d.id 
 
 ID: 2000011 as title
+ID: 0003012 releases with year
 +-----+------------+----------+------------------------+---------+------+------+--------+----------------------+--------+---------+--------------+----------------------------+
 | seq | title      | as_title | name                   | country | size | type | format | origin               | code   | barcode | dl           | encodingscheme             |
 +-----+------------+----------+------------------------+---------+------+------+--------+----------------------+--------+---------+--------------+----------------------------+
@@ -937,7 +938,7 @@ var getScreens = function(id) {
                     if (results[i].type == 'Loading screen') {
                         screen_type = 'load';
                     } else {
-                        screen_type = 'game';
+                        screen_type = 'run';
                     }
                     var new_filename = path.basename(results[i].url, path.extname(results[i].url));
                     if (path.basename(results[i].url).indexOf("-" + screen_type + "-") == -1) {

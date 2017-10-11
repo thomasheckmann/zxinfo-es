@@ -63,8 +63,8 @@ function convertScreen($id, $scr_file, $out_dir, $out_file, $title) {
 		if (strpos($out_file, '-load') !== false) {
 			$type = 'Loading screen';
 			$format = 'Picture';
-		} else if (strpos($out_file, '-game') !== false) {
-			$type = 'In-game screen';
+		} else if (strpos($out_file, '-run') !== false) {
+			$type = 'Running screen';
 			$format = 'Picture';
 		}
 
@@ -127,7 +127,7 @@ while ( !feof($fp) )
     $to_filename = $data[4];
     $title = $data[5];
 
-    if($screen_type == 'load' || $screen_type == 'game') {
+    if($screen_type == 'load' || $screen_type == 'run') {
     	$fullpath = '/Users/dkthahko/Public/github_thomas/zxinfo-es/UpdateScreens/mirror/spectrumcomputing.co.uk'.$from_url;
     	convertScreen($id, $fullpath, $to_path, $to_filename, $title);
 	}
