@@ -1028,7 +1028,7 @@ FROM
 INNER JOIN websites relw ON
     rel.website_id = relw.id
 WHERE
-    relw.name NOT IN('Freebase', 'The Tipshop', 'RZX Archive Channel (YouTube)', 'RZX Archive Channel (YouTube)') AND rel.entry_id = 4010
+    relw.name NOT IN('Freebase', 'The Tipshop', 'RZX Archive Channel (YouTube)', 'ZX81 videos (Youtube)') AND rel.entry_id = 4010
 ORDER BY
     sitename;
 
@@ -1043,7 +1043,7 @@ ORDER BY
 var getRelatedLinks = function(id) {
     var deferred = Q.defer();
     var connection = db.getConnection();
-    connection.query('SELECT relw.name AS sitename,rel.link FROM relatedlinks rel INNER JOIN websites relw ON rel.website_id = relw.id WHERE relw.name NOT IN ("Freebase","The Tipshop","RZX Archive Channel (YouTube)") AND rel.entry_id = ? ORDER BY sitename', [id], function(error, results, fields) {
+    connection.query('SELECT relw.name AS sitename,rel.link FROM relatedlinks rel INNER JOIN websites relw ON rel.website_id = relw.id WHERE relw.name NOT IN ("Freebase","The Tipshop","RZX Archive Channel (YouTube)", "ZX81 videos (Youtube)") AND rel.entry_id = ? ORDER BY sitename', [id], function(error, results, fields) {
         if (error) {
             throw error;
         }
@@ -1095,7 +1095,7 @@ var getRelatedSites = function() {
 var getYouTubeLinks = function(id) {
     var deferred = Q.defer();
     var connection = db.getConnection();
-    connection.query('SELECT relw.name AS sitename,rel.link FROM relatedlinks rel INNER JOIN websites relw ON rel.website_id = relw.id WHERE relw.name IN ("RZX Archive Channel (YouTube)") AND rel.entry_id = ? ORDER BY sitename', [id], function(error, results, fields) {
+    connection.query('SELECT relw.name AS sitename,rel.link FROM relatedlinks rel INNER JOIN websites relw ON rel.website_id = relw.id WHERE relw.name IN ("RZX Archive Channel (YouTube)", "ZX81 videos (Youtube)") AND rel.entry_id = ? ORDER BY sitename', [id], function(error, results, fields) {
         if (error) {
             throw error;
         }
