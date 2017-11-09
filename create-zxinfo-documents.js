@@ -76,7 +76,7 @@ var priceHelper = function(price, id) {
     } else {
         amount = price;
         currency = "N/A";
-        console.error("ERROR: ", id + " UNKNOWN PRICE: ", price);
+        // console.error("ERROR: ", id + " UNKNOWN PRICE: ", price);
     }
     return { amount: amount, currency: currency, license: license };
 }
@@ -1537,6 +1537,89 @@ var getMagazineRefs = function(id) {
     });
     return deferred.promise;
 }
+
+
+/**
+  get tosec references, requires temporary table 'tmp_tosec'
+*/
+
+var getTOSEC = function(id) {
+    var deferred = Q.defer();
+    var connection = db.getConnection();
+    connection.query('SELECT * FROM tmp_tosec WHERE zxdb_id = ?', [id], function(error, results, fields) {
+        if (error) {
+            throw error;
+        }
+        var arr = [];
+        var i = 0;
+        for (; i < results.length; i++) {
+            var item = {
+                url: results[i].path
+            }
+            arr.push(item);
+        }
+        deferred.resolve({ tosec: arr });
+    });
+    return deferred.promise;
+}
+
+
+/**
+  This title Manic Miner Hard (30440) is a modification of
+  Manic Miner (3012)
+
+  Manic Miner ZX81 (0032032)
+*/
+var getModOf = function(id) {
+    var deferred = Q.defer();
+    var connection = db.getConnection();
+    connection.query('SELECT e.id, e.title AS this_title, e.is_mod, o.title AS title, pub.name AS publisher, m.text FROM entries e INNER JOIN entries o ON e.original_id = o.id LEFT JOIN publishers p ON p.entry_id = o.id LEFT JOIN labels pub ON p.label_id = pub.id LEFT JOIN machinetypes m ON m.id = o.machinetype_id WHERE e.id = ? AND p.release_seq = 0', [id], function(error, results, fields) {
+        if (error) {
+            throw error;
+        }
+        var item = {};
+        if (results.length > 0) {
+            item = {
+                id: ('0000000' + results[0].id).slice(-7),
+                is_mod: results[0].is_mod,
+                title: results[0].title,
+                publisher: results[0].publisher,
+                machinetype: results[0].text
+            }
+        }
+        deferred.resolve({ mod_of: item });
+    });
+    return deferred.promise;
+
+}
+
+/**
+  This title Manic Miner (3012) are modified by these titles:  
+*/
+var getModifiedBy = function(id) {
+    var deferred = Q.defer();
+    var connection = db.getConnection();
+    connection.query('SELECT e.id, e.title, e.is_mod, pub.name AS publisher, m.text FROM entries e LEFT JOIN publishers p ON p.entry_id = e.id LEFT JOIN labels pub ON p.label_id = pub.id INNER JOIN machinetypes m ON m.id = e.machinetype_id WHERE e.original_id = ? AND p.release_seq = 0', [id], function(error, results, fields) {
+        if (error) {
+            throw error;
+        }
+        var arr = [];
+        var i = 0;
+        for (; i < results.length; i++) {
+            var item = {
+                id: ('0000000' + results[i].id).slice(-7),
+                is_mod: results[i].is_mod,
+                title: results[i].title,
+                publisher: results[i].publisher,
+                machinetype: results[i].text
+            }
+            arr.push(item);
+        }
+        deferred.resolve({ modified_by: arr });
+    });
+    return deferred.promise;
+
+}
 /*
  * #############################################
  */
@@ -1567,7 +1650,10 @@ var zxdb_doc = function(id) {
         getMagazineReviews(id),
         getAdditionals(id),
         getMagazineRefs(id),
-        getAdverts(id)
+        getAdverts(id),
+        getTOSEC(id),
+        getModOf(id),
+        getModifiedBy(id)
     ]).then(function(results) {
         var i = 0;
         var doc_array = {};

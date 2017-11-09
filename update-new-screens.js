@@ -39,6 +39,7 @@ fs.readdir(path, function(err, items) {
                         var j = 0;
                         for (; j < screens_new.screens.length; j++) {
                             body.screens.push(screens_new.screens[j]);
+                            body.screens = _.sortBy(body.screens, ["filename"]);
                         }
                         // remove duplicates
                         body.screens = _.uniqWith(body.screens, _.isEqual);
