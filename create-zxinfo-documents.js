@@ -3,6 +3,7 @@
 dd.mm.yyyy
 
 Changelog:
+30.11.2017 - author object changed from simple string, to object {name, country, alias}
 06.09.2017 - sites -> relatedlinks (and remove site if it exits as a general ZXDB integrated website)
 05.09.2017 - Variations (on Compilations) added to document
 24.08.2017 - Table "bases" was renamed to "frameworks". This table associates games with the tools used to build it (like PAW, AGD, NIRVANA, etc).
@@ -342,51 +343,77 @@ var getReleases = function(id) {
  * Get authors
 
 --
-SELECT dev.name AS name,team.name AS dev_group
-FROM   authors aut
-       INNER JOIN labels dev
-               ON aut.label_id = dev.id
-       LEFT JOIN countries ac1
-              ON dev.country_id = ac1.id
-       LEFT JOIN labels team
-              ON aut.team_id = team.id
-       LEFT JOIN countries tc1
-              ON team.country_id = tc1.id
-WHERE  aut.entry_id = 483
+SELECT
+    dev.name AS dev_name,
+    ac1.text AS dev_country,
+    team.name AS group_name,
+    tc1.text AS group_country,
+    devalias.name AS dev_alias
+FROM
+    authors aut
+INNER JOIN labels dev ON
+    aut.label_id = dev.id
+LEFT JOIN labels devalias ON
+    devalias.from_id = dev.id AND devalias.is_company = 0
+LEFT JOIN countries ac1 ON
+    dev.country_id = ac1.id
+LEFT JOIN labels team ON
+    aut.team_id = team.id
+LEFT JOIN countries tc1 ON
+    team.country_id = tc1.id
+WHERE
+    aut.entry_id = 996
+ORDER BY
+    group_name,
+    dev_name
 
-+-------------------+----------------------+
-| name              | dev_group            |
-+-------------------+----------------------+
-| David J. Anderson | Platinum Productions |
-| Ian Morrison      | Platinum Productions |
-| Alan Laird        | Platinum Productions |
-| F. David Thorpe   | NULL                 |
-+-------------------+----------------------+
+996 - Cobra (Alias)
+483 - Beach Head II (Group)
+
++-------------------+-------------+------------+---------------+--------------+
+| dev_name          | dev_country | group_name | group_country | dev_alias    |
++-------------------+-------------+------------+---------------+--------------+
+| Jonathan M. Smith | UK          | NULL       | NULL          | Frobush      |
+| Jonathan M. Smith | UK          | NULL       | NULL          | Joffa Smifff |
+| Martin Galway     | UK          | NULL       | NULL          | NULL         |
+| Steve Cain        | UK          | NULL       | NULL          | NULL         |
++-------------------+-------------+----------------------+---------------+-----------+
++-------------------+-------------+----------------------+---------------+-----------+
+| dev_name          | dev_country | group_name           | group_country | dev_alias |
++-------------------+-------------+----------------------+---------------+-----------+
+| F. David Thorpe   | UK          | NULL                 | NULL          | NULL      |
+| Oliver Frey       | Switzerland | NULL                 | NULL          | NULL      |
+| Alan Laird        | UK          | Platinum Productions | UK            | NULL      |
+| David J. Anderson | UK          | Platinum Productions | UK            | NULL      |
+| Ian Morrison      | UK          | Platinum Productions | UK            | NULL      |
++-------------------+-------------+----------------------+---------------+-----------+
 
 */
 var getAuthors = function(id) {
     var deferred = Q.defer();
     var connection = db.getConnection();
-    connection.query('select dev.name as name, team.name as dev_group from authors aut inner join labels dev on aut.label_id = dev.id left join countries ac1 on dev.country_id = ac1.id left join labels team on aut.team_id = team.id left join countries tc1 on team.country_id = tc1.id where aut.entry_id = ?', [id], function(error, results, fields) {
+    connection.query('SELECT dev.name AS dev_name, ac1.text AS dev_country, team.name AS group_name, tc1.text AS group_country, devalias.name AS dev_alias FROM authors aut INNER JOIN labels dev ON aut.label_id = dev.id LEFT JOIN labels devalias ON devalias.from_id = dev.id AND devalias.is_company = 0 LEFT JOIN countries ac1 ON dev.country_id = ac1.id LEFT JOIN labels team ON aut.team_id = team.id LEFT JOIN countries tc1 ON team.country_id = tc1.id WHERE aut.entry_id = ? ORDER BY group_name, dev_name;', [id], function(error, results, fields) {
         if (error) {
             throw error;
         }
         var arr = [];
         var i = 0;
-        var group;
-        var tmparr = [];
+        var groupArray;
+        var authorArray = [];
         for (; i < results.length; i++) {
-            if (group != results[i].dev_group) {
-                if (tmparr.length > 0) {
-                    arr.push({ authors: tmparr, group: group })
+            if (groupArray != results[i].group_name) {
+                if (authorArray.length > 0) {
+                    arr.push({ authors: authorArray, group: groupArray })
                 }
-                group = results[i].dev_group;
-                tmparr = [];
+                groupArray = results[i].group_name;
+                authorArray = [];
             }
-            tmparr.push(results[i].name);
+            if (!authorArray.includes(results[i].dev_name.trim())) {
+                authorArray.push({name: results[i].dev_name.trim(), country: results[i].dev_country, alias: results[i].dev_alias});
+            }
         }
-        if (tmparr.length > 0) {
-            arr.push({ authors: tmparr, group: group })
+        if (authorArray.length > 0) {
+            arr.push({ authors: authorArray, group: groupArray})
         }
         deferred.resolve({ authors: arr });
     });
@@ -947,7 +974,7 @@ var getScreens = function(id) {
                     if (results[i].title == null) {
                         results[i].title = '';
                     }
-                    console.error(screen_type + "\t" + zerofilled + "\t" + results[i].url + "\t" + ('/zxscreens/' + zerofilled + "/") + "\t" + new_filename + "\t" + results[i].title);
+                    //-console.error(screen_type + "\t" + zerofilled + "\t" + results[i].url + "\t" + ('/zxscreens/' + zerofilled + "/") + "\t" + new_filename + "\t" + results[i].title);
                 }
             }
         }
@@ -1573,7 +1600,7 @@ var getTOSEC = function(id) {
 var getModOf = function(id) {
     var deferred = Q.defer();
     var connection = db.getConnection();
-    connection.query('SELECT e.id, e.title AS this_title, e.is_mod, o.title AS title, pub.name AS publisher, m.text FROM entries e INNER JOIN entries o ON e.original_id = o.id LEFT JOIN publishers p ON p.entry_id = o.id LEFT JOIN labels pub ON p.label_id = pub.id LEFT JOIN machinetypes m ON m.id = o.machinetype_id WHERE e.id = ? AND p.release_seq = 0', [id], function(error, results, fields) {
+    connection.query('SELECT o.id, e.title AS this_title, e.is_mod, o.title AS title, pub.name AS publisher, m.text, e.original_id FROM entries e INNER JOIN entries o ON e.original_id = o.id LEFT JOIN publishers p ON p.entry_id = o.id LEFT JOIN labels pub ON p.label_id = pub.id LEFT JOIN machinetypes m ON m.id = o.machinetype_id WHERE e.id = ? order by p.release_seq limit 1', [id], function(error, results, fields) {
         if (error) {
             throw error;
         }
@@ -1599,7 +1626,7 @@ var getModOf = function(id) {
 var getModifiedBy = function(id) {
     var deferred = Q.defer();
     var connection = db.getConnection();
-    connection.query('SELECT e.id, e.title, e.is_mod, pub.name AS publisher, m.text FROM entries e LEFT JOIN publishers p ON p.entry_id = e.id LEFT JOIN labels pub ON p.label_id = pub.id INNER JOIN machinetypes m ON m.id = e.machinetype_id WHERE e.original_id = ? AND p.release_seq = 0', [id], function(error, results, fields) {
+    connection.query('SELECT e.id, e.title, e.is_mod, pub.name AS publisher, m.text FROM entries e LEFT JOIN publishers p ON p.entry_id = e.id LEFT JOIN labels pub ON p.label_id = pub.id INNER JOIN machinetypes m ON m.id = e.machinetype_id WHERE e.original_id = ?', [id], function(error, results, fields) {
         if (error) {
             throw error;
         }

@@ -134,12 +134,44 @@
         "authors": {
           "type": "nested",
           "properties": {
-            "authors": {
+            "alias": {
               "type": "string",
               "fields": {
                 "raw": {
                   "type": "string",
                   "index": "not_analyzed"
+                }
+              }
+            },
+            "authors": {
+              "type": "nested", 
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "fields": {
+                    "raw": {
+                      "type": "string",
+                      "index": "not_analyzed"
+                    }
+                  }
+                },
+                "country": {
+                  "type": "string",
+                  "fields": {
+                    "raw": {
+                      "type": "string",
+                      "index": "not_analyzed"
+                    }
+                  }
+                },
+                "alias": {
+                  "type": "string",
+                  "fields": {
+                    "raw": {
+                      "type": "string",
+                      "index": "not_analyzed"
+                    }
+                  }
                 }
               }
             },

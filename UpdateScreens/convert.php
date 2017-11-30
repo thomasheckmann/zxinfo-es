@@ -5,13 +5,14 @@ include_once('src/GifCreator/GifCreator.php');
 $scr_array = array();
 
 function convertScreen($id, $scr_file, $out_dir, $out_file, $title) {
-		global $scr_array;
+		$object = [];
+
 		$size = filesize($scr_file);
 
 		$info = pathinfo($scr_file);
 		$src_filename =  basename($scr_file,'.'.$info['extension']);
 
-		echo "processing file: $src_filename\n";
+		// echo "processing file: $src_filename\n";
 		$scrType = 'standard';
 		switch ($size) {
 		case 6912:
@@ -90,22 +91,17 @@ function convertScreen($id, $scr_file, $out_dir, $out_file, $title) {
 		    		break;
 		    }
 
-		    echo "converting $src_filename to $outdir_converted";
+		    // echo "converting $src_filename to $outdir_converted";
 			if (!is_dir($outdir_converted)) {
 				// dir doesn't exist, make it
 				mkdir($outdir_converted, 0777, true);
 			}
 			file_put_contents($outfile_converted, $binary);
 			$newfilesize = filesize($outfile_converted);
-			echo "$out_file, size: $newfilesize($size, $scrType)\n";
+			// echo "$out_file, size: $newfilesize($size, $scrType)\n";
 			$object = (object) ['filename' => $newfilename, 'url' => '/' . $outfile_converted, 'size' => $newfilesize, 'type' => $type, 'format' => $format, 'title' => $title];
-
-			if(is_null($scr_array[$id])) {
-				$scr_array[$id] = array();
-			}
-			array_push($scr_array[$id], $object);
 		}
-
+		return $object;
 }
 
 
@@ -114,6 +110,11 @@ $delimiter = "\t";
 
 $fp = fopen('../zxscreens.txt', 'r');
 
+/*
+
+ Loop through list of screens identified by create json documents
+
+ */
 while ( !feof($fp) )
 {
     $line = fgets($fp, 2048);
@@ -128,12 +129,49 @@ while ( !feof($fp) )
     $title = $data[5];
 
     if($screen_type == 'load' || $screen_type == 'run') {
+    	$object;
     	$fullpath = '/Users/dkthahko/Public/github_thomas/zxinfo-es/UpdateScreens/mirror/spectrumcomputing.co.uk'.$from_url;
-    	convertScreen($id, $fullpath, $to_path, $to_filename, $title);
+    	if(file_exists("." . $to_path . $to_filename . ".gif") || file_exists("." . $to_path . $to_filename . ".png")) {
+	    	// gif or png?
+	    	$ext = "";
+	    	if(file_exists("." . $to_path . $to_filename . ".gif")) {
+		    	$ext = ".gif";
+	    	}
+	    	if(file_exists("." . $to_path . $to_filename . ".png")) {
+		    	$ext = ".png";
+	    	}
+	    	echo "[EXISTS]" . $to_path . $to_filename . $ext . "\n";
+	    	$newfilename = $to_filename . $ext;
+	    	$outfile_converted = $to_path . $to_filename . $ext;
+
+			if ($screen_type == 'load') {
+				$type = 'Loading screen';
+				$format = 'Picture';
+			} else if ($screen_type == 'run') {
+				$type = 'Running screen';
+				$format = 'Picture';
+			}
+			$newfilesize = filesize("." . $to_path . $to_filename . $ext);
+
+			$object = (object) ['filename' => $newfilename, 'url' => $outfile_converted, 'size' => $newfilesize, 'type' => $type, 'format' => $format, 'title' => $title];
+    	} else {
+	    	echo "[CONVERT]" . $to_path . $to_filename . "\n";
+	    	$object = convertScreen($id, $fullpath, $to_path, $to_filename, $title);
+
+    	}
+		if(is_null($scr_array[$id])) {
+			$scr_array[$id] = array();
+		}
+		array_push($scr_array[$id], $object);
 	}
 }                              
 fclose($fp);
 
+/*
+
+ Update "screens" section for json documents
+
+ */
 foreach ($scr_array as $key => $items) {
 	$json_file = str_pad($key, 7, '0', STR_PAD_LEFT) . ".json";
 	$json_items = json_encode($items, JSON_UNESCAPED_SLASHES);
