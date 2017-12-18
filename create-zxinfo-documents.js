@@ -118,7 +118,7 @@ SELECT e.title AS fulltitle,aka.title AS alsoknownas,
        availt.text AS availability,e.known_errors as known_errors,e.comments AS remarks,sc.score AS score,
        sc.votes AS votes
 FROM   entries e
-       INNER JOIN releases r
+       LEFT JOIN releases r
                ON r.entry_id = e.id
        LEFT JOIN aliases aka
               ON aka.entry_id = r.entry_id
@@ -140,7 +140,7 @@ FROM   entries e
        LEFT JOIN scores sc
               ON sc.entry_id = e.id
 WHERE  e.id = 4010
-   AND r.release_seq = 0; 
+   AND (r.release_seq = 0 or r.release_seq is NULL); 
 
 +-----------+----------------------------+---------------+-----------------+-----------------+-----------------+-----------------+---------------------+------+-----------------+---------------------+---------------+--------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+----------------+-----------+------------+------------+--------+--------+-----------+-----------+-----------+-----------+-----------+-------------------------------------------------------------------------------------------------+----------------+-----------+------------+------------+----------+--+----------------------------------------------+--------+--+--+-------------------------------+-----------+-----------+-----------+-----------+-----------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+------+------+----+
 | fulltitle | alsoknownas                | yearofrelease | machinetype     | numberofplayers | multiplayermode | multiplayertype | type                | isbn | messagelanguage | originalpublication | originalprice | availability | known_errors                                                                                                                                                                                                                                                                                                                                     | remarks        | score     | votes      |            |        |        |           |           |           |           |           |                                                                                                 |                |           |            |            |          |  |                                              |        |  |  |                               |           |           |           |           |           |                                                                                                                                                                                                                                                                      |      |      |    |
@@ -152,7 +152,7 @@ WHERE  e.id = 4010
 var getBasicInfo = function(id) {
     var deferred = Q.defer();
     var connection = db.getConnection();
-    connection.query('select e.title as fulltitle, aka.title as alsoknownas, r.release_year as yearofrelease, machinet.text as machinetype, e.max_players as numberofplayers, turnt.text as multiplayermode, multipl.text as multiplayertype, e.genretype_id as genretype, entryt.text as type, e.book_isbn as isbn, idm.text as messagelanguage, pubt.text as originalpublication, r.release_price as originalprice, availt.text as availability, e.known_errors as known_errors, e.comments as remarks, e.spot_comments as spotcomments, sc.score as score, sc.votes as votes from entries e inner join releases r on r.entry_id = e.id left join aliases aka on aka.entry_id = r.entry_id and aka.release_seq = r.release_seq left join availabletypes availt on e.availabletype_id = availt.id left join machinetypes machinet on e.machinetype_id = machinet.id left join turntypes turnt on e.turntype_id = turnt.id left join multiplaytypes multipl on e.multiplaytype_id = multipl.id left join genretypes entryt on e.genretype_id = entryt.id left join publicationtypes pubt on e.publicationtype_id = pubt.id left join idioms idm on e.idiom_id = idm.id left join scores sc on sc.entry_id = e.id where e.id = ? and r.release_seq = 0', [id], function(error, results, fields) {
+    connection.query('select e.title as fulltitle, aka.title as alsoknownas, r.release_year as yearofrelease, machinet.text as machinetype, e.max_players as numberofplayers, turnt.text as multiplayermode, multipl.text as multiplayertype, e.genretype_id as genretype, entryt.text as type, e.book_isbn as isbn, idm.text as messagelanguage, pubt.text as originalpublication, r.release_price as originalprice, availt.text as availability, e.known_errors as known_errors, e.comments as remarks, e.spot_comments as spotcomments, sc.score as score, sc.votes as votes from entries e left join releases r on r.entry_id = e.id left join aliases aka on aka.entry_id = r.entry_id and aka.release_seq = r.release_seq left join availabletypes availt on e.availabletype_id = availt.id left join machinetypes machinet on e.machinetype_id = machinet.id left join turntypes turnt on e.turntype_id = turnt.id left join multiplaytypes multipl on e.multiplaytype_id = multipl.id left join genretypes entryt on e.genretype_id = entryt.id left join publicationtypes pubt on e.publicationtype_id = pubt.id left join idioms idm on e.idiom_id = idm.id left join scores sc on sc.entry_id = e.id where e.id = ? and (r.release_seq = 0 or r.release_seq is null);', [id], function(error, results, fields) {
         if (error) {
             throw error;
         }
@@ -974,7 +974,7 @@ var getScreens = function(id) {
                     if (results[i].title == null) {
                         results[i].title = '';
                     }
-                    //-console.error(screen_type + "\t" + zerofilled + "\t" + results[i].url + "\t" + ('/zxscreens/' + zerofilled + "/") + "\t" + new_filename + "\t" + results[i].title);
+                    console.error(screen_type + "\t" + zerofilled + "\t" + results[i].url + "\t" + ('/zxscreens/' + zerofilled + "/") + "\t" + new_filename + "\t" + results[i].title);
                 }
             }
         }
@@ -1710,7 +1710,7 @@ var getAllIDs = function() {
     var done = false;
     connection.query('select id from entries where 1 order by id asc', function(error, results, fields) {
         if (error) {
-            throw new Error("Can't connect: ", err.stack);
+            throw error;
         }
         var i = 0;
         for (; i < results.length; i++) {
@@ -1730,7 +1730,7 @@ var getID = function(gameid) {
     var done = false;
     connection.query('select id from entries where id = ? order by id asc', [gameid], function(error, results, fields) {
         if (error) {
-            throw new Error("Can't connect: ", err.stack);
+            throw error;
         }
         var i = 0;
         for (; i < results.length; i++) {
@@ -1755,7 +1755,6 @@ if (process.argv[2] === '-all') {
     getAllIDs();
 } else {
     var gameid = process.argv[2];
-    console.log(gameid + ", " + parseInt(gameid))
     if (gameid == parseInt(gameid)) {
         console.log("Processing game: " + gameid);
         getID(gameid);
