@@ -19,10 +19,10 @@ echo 'Index             : ' ${WRITE_INDEX}
 echo 'Index_alias       : ' ${WRITE_ALIAS}
 
 echo '-- create ' $WRITE_INDEX/$GAMES_TYPE
-curl -XPUT "http://${ES_HOST}:${ES_PORT}/${WRITE_INDEX}/" -d @mappings/games-mapping.json; echo ""
+curl -H'Content-Type: application/json' -XPUT "http://${ES_HOST}:${ES_PORT}/${WRITE_INDEX}/" -d @mappings/games-mapping.json; echo ""
 
 echo '-- remove all alias for ' $WRITE_ALIAS
-curl -XPOST "http://${ES_HOST}:${ES_PORT}/_aliases" -d '
+curl -H'Content-Type: application/json' -XPOST "http://${ES_HOST}:${ES_PORT}/_aliases" -d '
 {
     "actions" : [
         { "remove" : { "index" : "*", "alias" : "'$WRITE_ALIAS'" } }
@@ -30,7 +30,7 @@ curl -XPOST "http://${ES_HOST}:${ES_PORT}/_aliases" -d '
 }'; echo ""
 
 echo '-- create alias ' $WRITE_ALIAS ' for index ' $WRITE_INDEX
-curl -XPOST "http://${ES_HOST}:${ES_PORT}/_aliases" -d '
+curl -H'Content-Type: application/json' -XPOST "http://${ES_HOST}:${ES_PORT}/_aliases" -d '
 {
     "actions" : [
         { "add" : { "index" : "'$WRITE_INDEX'", "alias" : "'$WRITE_ALIAS'" } }
@@ -42,7 +42,7 @@ echo 'Now import data into ['${WRITE_ALIAS}']'
 read -n1 -r -p "Press space to continue..." key
 
 echo '-- remove all alias for ' ${GAMES_INDEX}
-curl -XPOST "http://${ES_HOST}:${ES_PORT}/_aliases" -d '
+curl -H'Content-Type: application/json' -XPOST "http://${ES_HOST}:${ES_PORT}/_aliases" -d '
 {
     "actions" : [
         { "remove" : { "index" : "*", "alias" : "'${GAMES_INDEX}'" } }
@@ -50,7 +50,7 @@ curl -XPOST "http://${ES_HOST}:${ES_PORT}/_aliases" -d '
 }'; echo ""
 
 echo "Switching to new INDEX ${WRITE_INDEX} for ALIAS ${GAMES_INDEX}"
-curl -XPOST "http://${ES_HOST}:${ES_PORT}/_aliases" -d '
+curl -H'Content-Type: application/json' -XPOST "http://${ES_HOST}:${ES_PORT}/_aliases" -d '
 {
     "actions" : [
         { "add" : { "index" : "'$WRITE_INDEX'", "alias" : "'$GAMES_INDEX'" } }

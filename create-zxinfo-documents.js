@@ -30,6 +30,8 @@ var json_output_dir = 'data/processed/json/';
 var Q = require('Q');
 var jsonfile = require('jsonfile')
 var path = require('path');
+var allcombinations = require('allcombinations')
+var _ = require('lodash');
 
 Array.prototype.contains = function(element) {
     return this.indexOf(element) > -1;
@@ -1647,6 +1649,70 @@ var getModifiedBy = function(id) {
     return deferred.promise;
 
 }
+
+var getTitlesForSuggestions = function(id) {
+    var deferred = Q.defer();
+    var connection = db.getConnection();
+    connection.query('SELECT title FROM entries e where e.id = ? UNION SELECT aka.title AS title FROM aliases aka LEFT JOIN entries e ON e.id = aka.entry_id WHERE e.id = ? UNION SELECT aka.entry_title AS title FROM search_by_titles aka LEFT JOIN entries e ON e.id = aka.entry_id WHERE id = ?', [id, id, id], function(error, results, fields) {
+        if (error) {
+            throw error;
+        }
+        var arr = [];
+        var i = 0;
+        for (; i < results.length; i++) {
+          arr.push.apply(arr, createSuggestions(results[i].title));
+        }
+        deferred.resolve({ titlesuggest: arr });
+    });
+    return deferred.promise;
+
+}
+
+/**
+ * Suggestion functions
+ */
+
+function createSuggestions(title) {
+    // split title by space, comma, dash, colon, semi-colon
+    var titlewords = title.toLowerCase().split(/[\: ,-]+/);
+    // if more than 5 words, keep first 5 only (to limit combinations)
+    if (titlewords.length > 3) {
+        var tmpArray = [];
+        var ii = 0;
+        for (; ii < 4; ii++) {
+            tmpArray.push(titlewords[ii]);
+        }
+        titlewords = tmpArray;
+    }
+
+    // clean titlewords
+    // remove everything not 0-9, A-Z
+    // get rid of 'a', 'of' etc
+
+    var titlewordsCleaned = [];
+    titlewords.forEach(function(value) {
+        var word = value.replace(/\W/g, '');
+        if (word.length > 2) {
+            titlewordsCleaned.push(word);
+        }
+    });
+
+    var cs = Array.from(allcombinations(titlewordsCleaned));
+    var input = [title];
+    cs.forEach(function(v) {
+        var inputLine = "";
+        v.forEach(function(w) {
+            inputLine += " " + w;
+        });
+        input.push(inputLine.trim());
+    });
+
+    input = _.uniqWith(input, _.isEqual);
+
+    return input;
+}
+
+
 /*
  * #############################################
  */
@@ -1680,7 +1746,8 @@ var zxdb_doc = function(id) {
         getAdverts(id),
         getTOSEC(id),
         getModOf(id),
-        getModifiedBy(id)
+        getModifiedBy(id),
+        getTitlesForSuggestions(id)
     ]).then(function(results) {
         var i = 0;
         var doc_array = {};
@@ -1689,6 +1756,7 @@ var zxdb_doc = function(id) {
                 doc_array[attributename] = results[i][attributename];
             }
         }
+
         var zerofilled = ('0000000' + id).slice(-7);
         var filename = json_output_dir + zerofilled + ".json";
         jsonfile.writeFile(filename, doc_array, { spaces: 2 }, function(err) {

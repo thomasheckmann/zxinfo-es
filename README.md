@@ -1,7 +1,7 @@
 # zxinfo-es
 Create Elasticsearch instance with documents created from ZXDB.
 
-This is the data backend for [ZXInfo App](http://sinclair.kolbeck.dk) using Elasticsearch.
+This is the data backend for [ZXInfo App](http://zxinfo.dk) using Elasticsearch.
 
 It is written in NodeJS and requires the following:
 * Node.js
@@ -38,19 +38,6 @@ After finish, import into Elasticsearch
 ````
 This command indexes all JSON document in the folder. It updates index 'zxinfo_index' which can be configure in the file esConfig.js
 
-## optional - create title suggestions
-Use this to generate documents for use with completion suggester in Elasticsearch - read more about it [on the blog](https://www.elastic.co/blog/you-complete-me). The script makes suggestions based on title and alias.
-
-Make sure the index has been created
-````
-> (cd ZXInfoArchive/scripts/ && ./createSuggestersIndex.sh)
-````
-
-Generate and index documents with suggesters straight into Elasticsearch (to index 'zxinfo_suggests_index')
-````
-> node create-title-suggestions
-````
-
 ## optional - add new screenshots
 Make sure you got all lates screen from http://spectrumcomputing.co.uk 
 ````
@@ -79,6 +66,9 @@ Merge additional info with documents in Elasticsearch
 ````
 
 Copy converted screens to htdocs or similar accesible by web-server.
+## 01-2018
+* Major update of Elasticsearch from 2.4.x to 6.1.x
+
 ## 05-2017
 * Updated README
 
