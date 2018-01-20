@@ -7,7 +7,7 @@
         },
         "titlesuggest": {
           "type": "completion",
-          "analyzer": "whitespace",
+          "analyzer": "simple",
           "preserve_separators": true,
           "preserve_position_increments": true,
           "max_input_length": 50
