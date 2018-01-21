@@ -1022,7 +1022,30 @@ WHERE  feat.entry_id = 176;
 +----------------------------+----+----------------------+
 
  */
-var getFeatures = function(id) {
+var getFeatures = function(id, grouptype_id, groupname) {
+    var deferred = Q.defer();
+    var connection = db.getConnection();
+    connection.query('select g.name, groupt.id, groupt.text from members feat inner join groups g on feat.group_id = g.id inner join grouptypes groupt on g.grouptype_id = groupt.id and groupt.id = ? where feat.entry_id = ?', [grouptype_id, id], function(error, results, fields) {
+        if (error) {
+            throw error;
+        }
+        var arr = [];
+        var i = 0;
+        for (; i < results.length; i++) {
+            var item = {
+                name: results[i].name,
+                id: results[i].id,
+                text: results[i].text
+            }
+            arr.push(item);
+        }
+        var obj = {};
+        obj[groupname] = arr;
+        deferred.resolve(obj);
+    });
+    return deferred.promise;
+}
+var getGroups = function(id) {
     var deferred = Q.defer();
     var connection = db.getConnection();
     connection.query('select g.name, groupt.id, groupt.text from members feat inner join groups g on feat.group_id = g.id inner join grouptypes groupt on g.grouptype_id = groupt.id and groupt.id <> "S" where feat.entry_id = ?', [id], function(error, results, fields) {
@@ -1039,11 +1062,10 @@ var getFeatures = function(id) {
             }
             arr.push(item);
         }
-        deferred.resolve({ features: arr });
+        deferred.resolve({groups: arr});
     });
     return deferred.promise;
 }
-
 /**
  * Get relatedlinks
 
@@ -1733,7 +1755,12 @@ var zxdb_doc = function(id) {
         getOtherSystems(id),
         getCompilationContent(id),
         getScreens(id),
-        getFeatures(id),
+        getGroups(id),
+        getFeatures(id, "F", "features"),
+        getFeatures(id, "C", "competition"),
+        getFeatures(id, "M", "majorclone"),
+        getFeatures(id, "T", "themedgroup"),
+        getFeatures(id, "U", "unnamedgroup"),
         getRelatedLinks(id),
         getRelatedSites(),
         getYouTubeLinks(id),

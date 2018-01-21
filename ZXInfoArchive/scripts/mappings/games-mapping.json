@@ -224,7 +224,77 @@
             }
           }
         },
+        "groups": {
+          "type": "nested",
+          "properties": {
+            "id": {
+              "type": "keyword"
+            },
+            "name": {
+              "type": "keyword"
+            },
+            "text": {
+              "type": "keyword"
+            }
+          }
+        },
         "features": {
+          "type": "nested",
+          "properties": {
+            "id": {
+              "type": "keyword"
+            },
+            "name": {
+              "type": "keyword"
+            },
+            "text": {
+              "type": "keyword"
+            }
+          }
+        },
+        "competition": {
+          "type": "nested",
+          "properties": {
+            "id": {
+              "type": "keyword"
+            },
+            "name": {
+              "type": "keyword"
+            },
+            "text": {
+              "type": "keyword"
+            }
+          }
+        },
+        "majorclone": {
+          "type": "nested",
+          "properties": {
+            "id": {
+              "type": "keyword"
+            },
+            "name": {
+              "type": "keyword"
+            },
+            "text": {
+              "type": "keyword"
+            }
+          }
+        },
+        "themedgroup": {
+          "type": "nested",
+          "properties": {
+            "id": {
+              "type": "keyword"
+            },
+            "name": {
+              "type": "keyword"
+            },
+            "text": {
+              "type": "keyword"
+            }
+          }
+        },
+        "unnamedgroup": {
           "type": "nested",
           "properties": {
             "id": {
