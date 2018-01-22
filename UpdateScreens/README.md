@@ -1,7 +1,3 @@
-#
-rsync -av zxdb kolbeck@thomas.kolbeck.dk:/www/sinclair/media
-rsync -av zxscreens kolbeck@thomas.kolbeck.dk:/www/sinclair/media
-
 # Installation
 To update with new screens from ZXDB:
 
