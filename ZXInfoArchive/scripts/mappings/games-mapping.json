@@ -1,11 +1,21 @@
 {
-  "mappings": {
+  "settings": {
+    "index.mapping.total_fields.limit": 1000
+  },
+    "mappings": {
     "zxinfo_games": {
       "properties": {
         "contenttype": {
           "type": "keyword"
         },
         "titlesuggest": {
+          "type": "completion",
+          "analyzer": "simple",
+          "preserve_separators": true,
+          "preserve_position_increments": true,
+          "max_input_length": 50
+        },
+        "authorsuggest": {
           "type": "completion",
           "analyzer": "simple",
           "preserve_separators": true,

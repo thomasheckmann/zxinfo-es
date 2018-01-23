@@ -1690,6 +1690,28 @@ var getTitlesForSuggestions = function(id) {
 
 }
 
+var getAuthorsForSuggestions = function(id) {
+    var deferred = Q.defer();
+    var connection = db.getConnection();
+    connection.query('SELECT DISTINCT dev.id AS id, dev.name AS name FROM authors aut INNER JOIN labels dev ON aut.label_id = dev.id WHERE aut.entry_id = ? ORDER BY dev.name ASC', [id], function(error, results, fields) {
+        if (error) {
+            throw error;
+        }
+        var arr = [];
+        var metadata = [];
+        var i = 0;
+        for (; i < results.length; i++) {
+          var autsug = createSuggestions(results[i].name);
+          var item = {name: results[i].name, alias: autsug};
+          metadata.push(item);
+          arr.push.apply(arr, autsug);
+        }
+        deferred.resolve({ authorsuggest: arr, "metadata_author": metadata });
+    });
+    return deferred.promise;
+
+}
+
 /**
  * Suggestion functions
  */
@@ -1774,7 +1796,8 @@ var zxdb_doc = function(id) {
         getTOSEC(id),
         getModOf(id),
         getModifiedBy(id),
-        getTitlesForSuggestions(id)
+        getTitlesForSuggestions(id),
+        getAuthorsForSuggestions(id)
     ]).then(function(results) {
         var i = 0;
         var doc_array = {};
@@ -1795,9 +1818,17 @@ var zxdb_doc = function(id) {
             done = true;
         })
     });
+
+    var deasync = require('deasync');
+    deasync.loopWhile(function() {
+        return !done;
+    });
+
+/**
     require('deasync').loopWhile(function() {
         return !done;
     });
+    */
 }
 
 var getAllIDs = function() {

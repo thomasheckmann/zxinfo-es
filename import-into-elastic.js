@@ -32,7 +32,6 @@ if (stats.isDirectory()) {
                         if (error) {
                             throw error;
                         }
-                        // console.log(id + ' => ', response);
                         done = true;
                     });
                 require('deasync').loopWhile(function() {

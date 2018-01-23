@@ -20,9 +20,9 @@ Create Elasticsearch mappings
 
 Start your MariaDB with ZXDB data as described on [github](https://github.com/thomasheckmann/zxinfo-services)
 
-Generates json documents for all releases.
+Generates json documents for all releases. (important to increase max size when extracting all)
 ````
-> node create-zxinfo-documents -all
+> node --max-old-space-size=2048 create-zxinfo-documents.js -all 2> zxscreens.txt
 ````
 This command creates all JSON documents to be imported into Elasticsearch in the following directory:
 * _'data/processed/json'_
