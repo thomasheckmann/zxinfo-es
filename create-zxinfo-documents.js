@@ -1046,9 +1046,7 @@ var getFeatures = function(id, grouptype_id, groupname) {
         var i = 0;
         for (; i < results.length; i++) {
             var item = {
-                name: results[i].name,
-                id: results[i].id,
-                text: results[i].text
+                name: results[i].name
             }
             arr.push(item);
         }
@@ -1773,7 +1771,7 @@ var zxdb_doc = function(id) {
         getFeatures(id, "C", "competition"),
         getFeatures(id, "M", "majorclone"),
         getFeatures(id, "T", "themedgroup"),
-        getFeatures(id, "U", "unnamedgroup"),
+        getFeatures(id, "U", "unsortedgroup"),
         getRelatedLinks(id),
         getRelatedSites(),
         getYouTubeLinks(id),
