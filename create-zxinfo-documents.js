@@ -170,8 +170,18 @@ var getBasicInfo = function(id) {
             type = entrytypes[0];
             subtype = entrytypes[1];
         }
+
+        // filter original publication: add 'normal' #19
+        var entry_content_type = contenttype(results[0].genretype);
+        var originalpublication = results[0].originalpublication;
+
+        // If entry is software and NOT a compilation, default should be "Standard" (will be available in filter)
+        if (entry_content_type == "SOFTWARE" && type !== "Compilation") {
+            originalpublication = originalpublication == null ? "Standard" : originalpublication;
+        }
+
         var doc = {
-            contenttype: contenttype(results[0].genretype),
+            contenttype: entry_content_type,
             fulltitle: results[0].fulltitle,
             alsoknownas: results[0].alsoknownas,
             yearofrelease: results[0].yearofrelease,
@@ -183,7 +193,7 @@ var getBasicInfo = function(id) {
             subtype: subtype,
             isbn: results[0].isbn,
             messagelanguage: results[0].messagelanguage,
-            originalpublication: results[0].originalpublication,
+            originalpublication: originalpublication,
             originalprice: originalprice,
             availability: results[0].availability,
             knownerrors: results[0].known_errors,
@@ -316,7 +326,7 @@ var getReleases = function(id) {
         var i = 0;
         for (; i < results.length; i++) {
             var item = {
-                seq: results[i].seq,
+                release: results[i].seq,
                 publisher: results[i].name,
                 country: results[i].country,
                 as_title: results[i].as_title,
@@ -411,11 +421,11 @@ var getAuthors = function(id) {
                 authorArray = [];
             }
             if (!authorArray.includes(results[i].dev_name.trim())) {
-                authorArray.push({name: results[i].dev_name.trim(), country: results[i].dev_country, alias: results[i].dev_alias});
+                authorArray.push({ name: results[i].dev_name.trim(), country: results[i].dev_country, alias: results[i].dev_alias });
             }
         }
         if (authorArray.length > 0) {
-            arr.push({ authors: authorArray, group: groupArray})
+            arr.push({ authors: authorArray, group: groupArray })
         }
         deferred.resolve({ authors: arr });
     });
@@ -1062,7 +1072,7 @@ var getGroups = function(id) {
             }
             arr.push(item);
         }
-        deferred.resolve({groups: arr});
+        deferred.resolve({ groups: arr });
     });
     return deferred.promise;
 }
@@ -1682,7 +1692,7 @@ var getTitlesForSuggestions = function(id) {
         var arr = [];
         var i = 0;
         for (; i < results.length; i++) {
-          arr.push.apply(arr, createSuggestions(results[i].title));
+            arr.push.apply(arr, createSuggestions(results[i].title));
         }
         deferred.resolve({ titlesuggest: arr });
     });
@@ -1701,10 +1711,10 @@ var getAuthorsForSuggestions = function(id) {
         var metadata = [];
         var i = 0;
         for (; i < results.length; i++) {
-          var autsug = createSuggestions(results[i].name);
-          var item = {name: results[i].name, alias: autsug};
-          metadata.push(item);
-          arr.push.apply(arr, autsug);
+            var autsug = createSuggestions(results[i].name);
+            var item = { name: results[i].name, alias: autsug };
+            metadata.push(item);
+            arr.push.apply(arr, autsug);
         }
         deferred.resolve({ authorsuggest: arr, "metadata_author": metadata });
     });
@@ -1824,11 +1834,11 @@ var zxdb_doc = function(id) {
         return !done;
     });
 
-/**
-    require('deasync').loopWhile(function() {
-        return !done;
-    });
-    */
+    /**
+        require('deasync').loopWhile(function() {
+            return !done;
+        });
+        */
 }
 
 var getAllIDs = function() {
