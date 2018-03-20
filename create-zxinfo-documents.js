@@ -1103,12 +1103,29 @@ var getRelatedLinks = function(id) {
     return deferred.promise;
 }
 
+
+
+function replaceMask(input, pattern, value) {
+    var result = input;
+    var found = input.match(pattern);
+    if (found != null) {
+        var template = found[0];
+        var padding = found[1];
+        var zero = ("0".repeat(padding) + value).slice(-padding);
+        if (padding == 1) { // N = 1, plain value
+            zero = value;
+        }
+        var re = new RegExp(template, "g");
+        result = input.replace(re, zero);
+    }
+    return result;
+}
 /**
 
   Other sites integrated with ZXDB
 
 */
-var getRelatedSites = function() {
+var getRelatedSites = function(id) {
     var deferred = Q.defer();
     var connection = db.getConnection();
     connection.query('SELECT name as sitename, link_mask FROM websites WHERE name NOT IN ("ZXInfo") AND link_mask is NOT NULL ORDER BY sitename', function(error, results, fields) {
@@ -1118,9 +1135,10 @@ var getRelatedSites = function() {
         var arr = [];
         var i = 0;
         for (; i < results.length; i++) {
+            var link = replaceMask(results[i].link_mask, /{e(\d)+}/i, parseInt(id));
             var item = {
                 sitename: results[i].sitename,
-                link_mask: results[i].link_mask
+                link: link
             }
             arr.push(item);
         }
@@ -1773,7 +1791,7 @@ var zxdb_doc = function(id) {
         getFeatures(id, "T", "themedgroup"),
         getFeatures(id, "U", "unsortedgroup"),
         getRelatedLinks(id),
-        getRelatedSites(),
+        getRelatedSites(id),
         getYouTubeLinks(id),
         getInCompilations(id),
         getBookTypeIns(id),
