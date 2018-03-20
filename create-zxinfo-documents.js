@@ -3,6 +3,7 @@
 dd.mm.yyyy
 
 Changelog:
+20.04.2018 - releases.seq => releases.release
 30.11.2017 - author object changed from simple string, to object {name, country, alias}
 06.09.2017 - sites -> relatedlinks (and remove site if it exits as a general ZXDB integrated website)
 05.09.2017 - Variations (on Compilations) added to document
@@ -302,6 +303,7 @@ order  by r.release_seq,
 
 ID: 2000011 as title
 ID: 0003012 releases with year
+ID: 0009362 distribution denied (url is null)
 +-----+------------+----------+------------------------+---------+------+------+--------+----------------------+--------+---------+--------------+----------------------------+
 | seq | title      | as_title | name                   | country | size | type | format | origin               | code   | barcode | dl           | encodingscheme             |
 +-----+------------+----------+------------------------+---------+------+------+--------+----------------------+--------+---------+--------------+----------------------------+
@@ -331,8 +333,6 @@ var getReleases = function(id) {
                 country: results[i].country,
                 as_title: results[i].as_title,
                 yearofrelease: results[i].yearofrelease,
-                // fileinfo                
-                filename: results[i].url == null ? null : path.basename(results[i].url),
                 url: results[i].url,
                 size: results[i].size,
                 type: results[i].type,
