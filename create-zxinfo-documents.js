@@ -6,6 +6,7 @@ Changelog:
 20.04.2018 - releases.seq => releases.release
              removed releases.filename
              removed additionals.filename
+             removed groups (seperate fields for each type CFMSTU)
 30.11.2017 - author object changed from simple string, to object {name, country, alias}
 06.09.2017 - sites -> relatedlinks (and remove site if it exits as a general ZXDB integrated website)
 05.09.2017 - Variations (on Compilations) added to document
@@ -672,7 +673,7 @@ var getInspiredByTieInLicense = function(id) {
 -- (S)equenced - groupname (1942), (LastNinja)
 
 -- This program belongs in the following series (with these other titles)...
-SELECT DISTINCT prog.title AS title, 
+SELECT DISTINCT prog.title AS title, prog.id as entry_id,
        pub.NAME   AS publisher, g.name as groupname, groupt.id as grouptype 
 FROM   entries e 
        INNER JOIN members memb 
@@ -706,7 +707,7 @@ ORDER  BY g.NAME,
 var getSeries = function(id) {
     var deferred = Q.defer();
     var connection = db.getConnection();
-    connection.query('select distinct prog.title as title, pub.name as publisher, g.name as groupname, groupt.id as grouptype from entries e inner join members memb on memb.entry_id = e.id inner join groups g on memb.group_id = g.id inner join grouptypes groupt on g.grouptype_id = groupt.id and groupt.id = "S" inner join members others on others.group_id = g.id inner join entries prog on others.entry_id = prog.id left join publishers p on p.entry_id = prog.id left join labels pub on p.label_id = pub.id where e.id = ? and p.release_seq = 0 order by g.name, others.series_seq ASC', [id], function(error, results, fields) {
+    connection.query('select distinct prog.title as title, prog.id as entry_id, pub.name as publisher, g.name as groupname, groupt.id as grouptype from entries e inner join members memb on memb.entry_id = e.id inner join groups g on memb.group_id = g.id inner join grouptypes groupt on g.grouptype_id = groupt.id and groupt.id = "S" inner join members others on others.group_id = g.id inner join entries prog on others.entry_id = prog.id left join publishers p on p.entry_id = prog.id left join labels pub on p.label_id = pub.id where e.id = ? and p.release_seq = 0 order by g.name, others.series_seq ASC', [id], function(error, results, fields) {
         if (error) {
             throw error;
         }
@@ -715,9 +716,9 @@ var getSeries = function(id) {
         for (; i < results.length; i++) {
             var item = {
                 title: results[i].title,
+                entry_id: results[i].entry_id,
                 publisher: results[i].publisher,
-                groupname: results[i].groupname,
-                grouptype: results[i].grouptype,
+                groupname: results[i].groupname
             }
             arr.push(item);
         }
