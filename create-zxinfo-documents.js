@@ -1381,7 +1381,6 @@ var getAdditionals = function(id) {
             if (results[i].url == undefined) {; // console.log(id + ": empty additionals: ");
             } else {
                 var downloaditem = {
-                    filename: path.basename(results[i].url),
                     url: results[i].url,
                     size: results[i].size,
                     type: results[i].type,
