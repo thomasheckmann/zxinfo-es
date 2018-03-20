@@ -4,6 +4,8 @@ dd.mm.yyyy
 
 Changelog:
 20.04.2018 - releases.seq => releases.release
+             removed releases.filename
+             removed additionals.filename
 30.11.2017 - author object changed from simple string, to object {name, country, alias}
 06.09.2017 - sites -> relatedlinks (and remove site if it exits as a general ZXDB integrated website)
 05.09.2017 - Variations (on Compilations) added to document
@@ -1055,27 +1057,7 @@ var getFeatures = function(id, grouptype_id, groupname) {
     });
     return deferred.promise;
 }
-var getGroups = function(id) {
-    var deferred = Q.defer();
-    var connection = db.getConnection();
-    connection.query('select g.name, groupt.id, groupt.text from members feat inner join groups g on feat.group_id = g.id inner join grouptypes groupt on g.grouptype_id = groupt.id and groupt.id <> "S" where feat.entry_id = ?', [id], function(error, results, fields) {
-        if (error) {
-            throw error;
-        }
-        var arr = [];
-        var i = 0;
-        for (; i < results.length; i++) {
-            var item = {
-                name: results[i].name,
-                id: results[i].id,
-                text: results[i].text
-            }
-            arr.push(item);
-        }
-        deferred.resolve({ groups: arr });
-    });
-    return deferred.promise;
-}
+
 /**
  * Get relatedlinks
 
@@ -1782,11 +1764,10 @@ var zxdb_doc = function(id) {
         getAuthoring(id),
         getControls(id),
         getInspiredByTieInLicense(id),
-        getSeries(id),
         getOtherSystems(id),
         getCompilationContent(id),
         getScreens(id),
-        getGroups(id),
+        getSeries(id),
         getFeatures(id, "F", "features"),
         getFeatures(id, "C", "competition"),
         getFeatures(id, "M", "majorclone"),
