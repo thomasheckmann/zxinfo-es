@@ -3,10 +3,7 @@
 dd.mm.yyyy
 
 Changelog:
-20.04.2018 - releases.seq => releases.release
-             removed releases.filename
-             removed additionals.filename
-             removed groups (seperate fields for each type CFMSTU)
+20.04.2018 - JSON cleanup - https://github.com/thomasheckmann/zxinfo-services/issues/8
 30.11.2017 - author object changed from simple string, to object {name, country, alias}
 06.09.2017 - sites -> relatedlinks (and remove site if it exits as a general ZXDB integrated website)
 05.09.2017 - Variations (on Compilations) added to document
@@ -117,6 +114,8 @@ var contenttype = function(genretype) {
 --
 SELECT e.title AS fulltitle,aka.title AS alsoknownas,
        r.release_year AS yearofrelease,
+       r.release_month AS monthofrelease,
+       r_release_day AS dayofrelease,
        machinet.text AS machinetype,e.max_players AS numberofplayers,
        turnt.text AS multiplayermode,multipl.text AS multiplayertype,
        e.genretype_id as genretype, entryt.text AS type, e.book_isbn as isbn, idm.text AS messagelanguage,
@@ -148,6 +147,11 @@ FROM   entries e
 WHERE  e.id = 4010
    AND (r.release_seq = 0 or r.release_seq is NULL); 
 
+-- full release info
+
+SELECT * FROM `releases` WHERE release_year is not null and release_month is not null and release_day is not null
+
+
 +-----------+----------------------------+---------------+-----------------+-----------------+-----------------+-----------------+---------------------+------+-----------------+---------------------+---------------+--------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+----------------+-----------+------------+------------+--------+--------+-----------+-----------+-----------+-----------+-----------+-------------------------------------------------------------------------------------------------+----------------+-----------+------------+------------+----------+--+----------------------------------------------+--------+--+--+-------------------------------+-----------+-----------+-----------+-----------+-----------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+------+------+----+
 | fulltitle | alsoknownas                | yearofrelease | machinetype     | numberofplayers | multiplayermode | multiplayertype | type                | isbn | messagelanguage | originalpublication | originalprice | availability | known_errors                                                                                                                                                                                                                                                                                                                                     | remarks        | score     | votes      |            |        |        |           |           |           |           |           |                                                                                                 |                |           |            |            |          |  |                                              |        |  |  |                               |           |           |           |           |           |                                                                                                                                                                                                                                                                      |      |      |    |
 +-----------+----------------------------+---------------+-----------------+-----------------+-----------------+-----------------+---------------------+------+-----------------+---------------------+---------------+--------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+----------------+-----------+------------+------------+--------+--------+-----------+-----------+-----------+-----------+-----------+-------------------------------------------------------------------------------------------------+----------------+-----------+------------+------------+----------+--+----------------------------------------------+--------+--+--+-------------------------------+-----------+-----------+-----------+-----------+-----------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+------+------+----+
@@ -158,7 +162,7 @@ WHERE  e.id = 4010
 var getBasicInfo = function(id) {
     var deferred = Q.defer();
     var connection = db.getConnection();
-    connection.query('select e.title as fulltitle, aka.title as alsoknownas, r.release_year as yearofrelease, machinet.text as machinetype, e.max_players as numberofplayers, turnt.text as multiplayermode, multipl.text as multiplayertype, e.genretype_id as genretype, entryt.text as type, e.book_isbn as isbn, idm.text as messagelanguage, pubt.text as originalpublication, r.release_price as originalprice, availt.text as availability, e.known_errors as known_errors, e.comments as remarks, e.spot_comments as spotcomments, sc.score as score, sc.votes as votes from entries e left join releases r on r.entry_id = e.id left join aliases aka on aka.entry_id = r.entry_id and aka.release_seq = r.release_seq left join availabletypes availt on e.availabletype_id = availt.id left join machinetypes machinet on e.machinetype_id = machinet.id left join turntypes turnt on e.turntype_id = turnt.id left join multiplaytypes multipl on e.multiplaytype_id = multipl.id left join genretypes entryt on e.genretype_id = entryt.id left join publicationtypes pubt on e.publicationtype_id = pubt.id left join idioms idm on e.idiom_id = idm.id left join scores sc on sc.entry_id = e.id where e.id = ? and (r.release_seq = 0 or r.release_seq is null);', [id], function(error, results, fields) {
+    connection.query('select e.title as fulltitle, aka.title as alsoknownas, r.release_year as yearofrelease, r.release_month as monthofrelease, r.release_day as dayofrelease, machinet.text as machinetype, e.max_players as numberofplayers, turnt.text as multiplayermode, multipl.text as multiplayertype, e.genretype_id as genretype, entryt.text as type, e.book_isbn as isbn, idm.text as messagelanguage, pubt.text as originalpublication, r.release_price as originalprice, availt.text as availability, e.known_errors as known_errors, e.comments as remarks, e.spot_comments as spotcomments, sc.score as score, sc.votes as votes from entries e left join releases r on r.entry_id = e.id left join aliases aka on aka.entry_id = r.entry_id and aka.release_seq = r.release_seq left join availabletypes availt on e.availabletype_id = availt.id left join machinetypes machinet on e.machinetype_id = machinet.id left join turntypes turnt on e.turntype_id = turnt.id left join multiplaytypes multipl on e.multiplaytype_id = multipl.id left join genretypes entryt on e.genretype_id = entryt.id left join publicationtypes pubt on e.publicationtype_id = pubt.id left join idioms idm on e.idiom_id = idm.id left join scores sc on sc.entry_id = e.id where e.id = ? and (r.release_seq = 0 or r.release_seq is null);', [id], function(error, results, fields) {
         if (error) {
             throw error;
         }
@@ -189,6 +193,8 @@ var getBasicInfo = function(id) {
             fulltitle: results[0].fulltitle,
             alsoknownas: results[0].alsoknownas,
             yearofrelease: results[0].yearofrelease,
+            monthofrelease: results[0].monthofrelease,
+            dayofrelease: results[0].dayofrelease,
             machinetype: results[0].machinetype,
             numberofplayers: results[0].numberofplayers,
             multiplayermode: results[0].multiplayermode,
@@ -281,10 +287,10 @@ from   releases r
                  and aka.release_seq = r.release_seq
        inner join entries e
                on e.id = r.entry_id
-       inner join publishers p
+       left join publishers p
                on p.entry_id = r.entry_id
                   and p.release_seq = r.release_seq
-       inner join labels pub
+       left join labels pub
                on p.label_id = pub.id
        left join countries pc1
               on pub.country_id = pc1.id
@@ -323,7 +329,7 @@ ID: 0009362 distribution denied (url is null)
 var getReleases = function(id) {
     var deferred = Q.defer();
     var connection = db.getConnection();
-    connection.query('select distinct r.release_seq as seq, e.title as title, aka.title as as_title, pub.name as name, pc1.text as country, r.release_year as yearofrelease, file_size as size, file_link as url, filet.text as type, format.text as format, origint.text as origin, d.file_code as code, d.file_barcode as barcode, d.file_dl as dl, schemet.text as encodingscheme from releases r left join aliases aka on aka.entry_id = r.entry_id and aka.release_seq = r.release_seq inner join entries e on e.id = r.entry_id inner join publishers p on p.entry_id = r.entry_id and p.release_seq = r.release_seq inner join labels pub on p.label_id = pub.id left join countries pc1 on pub.country_id = pc1.id left join downloads d on r.entry_id = d.entry_id and r.release_seq = d.release_seq and d.machinetype_id is not null left join filetypes filet on d.filetype_id = filet.id left join formattypes format on d.formattype_id = format.id left join origintypes origint on d.origintype_id = origint.id left join schemetypes schemet on d.schemetype_id = schemet.id where r.entry_id = ? order by r.release_seq, d.id', [id], function(error, results, fields) {
+    connection.query('select distinct r.release_seq as seq, e.title as title, aka.title as as_title, pub.name as name, pc1.text as country, r.release_year as yearofrelease, file_size as size, file_link as url, filet.text as type, format.text as format, origint.text as origin, d.file_code as code, d.file_barcode as barcode, d.file_dl as dl, schemet.text as encodingscheme from releases r left join aliases aka on aka.entry_id = r.entry_id and aka.release_seq = r.release_seq inner join entries e on e.id = r.entry_id left join publishers p on p.entry_id = r.entry_id and p.release_seq = r.release_seq left join labels pub on p.label_id = pub.id left join countries pc1 on pub.country_id = pc1.id left join downloads d on r.entry_id = d.entry_id and r.release_seq = d.release_seq and d.machinetype_id is not null left join filetypes filet on d.filetype_id = filet.id left join formattypes format on d.formattype_id = format.id left join origintypes origint on d.origintype_id = origint.id left join schemetypes schemet on d.schemetype_id = schemet.id where r.entry_id = ? order by r.release_seq, d.id', [id], function(error, results, fields) {
         if (error) {
             throw error;
         }
