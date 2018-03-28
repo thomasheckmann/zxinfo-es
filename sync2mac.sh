@@ -14,5 +14,11 @@
 #rsync -avz data -e 'ssh -i ~/.ssh/thishost-rsync-key' kolbeck@thomas.kolbeck.dk:/Users/kolbeck/git/zxinfo-es
 #rsync -avz UpdateScreens/json -e 'ssh -i ~/.ssh/thishost-rsync-key' kolbeck@thomas.kolbeck.dk:/Users/kolbeck/git/zxinfo-es/UpdateScreens
 
+# sync to MacMini
+echo "TRANSFER EXPORT FILES TO HOST: thomas.kolbeck.dk"
 rsync -avz UpdateScreens/zxdb -e 'ssh -i ~/.ssh/thishost-rsync-key' kolbeck@thomas.kolbeck.dk:/www/sinclair/media
 rsync -avz UpdateScreens/zxscreens -e 'ssh -i ~/.ssh/thishost-rsync-key' kolbeck@thomas.kolbeck.dk:/www/sinclair/media
+
+# sync to Hetzner
+echo "TRANSFER EXPORT FILES TO HOST: http://195.201.118.208/"
+rsync -avz UpdateScreens/zxscreens -e 'ssh -i ~/.ssh/thishost-rsync-key' kolbeck@zxinfo.dk:/www/sinclair/media

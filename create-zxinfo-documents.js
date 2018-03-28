@@ -1801,7 +1801,6 @@ var zxdb_doc = function(id) {
         getYouTubeLinks(id),
         getInCompilations(id),
         getBookTypeIns(id),
-        /*        getDownloads(id),*/
         getMagazineReviews(id),
         getAdditionals(id),
         getMagazineRefs(id),
@@ -1836,18 +1835,12 @@ var zxdb_doc = function(id) {
     deasync.loopWhile(function() {
         return !done;
     });
-
-    /**
-        require('deasync').loopWhile(function() {
-            return !done;
-        });
-        */
 }
 
-var getAllIDs = function() {
+var getAllIDs = function(min_id) {
     var connection = db.getConnection();
     var done = false;
-    connection.query('select id from entries where 1 order by id asc', function(error, results, fields) {
+    connection.query('select id from entries where id >= ? order by id asc', [min_id], function(error, results, fields) {
         if (error) {
             throw error;
         }
@@ -1864,10 +1857,10 @@ var getAllIDs = function() {
     db.closeConnection(connection);
 }
 
-var getID = function(gameid) {
+var getID = function(zxdb_id) {
     var connection = db.getConnection();
     var done = false;
-    connection.query('select id from entries where id = ? order by id asc', [gameid], function(error, results, fields) {
+    connection.query('select id from entries where id = ? order by id asc', [zxdb_id], function(error, results, fields) {
         if (error) {
             throw error;
         }
@@ -1885,19 +1878,34 @@ var getID = function(gameid) {
 }
 
 if (process.argv.length <= 2) {
-    console.log("Usage: " + __filename + " [-all] [game_id]");
+    console.log("Usage: " + __filename + " [-all] | [-from] [zxdb_id]");
     process.exit(-1);
 }
 
-if (process.argv[2] === '-all') {
-    console.log("Processing ALL games");
-    getAllIDs();
-} else {
-    var gameid = process.argv[2];
-    if (gameid == parseInt(gameid)) {
-        console.log("Processing game: " + gameid);
-        getID(gameid);
-    } else {
-        console.log(gameid + " is NOT a valid gameid");
+var zxdb_id = null;
+var process_all = false;
+var process_from = false;
+
+process.argv.forEach((val, index) => {
+    if (val === '-all' && index > 1) {
+        process_all = true;
+    } else if (val === '-from' && index > 1) {
+        process_from = true;
+    } else if (Number.isInteger(parseInt(val)) && index > 1) {
+        zxdb_id = val;
     }
+});
+
+if (process_all) {
+    console.log("Processing ALL games");
+    getAllIDs(0);
+} else if (zxdb_id !== null && !process_from) {
+    console.log("Processing game: " + zxdb_id);
+    getID(zxdb_id);
+} else if (zxdb_id !== null && process_from) {
+    console.log("Processing from game: " + zxdb_id);
+    getAllIDs(zxdb_id);
+} else {
+    console.log("Usage: " + __filename + " [-all] | [-from] [game_id]");
+    process.exit(-1);
 }
