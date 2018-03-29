@@ -1,0 +1,142 @@
+{
+  "settings": {
+    "index.mapping.total_fields.limit": 1000
+  },
+  "mappings": {
+    "zxinfo_magazines": {
+      "properties": {
+        "name": {
+          "type": "text",
+          "fields": {
+            "raw": {
+              "type": "keyword"
+            }
+          }
+        },
+        "is_electronic": {
+          "type": "boolean"
+        },
+        "language": {
+          "type": "keyword"
+        },
+        "link_mask": {
+          "type": "keyword"
+        },
+        "archive_mask": {
+          "type": "keyword"
+        },
+        "issues": {
+          "type": "nested",
+          "properties": {
+            "id": {
+              "type": "long"
+            },
+            "cover_image": {
+              "type": "keyword"
+            },
+            "date_year": {
+              "type": "short"
+            },
+            "date_month": {
+              "type": "byte"
+            },
+            "date_day": {
+              "type": "byte"
+            },
+            "volume": {
+              "type": "byte"
+            },
+            "number": {
+              "type": "short"
+            },
+            "special": {
+              "type": "text"
+            },
+            "references": {
+              "type": "nested",
+              "properties": {
+                "type": {
+                  "type": "keyword"
+                },
+                "entry_id": {
+                  "type": "long"
+                },
+                "entry_title": {
+                  "type": "text"
+                },
+                "magrefs_name": {
+                  "type": "text"
+                },
+                "page": {
+                  "type": "integer"
+                },
+                "is_supplement": {
+                  "type": "byte"
+                },
+                "link": {
+                  "type": "keyword"
+                },
+                "link2": {
+                  "type": "keyword"
+                },
+                "topic": {
+                  "type": "keyword"
+                },
+                "topictype": {
+                  "type": "keyword"
+                },
+                "comment": {
+                  "type": "keyword"
+                },
+                "features": {
+                  "type": "keyword"
+                },
+                "version": {
+                  "type": "byte"
+                },
+                "feature_name": {
+                  "type": "text"
+                },
+                "feature_name2": {
+                  "type": "text"
+                },
+                "host_title": {
+                  "type": "keyword"
+                },
+                "host_link": {
+                  "type": "keyword"
+                }
+              }
+            },
+            "files": {
+              "type": "nested",
+              "properties": {
+                "filetype": {
+                  "type": "keyword"
+                },
+                "formattype": {
+                  "type": "keyword"
+                },
+                "page": {
+                  "type": "integer"
+                },
+                "file_link": {
+                  "type": "keyword"
+                },
+                "file_date": {
+                  "type": "keyword"
+                },
+                "file_size": {
+                  "type": "long"
+                },
+                "comments": {
+                  "type": "text"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

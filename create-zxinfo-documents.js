@@ -871,7 +871,7 @@ SELECT
     d.file_link AS url,
     file_size AS size,
     filet.text AS type,
-    format.text AS format,
+    FORMAT.text AS format,
     null AS title
 FROM
     downloads d
@@ -886,7 +886,7 @@ SELECT
     d.file_link AS url,
     file_size AS size,
     filet.text AS type,
-    format.text AS format,
+    FORMAT.text AS format,
     null AS title
 FROM
     downloads d
@@ -903,7 +903,7 @@ SELECT
     d.file_link AS url,
     file_size AS size,
     "Loading screen" as type,
-    format.text AS format,
+    FORMAT.text AS format,
     null AS title
 FROM
     downloads d
@@ -958,7 +958,7 @@ More screens: 0030237
 var getScreens = function(id) {
     var deferred = Q.defer();
     var connection = db.getConnection();
-    connection.query('SELECT d.file_link AS url, d.file_size AS size, filet.text AS type, FORMAT.text AS format, e.title as title FROM compilations c INNER JOIN entries e ON c.entry_id = e.id INNER JOIN downloads d ON e.id = d.entry_id AND d.release_seq = 0 INNER JOIN filetypes filet ON d.filetype_id = filet.id INNER JOIN formattypes FORMAT ON d.formattype_id = FORMAT.id WHERE d.filetype_id IN(1, 2) AND d.formattype_id IN (52, 53) AND c.compilation_id = ? UNION SELECT d.file_link AS url, file_size AS size, filet.text AS type, format.text AS format, null as title FROM downloads d INNER JOIN filetypes filet ON d.filetype_id = filet.id INNER JOIN formattypes FORMAT ON d.formattype_id = FORMAT.id WHERE d.machinetype_id IS NULL AND d.filetype_id IN(1, 2) AND d.formattype_id IN (52, 53) AND d.entry_id = ? UNION SELECT d.file_link AS url, file_size AS size, "Loading screen" AS type, format.text AS format, null AS title FROM downloads d INNER JOIN formattypes FORMAT ON d.formattype_id = FORMAT.id INNER JOIN entries e ON d.entry_id = e.id WHERE (e.genretype_id BETWEEN 91 AND 108) AND d.filetype_id IN(53) AND d.formattype_id IN (53) AND d.entry_id = ? UNION SELECT d.file_link AS url, file_size AS size, "Loading screen" as type, format.text AS format, null AS title FROM downloads d INNER JOIN formattypes FORMAT ON d.formattype_id = FORMAT.id INNER JOIN entries e ON d.entry_id = e.id WHERE (e.genretype_id BETWEEN 83 AND 90) AND d.filetype_id IN(45) AND d.formattype_id IN (53) AND d.entry_id = ?', [id, id, id, id], function(error, results, fields) {
+    connection.query('SELECT d.file_link AS url, d.file_size AS size, filet.text AS type, FORMAT.text AS format, e.title as title FROM compilations c INNER JOIN entries e ON c.entry_id = e.id INNER JOIN downloads d ON e.id = d.entry_id AND d.release_seq = 0 INNER JOIN filetypes filet ON d.filetype_id = filet.id INNER JOIN formattypes FORMAT ON d.formattype_id = FORMAT.id WHERE d.filetype_id IN(1, 2) AND d.formattype_id IN (52, 53) AND c.compilation_id = ? UNION SELECT d.file_link AS url, file_size AS size, filet.text AS type, FORMAT.text AS format, null as title FROM downloads d INNER JOIN filetypes filet ON d.filetype_id = filet.id INNER JOIN formattypes FORMAT ON d.formattype_id = FORMAT.id WHERE d.machinetype_id IS NULL AND d.filetype_id IN(1, 2) AND d.formattype_id IN (52, 53) AND d.entry_id = ? UNION SELECT d.file_link AS url, file_size AS size, "Loading screen" AS type, FORMAT.text AS format, null AS title FROM downloads d INNER JOIN formattypes FORMAT ON d.formattype_id = FORMAT.id INNER JOIN entries e ON d.entry_id = e.id WHERE (e.genretype_id BETWEEN 91 AND 108) AND d.filetype_id IN(53) AND d.formattype_id IN (53) AND d.entry_id = ? UNION SELECT d.file_link AS url, file_size AS size, "Loading screen" as type, FORMAT.text AS format, null AS title FROM downloads d INNER JOIN formattypes FORMAT ON d.formattype_id = FORMAT.id INNER JOIN entries e ON d.entry_id = e.id WHERE (e.genretype_id BETWEEN 83 AND 90) AND d.filetype_id IN(45) AND d.formattype_id IN (53) AND d.entry_id = ?', [id, id, id, id], function(error, results, fields) {
         if (error) {
             throw error;
         }
