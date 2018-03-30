@@ -21,9 +21,25 @@ var path = require('path');
 var allcombinations = require('allcombinations')
 var _ = require('lodash');
 
-Array.prototype.contains = function(element) {
-    return this.indexOf(element) > -1;
-};
+/*********************************************
+UTILITY FUNCTIONS
+*********************************************/
+
+/*
+    Remove empty properties from a JSON object. Only first level
+ */
+var removeEmpty = function(item) {
+    for (var property in item) {
+        if (item.hasOwnProperty(property)) {
+            var value = item[property];
+            if (value === undefined || value === null || value.length === 0 ||  (Object.keys(value).length === 0) && value.constructor === Object) {
+                delete item[property];
+            }
+        }
+    }
+
+    return item;
+}
 
 /**
 select m.name, m.is_electronic, i.text as language, m.link_mask, m.archive_mask from magazines m left join idioms i on i.id = m.idiom_id where m.id = 1
@@ -43,7 +59,7 @@ var getMagazineInfo = function(id) {
             link_mask: results[0].link_mask,
             archive_mask: results[0].archive_mask
         }
-        deferred.resolve(doc);
+        deferred.resolve(removeEmpty(doc));
     });
     return deferred.promise;
 }
@@ -74,7 +90,7 @@ var getIssues = function(id) {
                 references: magrefs,
                 files: magfiles
             }
-            arr.push(issue);
+            arr.push(removeEmpty(issue));
         }
         deferred.resolve({ issues: arr });
     });
@@ -101,7 +117,7 @@ var getMagRefs = function(issue_id) {
         }
         var i = 0;
         for (; i < results.length; i++) {
-            var file = {
+            var ref = {
                 type: results[i].referencetype,
                 entry_id: results[i].entry_id,
                 entry_title: results[i].entry_title,
@@ -121,7 +137,7 @@ var getMagRefs = function(issue_id) {
                 host_title: results[i].host_title,
                 host_link: results[i].host_link
             }
-            arr.push(file);
+            arr.push(removeEmpty(ref));
         }
         done = true;
 
@@ -156,7 +172,7 @@ var getMagFiles = function(issue_id) {
                 file_size: results[i].file_size,
                 comments: results[i].comments
             }
-            arr.push(file);
+            arr.push(removeEmpty(file));
         }
         done = true;
 
@@ -189,7 +205,7 @@ var getMagCover = function(issue_id) {
             // console.log("found");
             cover = results[0].file_link;
         } else {
-            console.log("more than one cover, check issue_id = ", issue_id);
+            console.warn("more than one cover, check issue_id = ", issue_id);
         }
         done = true;
     });
