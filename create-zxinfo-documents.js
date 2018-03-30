@@ -34,6 +34,26 @@ var path = require('path');
 var allcombinations = require('allcombinations')
 var _ = require('lodash');
 
+/*********************************************
+UTILITY FUNCTIONS
+*********************************************/
+
+/*
+    Remove empty properties from a JSON object. Only first level
+ */
+var removeEmpty = function(item) {
+    for (var property in item) {
+        if (item.hasOwnProperty(property)) {
+            var value = item[property];
+            if (value === undefined || value === null || value.length === 0 ||  (Object.keys(value).length === 0) && value.constructor === Object) {
+                delete item[property];
+            }
+        }
+    }
+
+    return item;
+}
+
 Array.prototype.contains = function(element) {
     return this.indexOf(element) > -1;
 };
@@ -214,7 +234,7 @@ var getBasicInfo = function(id) {
                 votes: results[0].votes
             }
         }
-        deferred.resolve(doc);
+        deferred.resolve(removeEmpty(doc));
     });
     return deferred.promise;
 
@@ -255,7 +275,7 @@ var getPublisher = function(id) {
                 name: results[i].name,
                 country: results[i].country,
             }
-            arr.push(item);
+            arr.push(removeEmpty(item));
         }
         deferred.resolve({ publisher: arr });
     });
@@ -353,7 +373,7 @@ var getReleases = function(id) {
                 encodingscheme: results[i].encodingscheme
 
             }
-            arr.push(item);
+            arr.push(removeEmpty(item));
         }
         deferred.resolve({ releases: arr });
     });
@@ -430,7 +450,7 @@ var getAuthors = function(id) {
                 authorArray = [];
             }
             if (!authorArray.includes(results[i].dev_name.trim())) {
-                authorArray.push({ name: results[i].dev_name.trim(), country: results[i].dev_country, alias: results[i].dev_alias });
+                authorArray.push(removeEmpty({ name: results[i].dev_name.trim(), country: results[i].dev_country, alias: results[i].dev_alias }));
             }
         }
         if (authorArray.length > 0) {
@@ -976,7 +996,7 @@ var getScreens = function(id) {
                         format: results[i].format,
                         title: results[i].title
                     }
-                    arr.push(downloaditem);
+                    arr.push(removeEmpty(downloaditem));
                 } else {
                     /** screen dump, write info to file (to be processed later) **/
                     var zerofilled = ('0000000' + id).slice(-7);
@@ -1391,7 +1411,7 @@ var getAdditionals = function(id) {
                     type: results[i].type,
                     format: results[i].format
                 }
-                arr.push(downloaditem);
+                arr.push(removeEmpty(downloaditem));
             }
         }
         deferred.resolve({ additionals: arr });
@@ -1479,7 +1499,6 @@ var getAdverts = function(id) {
         for (; i < results.length; i++) {
             var item = {
                 magazine: results[i].magazine,
-                issue: results[i].issueno + "." + results[i].issueyear,
                 issueyear: results[i].issueyear,
                 issueno: results[i].issueno,
                 page: results[i].pageno + "",
@@ -1488,7 +1507,7 @@ var getAdverts = function(id) {
                 link_mask: results[i].link_mask,
                 link: results[i].link
             }
-            arr.push(item);
+            arr.push(removeEmpty(item));
         }
         deferred.resolve({ adverts: arr });
     });
@@ -1556,14 +1575,13 @@ var getMagazineReviews = function(id) {
                 issueday: results[i].issueday,
                 issueno: results[i].issueno,
                 issuevolume: results[i].issuevolume,
-                issue: results[i].issuemonth + "." + results[i].issueyear,
                 page: results[i].pageno + "",
                 pageno: results[i].pageno,
                 magazine_type: results[i].magazine_type,
                 link_mask: results[i].link_mask,
                 link: results[i].link
             }
-            arr.push(item);
+            arr.push(removeEmpty(item));
         }
         deferred.resolve({ magazinereview: arr });
     });
@@ -1587,7 +1605,6 @@ var getMagazineRefs = function(id) {
         for (; i < results.length; i++) {
             var item = {
                 magazine: results[i].magazine,
-                issue: results[i].issueno + "." + results[i].issueyear,
                 issueyear: results[i].issueyear,
                 issueno: results[i].issueno,
                 page: results[i].pageno + "",
@@ -1596,7 +1613,7 @@ var getMagazineRefs = function(id) {
                 link_mask: results[i].link_mask,
                 link: results[i].link
             }
-            arr.push(item);
+            arr.push(removeEmpty(item));
         }
         deferred.resolve({ magrefs: arr });
     });
@@ -1652,7 +1669,7 @@ var getModOf = function(id) {
                 machinetype: results[0].text
             }
         }
-        deferred.resolve({ mod_of: item });
+        deferred.resolve({ mod_of: removeEmpty(item) });
     });
     return deferred.promise;
 
@@ -1678,7 +1695,7 @@ var getModifiedBy = function(id) {
                 publisher: results[i].publisher,
                 machinetype: results[i].text
             }
-            arr.push(item);
+            arr.push(removeEmpty(item));
         }
         deferred.resolve({ modified_by: arr });
     });
@@ -1790,7 +1807,7 @@ var zxdb_doc = function(id) {
         getOtherSystems(id),
         getCompilationContent(id),
         getScreens(id),
-        getSeries(id),
+        getSeries(id), // "S", "series"
         getFeatures(id, "F", "features"),
         getFeatures(id, "C", "competition"),
         getFeatures(id, "M", "majorclone"),
