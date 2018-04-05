@@ -3,6 +3,7 @@
 dd.mm.yyyy
 
 Changelog:
+05.05.2018 - Removed dev_alias from author info, removed reference to download.id
 20.04.2018 - JSON cleanup - https://github.com/thomasheckmann/zxinfo-services/issues/8
 30.11.2017 - author object changed from simple string, to object {name, country, alias}
 06.09.2017 - sites -> relatedlinks (and remove site if it exits as a general ZXDB integrated website)
@@ -327,8 +328,7 @@ from   releases r
        left join schemetypes schemet
               on d.schemetype_id = schemet.id
 where  r.entry_id = 9408
-order  by r.release_seq,
-          d.id 
+order  by r.release_seq
 
 ID: 2000011 as title
 ID: 0003012 releases with year
@@ -349,7 +349,7 @@ ID: 0009362 distribution denied (url is null)
 var getReleases = function(id) {
     var deferred = Q.defer();
     var connection = db.getConnection();
-    connection.query('select distinct r.release_seq as seq, e.title as title, aka.title as as_title, pub.name as name, pc1.text as country, r.release_year as yearofrelease, file_size as size, file_link as url, filet.text as type, format.text as format, origint.text as origin, d.file_code as code, d.file_barcode as barcode, d.file_dl as dl, schemet.text as encodingscheme from releases r left join aliases aka on aka.entry_id = r.entry_id and aka.release_seq = r.release_seq inner join entries e on e.id = r.entry_id left join publishers p on p.entry_id = r.entry_id and p.release_seq = r.release_seq left join labels pub on p.label_id = pub.id left join countries pc1 on pub.country_id = pc1.id left join downloads d on r.entry_id = d.entry_id and r.release_seq = d.release_seq and d.machinetype_id is not null left join filetypes filet on d.filetype_id = filet.id left join formattypes format on d.formattype_id = format.id left join origintypes origint on d.origintype_id = origint.id left join schemetypes schemet on d.schemetype_id = schemet.id where r.entry_id = ? order by r.release_seq, d.id', [id], function(error, results, fields) {
+    connection.query('select distinct r.release_seq as seq, e.title as title, aka.title as as_title, pub.name as name, pc1.text as country, r.release_year as yearofrelease, file_size as size, file_link as url, filet.text as type, format.text as format, origint.text as origin, d.file_code as code, d.file_barcode as barcode, d.file_dl as dl, schemet.text as encodingscheme from releases r left join aliases aka on aka.entry_id = r.entry_id and aka.release_seq = r.release_seq inner join entries e on e.id = r.entry_id left join publishers p on p.entry_id = r.entry_id and p.release_seq = r.release_seq left join labels pub on p.label_id = pub.id left join countries pc1 on pub.country_id = pc1.id left join downloads d on r.entry_id = d.entry_id and r.release_seq = d.release_seq and d.machinetype_id is not null left join filetypes filet on d.filetype_id = filet.id left join formattypes format on d.formattype_id = format.id left join origintypes origint on d.origintype_id = origint.id left join schemetypes schemet on d.schemetype_id = schemet.id where r.entry_id = ? order by r.release_seq', [id], function(error, results, fields) {
         if (error) {
             throw error;
         }
@@ -388,14 +388,11 @@ SELECT
     dev.name AS dev_name,
     ac1.text AS dev_country,
     team.name AS group_name,
-    tc1.text AS group_country,
-    devalias.name AS dev_alias
+    tc1.text AS group_country
 FROM
     authors aut
 INNER JOIN labels dev ON
     aut.label_id = dev.id
-LEFT JOIN labels devalias ON
-    devalias.from_id = dev.id AND devalias.is_company = 0
 LEFT JOIN countries ac1 ON
     dev.country_id = ac1.id
 LEFT JOIN labels team ON
@@ -433,7 +430,7 @@ ORDER BY
 var getAuthors = function(id) {
     var deferred = Q.defer();
     var connection = db.getConnection();
-    connection.query('SELECT dev.name AS dev_name, ac1.text AS dev_country, team.name AS group_name, tc1.text AS group_country, devalias.name AS dev_alias FROM authors aut INNER JOIN labels dev ON aut.label_id = dev.id LEFT JOIN labels devalias ON devalias.from_id = dev.id AND devalias.is_company = 0 LEFT JOIN countries ac1 ON dev.country_id = ac1.id LEFT JOIN labels team ON aut.team_id = team.id LEFT JOIN countries tc1 ON team.country_id = tc1.id WHERE aut.entry_id = ? ORDER BY group_name, dev_name;', [id], function(error, results, fields) {
+    connection.query('SELECT dev.name AS dev_name, ac1.text AS dev_country, team.name AS group_name, tc1.text AS group_country FROM authors aut INNER JOIN labels dev ON aut.label_id = dev.id LEFT JOIN countries ac1 ON dev.country_id = ac1.id LEFT JOIN labels team ON aut.team_id = team.id LEFT JOIN countries tc1 ON team.country_id = tc1.id WHERE aut.entry_id = ? ORDER BY group_name, dev_name', [id], function(error, results, fields) {
         if (error) {
             throw error;
         }
@@ -450,7 +447,7 @@ var getAuthors = function(id) {
                 authorArray = [];
             }
             if (!authorArray.includes(results[i].dev_name.trim())) {
-                authorArray.push(removeEmpty({ name: results[i].dev_name.trim(), country: results[i].dev_country, alias: results[i].dev_alias }));
+                authorArray.push(removeEmpty({ name: results[i].dev_name.trim(), country: results[i].dev_country}));
             }
         }
         if (authorArray.length > 0) {
