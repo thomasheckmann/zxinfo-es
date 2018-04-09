@@ -692,28 +692,39 @@ var getInspiredByTieInLicense = function(id) {
 -- (S)equenced - groupname (1942), (LastNinja)
 
 -- This program belongs in the following series (with these other titles)...
-SELECT DISTINCT prog.title AS title, prog.id as entry_id,
-       pub.NAME   AS publisher, g.name as groupname, groupt.id as grouptype 
-FROM   entries e 
-       INNER JOIN members memb 
-               ON memb.entry_id = e.id 
-       INNER JOIN groups g 
-               ON memb.group_id = g.id 
-       INNER JOIN grouptypes groupt 
-               ON g.grouptype_id = groupt.id 
-                  AND groupt.id = "S" 
-       INNER JOIN members others 
-               ON others.group_id = g.id 
-       INNER JOIN entries prog 
-               ON others.entry_id = prog.id 
-       LEFT JOIN publishers p 
-              ON p.entry_id = prog.id 
-       LEFT JOIN labels pub 
-              ON p.label_id = pub.id 
-WHERE  e.id = 9297 
-       AND p.release_seq = 0 
-ORDER  BY g.NAME, 
-          others.series_seq ASC 
+SELECT DISTINCT
+    prog.title AS title,
+    prog.id AS entry_id,
+    pub.NAME AS publisher,
+    g.name AS groupname,
+    groupt.id AS grouptype
+FROM
+    entries e
+INNER JOIN members memb ON
+    memb.entry_id = e.id
+INNER JOIN groups g ON
+    memb.group_id = g.id
+INNER JOIN grouptypes groupt ON
+    g.grouptype_id = groupt.id AND groupt.id = "S"
+INNER JOIN members others ON
+    others.group_id = g.id
+INNER JOIN entries prog ON
+    others.entry_id = prog.id
+LEFT JOIN publishers p ON
+    p.entry_id = prog.id
+LEFT JOIN labels pub ON
+    p.label_id = pub.id
+WHERE
+    e.id = 28465 AND(
+        (
+            p.label_id IS NOT NULL AND p.release_seq = 0
+        ) OR(
+            p.label_id IS NULL AND p.release_seq IS NULL
+        )
+    )
+ORDER BY
+    g.NAME,
+    others.series_seq ASC
 
 +-------+-------------------+-----------+-----------+
 | title |     publisher     | groupname | grouptype |
@@ -726,7 +737,7 @@ ORDER  BY g.NAME,
 var getSeries = function(id) {
     var deferred = Q.defer();
     var connection = db.getConnection();
-    connection.query('select distinct prog.title as title, prog.id as entry_id, pub.name as publisher, g.name as groupname, groupt.id as grouptype from entries e inner join members memb on memb.entry_id = e.id inner join groups g on memb.group_id = g.id inner join grouptypes groupt on g.grouptype_id = groupt.id and groupt.id = "S" inner join members others on others.group_id = g.id inner join entries prog on others.entry_id = prog.id left join publishers p on p.entry_id = prog.id left join labels pub on p.label_id = pub.id where e.id = ? and p.release_seq = 0 order by g.name, others.series_seq ASC', [id], function(error, results, fields) {
+    connection.query('SELECT DISTINCT prog.title AS title, prog.id as entry_id, pub.NAME AS publisher, g.name as groupname, groupt.id as grouptype FROM entries e INNER JOIN members memb ON memb.entry_id = e.id INNER JOIN groups g ON memb.group_id = g.id INNER JOIN grouptypes groupt ON g.grouptype_id = groupt.id AND groupt.id = "S" INNER JOIN members others ON others.group_id = g.id INNER JOIN entries prog ON others.entry_id = prog.id LEFT JOIN publishers p ON p.entry_id = prog.id LEFT JOIN labels pub ON p.label_id = pub.id WHERE e.id = ? AND ((p.label_id IS NOT NULL AND p.release_seq = 0) OR (p.label_id IS NULL AND p.release_seq IS NULL)) ORDER BY g.NAME, others.series_seq ASC', [id], function(error, results, fields) {
         if (error) {
             throw error;
         }
@@ -805,14 +816,16 @@ INNER JOIN entries item ON
     ecomp.entry_id = item.id
 INNER JOIN variationtypes evart ON
     ecomp.variationtype_id = evart.id
-INNER JOIN publishers p ON
+LEFT JOIN publishers p ON
     p.entry_id = ecomp.entry_id
 LEFT JOIN labels ll ON
     p.label_id = ll.id
 LEFT JOIN countries lc1 ON
     ll.country_id = lc1.id
 WHERE
-    ecomp.compilation_id = 13510 AND p.release_seq = 0
+    ((p.label_id IS NOT NULL AND p.release_seq = 0) OR (p.label_id IS NULL AND p.release_seq IS NULL)) AND ecomp.compilation_id = 11869
+ORDER BY
+  tape_side, tape_seq, prog_seq
 
 +-----------+----------+----------+---------------------------+----------------------+
 | tape_side | tape_seq | prog_seq | title                     | publisher            |
@@ -831,7 +844,7 @@ WHERE
 var getCompilationContent = function(id) {
     var deferred = Q.defer();
     var connection = db.getConnection();
-    connection.query('SELECT ecomp.tape_side AS tape_side, ecomp.tape_seq AS tape_seq, ecomp.prog_seq AS prog_seq, item.title AS title, ll.name AS publisher, evart.text as variation FROM compilations ecomp INNER JOIN entries item ON ecomp.entry_id = item.id INNER JOIN variationtypes evart ON ecomp.variationtype_id = evart.id INNER JOIN publishers p ON p.entry_id = ecomp.entry_id LEFT JOIN labels ll ON p.label_id = ll.id LEFT JOIN countries lc1 ON ll.country_id = lc1.id WHERE ecomp.compilation_id = ? AND p.release_seq = 0', [id], function(error, results, fields) {
+    connection.query('SELECT ecomp.tape_side AS tape_side, ecomp.tape_seq AS tape_seq, ecomp.prog_seq AS prog_seq, item.title AS title, ll.name AS publisher, evart.text as variation FROM compilations ecomp INNER JOIN entries item ON ecomp.entry_id = item.id INNER JOIN variationtypes evart ON ecomp.variationtype_id = evart.id LEFT JOIN publishers p ON p.entry_id = ecomp.entry_id LEFT JOIN labels ll ON p.label_id = ll.id LEFT JOIN countries lc1 ON ll.country_id = lc1.id WHERE ((p.label_id IS NOT NULL AND p.release_seq = 0) OR (p.label_id IS NULL AND p.release_seq IS NULL)) AND ecomp.compilation_id = ? ORDER BY tape_side, tape_seq, prog_seq', [id], function(error, results, fields) {
         if (error) {
             throw error;
         }
