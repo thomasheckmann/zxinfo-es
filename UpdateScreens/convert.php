@@ -130,7 +130,7 @@ while ( !feof($fp) )
 
     if($screen_type == 'load' || $screen_type == 'run') {
     	$object;
-    	$fullpath = '/Users/dkthahko/Public/github_thomas/zxinfo-es/UpdateScreens/mirror/spectrumcomputing.co.uk'.$from_url;
+    	$fullpath = './mirror/spectrumcomputing.co.uk'.$from_url;
     	if(file_exists("." . $to_path . $to_filename . ".gif") || file_exists("." . $to_path . $to_filename . ".png")) {
 	    	// gif or png?
 	    	$ext = "";
