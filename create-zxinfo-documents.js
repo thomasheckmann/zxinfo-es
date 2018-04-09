@@ -3,8 +3,9 @@
 dd.mm.yyyy
 
 Changelog:
-05.05.2018 - Removed dev_alias from author info, removed reference to download.id
-20.04.2018 - JSON cleanup - https://github.com/thomasheckmann/zxinfo-services/issues/8
+08.04.2018 - author_seq removed from roles table, simplified getRoles SQL query
+05.04.2018 - Removed dev_alias from author info, removed reference to download.id
+20.03.2018 - JSON cleanup - https://github.com/thomasheckmann/zxinfo-services/issues/8
 30.11.2017 - author object changed from simple string, to object {name, country, alias}
 06.09.2017 - sites -> relatedlinks (and remove site if it exits as a general ZXDB integrated website)
 05.09.2017 - Variations (on Compilations) added to document
@@ -462,16 +463,11 @@ var getAuthors = function(id) {
  * Get Roles
 
 --
-SELECT dev.name AS name, rt.text as role
-FROM   authors aut
-       INNER JOIN labels dev
-               ON aut.label_id = dev.id
-       INNER JOIN roles r
-              ON aut.entry_id = r.entry_id AND aut.author_seq = r.author_seq
-       LEFT JOIN roletypes rt 
-            ON r.roletype_id = rt.id
-WHERE  aut.entry_id = 26834
-ORDER BY rt.id
+SELECT title, l.name, rt.text AS role FROM roles r
+INNER JOIN entries e ON e.id = r.entry_id
+INNER JOIN labels l ON l.id = r.label_id
+INNER JOIN roletypes rt on rt.id = r.roletype_id
+WHERE r.entry_id = 26834 ORDER BY name
 
 +---------------+---------------------+
 | name          | role                |
@@ -489,7 +485,7 @@ ORDER BY rt.id
 var getRoles = function(id) {
     var deferred = Q.defer();
     var connection = db.getConnection();
-    connection.query('SELECT dev.name AS name, rt.text as role FROM authors aut INNER JOIN labels dev ON aut.label_id = dev.id INNER JOIN roles r ON aut.entry_id = r.entry_id AND aut.author_seq = r.author_seq LEFT JOIN roletypes rt ON r.roletype_id = rt.id WHERE aut.entry_id = ? ORDER BY rt.id', [id], function(error, results, fields) {
+    connection.query('SELECT title, l.name, rt.text AS role FROM roles r INNER JOIN entries e ON e.id = r.entry_id INNER JOIN labels l ON l.id = r.label_id INNER JOIN roletypes rt on rt.id = r.roletype_id WHERE r.entry_id = ? ORDER by name', [id], function(error, results, fields) {
         if (error) {
             throw error;
         }
