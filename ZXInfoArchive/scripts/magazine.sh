@@ -9,17 +9,17 @@ source settings.sh
 # Delete all indexes
 # curl -XDELETE "http://192.168.1.60:9200/zxinfo-*";
 
-WRITE_INDEX=`date "+zxinfo-%Y%m%d-%H%M%S"`
-WRITE_ALIAS="${GAMES_INDEX}_write"
+WRITE_INDEX=`date "+zxdb-magazines-%Y%m%d-%H%M%S"`
+WRITE_ALIAS="${MAGAZINES_INDEX}_write"
 
 echo 'Elasticsearch host: ' $ES_HOST
 echo 'Elasticsearch port: ' $ES_PORT
-echo 'Index/Type        : ' $GAMES_INDEX/$GAMES_TYPE
+echo 'Index/Type        : ' $MAGAZINES_INDEX/$MAGAZINES_TYPE
 echo 'Index             : ' ${WRITE_INDEX}
 echo 'Index_alias       : ' ${WRITE_ALIAS}
 
-echo '-- create ' $WRITE_INDEX/$GAMES_TYPE
-curl -H'Content-Type: application/json' -XPUT "http://${ES_HOST}:${ES_PORT}/${WRITE_INDEX}/" -d @mappings/games-mapping.json; echo ""
+echo '-- create ' $WRITE_INDEX/$MAGAZINES_TYPE
+curl -H'Content-Type: application/json' -XPUT "http://${ES_HOST}:${ES_PORT}/${WRITE_INDEX}/" -d @mappings/magazines-mapping.json; echo ""
 
 echo '-- remove all alias for ' $WRITE_ALIAS
 curl -H'Content-Type: application/json' -XPOST "http://${ES_HOST}:${ES_PORT}/_aliases" -d '
@@ -39,20 +39,33 @@ curl -H'Content-Type: application/json' -XPOST "http://${ES_HOST}:${ES_PORT}/_al
 
 echo ""
 echo 'Now import data into ['${WRITE_ALIAS}']'
-read -n1 -r -p "Press space to continue..." key
 
-echo '-- remove all alias for ' ${GAMES_INDEX}
+(cd ../../ && (node import-magazines.js data/magazines/json/ 2> import-magazines.log)) &
+PID=$!
+wait $PID
+
+if [ $? -eq 0 ]
+then
+  echo "Import OK"
+else
+  echo "Magazine import failed - pleae check log: import-magazines.log"
+  exit 1
+fi
+
+read -n1 -r -p "Press any key to switch to new index" key
+
+echo '-- remove all alias for ' ${MAGAZINES_INDEX}
 curl -H'Content-Type: application/json' -XPOST "http://${ES_HOST}:${ES_PORT}/_aliases" -d '
 {
     "actions" : [
-        { "remove" : { "index" : "*", "alias" : "'${GAMES_INDEX}'" } }
+        { "remove" : { "index" : "*", "alias" : "'${MAGAZINES_INDEX}'" } }
     ]
 }'; echo ""
 
-echo "Switching to new INDEX ${WRITE_INDEX} for ALIAS ${GAMES_INDEX}"
+echo "Switching to new INDEX ${WRITE_INDEX} for ALIAS ${MAGAZINES_INDEX}"
 curl -H'Content-Type: application/json' -XPOST "http://${ES_HOST}:${ES_PORT}/_aliases" -d '
 {
     "actions" : [
-        { "add" : { "index" : "'$WRITE_INDEX'", "alias" : "'$GAMES_INDEX'" } }
+        { "add" : { "index" : "'$WRITE_INDEX'", "alias" : "'$MAGAZINES_INDEX'" } }
     ]
 }'
