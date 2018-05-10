@@ -3,6 +3,9 @@
 dd.mm.yyyy
 
 Changelog:
+10.05.2018 - Controls changed to Group 'J'
+10.05.2018 - Turntype changed to Group 'N'
+10.05.2018 - Multiplayermode changed to Group 'Y'
 08.04.2018 - author_seq removed from roles table, simplified getRoles SQL query
 05.04.2018 - Removed dev_alias from author info, removed reference to download.id
 20.03.2018 - JSON cleanup - https://github.com/thomasheckmann/zxinfo-services/issues/8
@@ -134,40 +137,63 @@ var contenttype = function(genretype) {
  * Get basic info
 
 --
-SELECT e.title AS fulltitle,aka.title AS alsoknownas,
-       r.release_year AS yearofrelease,
-       r.release_month AS monthofrelease,
-       r_release_day AS dayofrelease,
-       machinet.text AS machinetype,e.max_players AS numberofplayers,
-       turnt.text AS multiplayermode,multipl.text AS multiplayertype,
-       e.genretype_id as genretype, entryt.text AS type, e.book_isbn as isbn, idm.text AS messagelanguage,
-       pubt.text AS originalpublication,r.release_price AS originalprice,
-       availt.text AS availability,e.known_errors as known_errors,e.comments AS remarks,sc.score AS score,
-       sc.votes AS votes
-FROM   entries e
-       LEFT JOIN releases r
-               ON r.entry_id = e.id
-       LEFT JOIN aliases aka
-              ON aka.entry_id = r.entry_id
-                 AND aka.release_seq = r.release_seq
-       LEFT JOIN availabletypes availt
-              ON e.availabletype_id = availt.id
-       LEFT JOIN machinetypes machinet
-              ON e.machinetype_id = machinet.id
-       LEFT JOIN turntypes turnt
-              ON e.turntype_id = turnt.id
-       LEFT JOIN multiplaytypes multipl
-              ON e.multiplaytype_id = multipl.id
-       LEFT JOIN genretypes entryt
-              ON e.genretype_id = entryt.id
-       LEFT JOIN publicationtypes pubt
-              ON e.publicationtype_id = pubt.id
-       LEFT JOIN idioms idm
-              ON e.idiom_id = idm.id
-       LEFT JOIN scores sc
-              ON sc.entry_id = e.id
-WHERE  e.id = 4010
-   AND (r.release_seq = 0 or r.release_seq is NULL); 
+SELECT
+    e.title AS fulltitle,
+    aka.title AS alsoknownas,
+    r.release_year AS yearofrelease,
+    r.release_month AS monthofrelease,
+    r.release_day AS dayofrelease,
+    machinet.text AS machinetype,
+    e.max_players AS numberofplayers,
+    g1.name AS multiplayermode,
+    g2.name AS multiplayertype,
+    e.genretype_id AS genretype,
+    entryt.text AS TYPE,
+    e.book_isbn AS isbn,
+    idm.text AS messagelanguage,
+    pubt.text AS originalpublication,
+    r.release_price AS originalprice,
+    availt.text AS availability,
+    e.known_errors AS known_errors,
+    e.comments AS remarks,
+    e.spot_comments AS spotcomments,
+    sc.score AS score,
+    sc.votes AS votes
+FROM
+    entries e
+LEFT JOIN releases r ON
+    r.entry_id = e.id
+LEFT JOIN aliases aka ON
+    aka.entry_id = r.entry_id AND aka.release_seq = r.release_seq
+LEFT JOIN availabletypes availt ON
+    e.availabletype_id = availt.id
+LEFT JOIN machinetypes machinet ON
+    e.machinetype_id = machinet.id
+
+LEFT JOIN members turn ON turn.entry_id = e.id
+INNER JOIN groups g1 ON
+    turn.group_id = g1.id
+INNER JOIN grouptypes groupt1 ON
+    g1.grouptype_id = groupt1.id AND groupt1.id = 'N'
+
+LEFT JOIN members multiplay ON multiplay.entry_id = e.id
+INNER JOIN groups g2 ON
+    multiplay.group_id = g2.id
+INNER JOIN grouptypes groupt2 ON
+    g2.grouptype_id = groupt2.id AND groupt2.id = 'Y'
+
+LEFT JOIN genretypes entryt ON
+    e.genretype_id = entryt.id
+LEFT JOIN publicationtypes pubt ON
+    e.publicationtype_id = pubt.id
+LEFT JOIN idioms idm ON
+    e.idiom_id = idm.id
+LEFT JOIN scores sc ON
+    sc.entry_id = e.id
+WHERE
+    e.id = 722 AND(
+        r.release_seq = 0 OR r.release_seq IS NULL
+    )
 
 -- full release info
 
@@ -184,7 +210,7 @@ SELECT * FROM `releases` WHERE release_year is not null and release_month is not
 var getBasicInfo = function(id) {
     var deferred = Q.defer();
     var connection = db.getConnection();
-    connection.query('select e.title as fulltitle, aka.title as alsoknownas, r.release_year as yearofrelease, r.release_month as monthofrelease, r.release_day as dayofrelease, machinet.text as machinetype, e.max_players as numberofplayers, turnt.text as multiplayermode, multipl.text as multiplayertype, e.genretype_id as genretype, entryt.text as type, e.book_isbn as isbn, idm.text as messagelanguage, pubt.text as originalpublication, r.release_price as originalprice, availt.text as availability, e.known_errors as known_errors, e.comments as remarks, e.spot_comments as spotcomments, sc.score as score, sc.votes as votes from entries e left join releases r on r.entry_id = e.id left join aliases aka on aka.entry_id = r.entry_id and aka.release_seq = r.release_seq left join availabletypes availt on e.availabletype_id = availt.id left join machinetypes machinet on e.machinetype_id = machinet.id left join turntypes turnt on e.turntype_id = turnt.id left join multiplaytypes multipl on e.multiplaytype_id = multipl.id left join genretypes entryt on e.genretype_id = entryt.id left join publicationtypes pubt on e.publicationtype_id = pubt.id left join idioms idm on e.idiom_id = idm.id left join scores sc on sc.entry_id = e.id where e.id = ? and (r.release_seq = 0 or r.release_seq is null);', [id], function(error, results, fields) {
+    connection.query('SELECT e.title AS fulltitle, aka.title AS alsoknownas, r.release_year AS yearofrelease, r.release_month AS monthofrelease, r.release_day AS dayofrelease, machinet.text AS machinetype, e.max_players AS numberofplayers, g1.name AS multiplayermode, g2.name AS multiplayertype, e.genretype_id AS genretype, entryt.text AS TYPE, e.book_isbn AS isbn, idm.text AS messagelanguage, pubt.text AS originalpublication, r.release_price AS originalprice, availt.text AS availability, e.known_errors AS known_errors, e.comments AS remarks, e.spot_comments AS spotcomments, sc.score AS score, sc.votes AS votes FROM entries e LEFT JOIN releases r ON r.entry_id = e.id LEFT JOIN aliases aka ON aka.entry_id = r.entry_id AND aka.release_seq = r.release_seq LEFT JOIN availabletypes availt ON e.availabletype_id = availt.id LEFT JOIN machinetypes machinet ON e.machinetype_id = machinet.id LEFT JOIN members turn ON turn.entry_id = e.id INNER JOIN groups g1 ON turn.group_id = g1.id INNER JOIN grouptypes groupt1 ON g1.grouptype_id = groupt1.id AND groupt1.id = \'N\'LEFT JOIN members multiplay ON multiplay.entry_id = e.id INNER JOIN groups g2 ON multiplay.group_id = g2.id INNER JOIN grouptypes groupt2 ON g2.grouptype_id = groupt2.id AND groupt2.id = \'Y\'LEFT JOIN genretypes entryt ON e.genretype_id = entryt.id LEFT JOIN publicationtypes pubt ON e.publicationtype_id = pubt.id LEFT JOIN idioms idm ON e.idiom_id = idm.id LEFT JOIN scores sc ON sc.entry_id = e.id WHERE e.id = ? AND(r.release_seq = 0 OR r.release_seq IS NULL );', [id], function(error, results, fields) {
         if (error) {
             throw error;
         }
@@ -595,14 +621,21 @@ var getAuthoring = function(id) {
  * Get controls
 
 --
-SELECT ctrt.text AS control
-FROM   controls ctr
-       INNER JOIN controltypes ctrt
-               ON ctr.controltype_id = ctrt.id
-WHERE  ctr.entry_id = 4010
+SELECT
+    g.name,
+    groupt.id,
+    groupt.text
+FROM
+    members feat
+INNER JOIN groups g ON
+    feat.group_id = g.id
+INNER JOIN grouptypes groupt ON
+    g.grouptype_id = groupt.id AND groupt.id = 'J'
+WHERE
+    feat.entry_id = 2259
 
 +---------------------+
-| control             |
+| name                |
 +---------------------+
 | Cursor              |
 | Interface 2 (left)  |
@@ -615,14 +648,14 @@ WHERE  ctr.entry_id = 4010
 var getControls = function(id) {
     var deferred = Q.defer();
     var connection = db.getConnection();
-    connection.query('select ctrt.text as control from controls ctr inner join controltypes ctrt on ctr.controltype_id = ctrt.id where ctr.entry_id = ?', [id], function(error, results, fields) {
+    connection.query('SELECT g.name, groupt.id, groupt.text FROM members feat INNER JOIN groups g ON feat.group_id = g.id INNER JOIN grouptypes groupt ON g.grouptype_id = groupt.id AND groupt.id = \'J\' WHERE feat.entry_id = ?', [id], function(error, results, fields) {
         if (error) {
             throw error;
         }
         var arr = [];
         var i = 0;
         for (; i < results.length; i++) {
-            var control = { control: results[i].control };
+            var control = { name: results[i].control };
             arr.push(control);
         }
         deferred.resolve({ controls: arr });
