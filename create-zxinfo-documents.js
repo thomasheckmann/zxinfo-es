@@ -642,7 +642,7 @@ var getControls = function(id) {
         var arr = [];
         var i = 0;
         for (; i < results.length; i++) {
-            var control = { name: results[i].control };
+            var control = { control: results[i].name };
             arr.push(control);
         }
         deferred.resolve({ controls: arr });
