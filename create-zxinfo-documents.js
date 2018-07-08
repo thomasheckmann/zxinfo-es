@@ -33,7 +33,7 @@ var db = require('./dbConfig');
 
 var json_output_dir = 'data/processed/json/';
 
-var Q = require('Q');
+var Q = require('q');
 var jsonfile = require('jsonfile')
 var path = require('path');
 var allcombinations = require('allcombinations')
