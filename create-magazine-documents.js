@@ -53,7 +53,7 @@ var getMagazineInfo = function(id) {
         }
 
         var doc = {
-            name: results[0].name,
+            name: results[0].name.trim(),
             is_electronic: results[0].is_electronic === '1' ? true : false,
             language: results[0].language,
             link_mask: results[0].link_mask,
