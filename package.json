@@ -4,7 +4,6 @@
   "description": "Create Elasticsearch instance with ZXDB documents Edit",
   "main": "create-zxinfo-documents.js",
   "dependencies": {
-    "Q": "^1.0.0",
     "allcombinations": "^1.1.4",
     "deasync": "^0.1.13",
     "elasticsearch": "^12.1.3",

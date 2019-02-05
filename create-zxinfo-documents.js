@@ -3,6 +3,9 @@
 dd.mm.yyyy
 
 Changelog:
+30.02.2019 - Technically all game licenses are now stored in a new table called "relatedlicenses".
+29.02.2019 - Internal definition of table "relatedlinks" was changed. (No changes needed)
+19.01.2019 - Technically columns disk_price, microdrive_price, and cartridge_price were moved to table "releases".
 10.05.2018 - Controls changed to Group 'J'
 10.05.2018 - Turntype changed to Group 'N'
 10.05.2018 - Multiplayermode changed to Group 'Y'
@@ -307,6 +310,11 @@ select distinct r.release_seq  as seq,
                 pub.name       as name,
                 pc1.text       as country,
                 r.release_year as yearofrelease,
+                r.release_price as releaseprice,
+                r.budget_price as budgetprice,
+                r.microdrive_price as microdriveprice,
+                r.disk_price as diskprice,
+                r.cartridge_price as cartridgeprice,
                 file_size      as size,
                 file_link      as url,
                 filet.text     as type,
@@ -363,7 +371,7 @@ ID: 0009362 distribution denied (url is null)
 var getReleases = function(id) {
     var deferred = Q.defer();
     var connection = db.getConnection();
-    connection.query('select distinct r.release_seq as seq, e.title as title, aka.title as as_title, pub.name as name, pc1.text as country, r.release_year as yearofrelease, file_size as size, file_link as url, filet.text as type, format.text as format, origint.text as origin, d.file_code as code, d.file_barcode as barcode, d.file_dl as dl, schemet.text as encodingscheme from releases r left join aliases aka on aka.entry_id = r.entry_id and aka.release_seq = r.release_seq inner join entries e on e.id = r.entry_id left join publishers p on p.entry_id = r.entry_id and p.release_seq = r.release_seq left join labels pub on p.label_id = pub.id left join countries pc1 on pub.country_id = pc1.id left join downloads d on r.entry_id = d.entry_id and r.release_seq = d.release_seq and d.machinetype_id is not null left join filetypes filet on d.filetype_id = filet.id left join formattypes format on d.formattype_id = format.id left join origintypes origint on d.origintype_id = origint.id left join schemetypes schemet on d.schemetype_id = schemet.id where r.entry_id = ? order by r.release_seq', [id], function(error, results, fields) {
+    connection.query('select distinct r.release_seq as seq, e.title as title, aka.title as as_title, pub.name as name, pc1.text as country, r.release_year as yearofrelease, r.release_price as releaseprice, r.budget_price as budgetprice, r.microdrive_price as microdriveprice, r.disk_price as diskprice, r.cartridge_price as cartridgeprice, file_size as size, file_link as url, filet.text as type, format.text as format, origint.text as origin, d.file_code as code, d.file_barcode as barcode, d.file_dl as dl, schemet.text as encodingscheme from releases r left join aliases aka on aka.entry_id = r.entry_id and aka.release_seq = r.release_seq inner join entries e on e.id = r.entry_id left join publishers p on p.entry_id = r.entry_id and p.release_seq = r.release_seq left join labels pub on p.label_id = pub.id left join countries pc1 on pub.country_id = pc1.id left join downloads d on r.entry_id = d.entry_id and r.release_seq = d.release_seq and d.machinetype_id is not null left join filetypes filet on d.filetype_id = filet.id left join formattypes format on d.formattype_id = format.id left join origintypes origint on d.origintype_id = origint.id left join schemetypes schemet on d.schemetype_id = schemet.id where r.entry_id = ? order by r.release_seq', [id], function(error, results, fields) {
         if (error) {
             throw error;
         }
@@ -376,6 +384,11 @@ var getReleases = function(id) {
                 country: results[i].country,
                 as_title: results[i].as_title,
                 yearofrelease: results[i].yearofrelease,
+                releaseprice: results[i].releaseprice,
+                budgetprice: results[i].budgetprice,
+                microdriveprice: results[i].microdriveprice,
+                diskprice: results[i].diskprice,
+                cartridgeprice: results[i].cartridgeprice,
                 url: results[i].url,
                 size: results[i].size,
                 type: results[i].type,
@@ -654,20 +667,25 @@ var getControls = function(id) {
  * Get inspired / tie-in license
 
  -- This program was licensed from or inspired by...
-SELECT ll.name AS name,lc1.text AS country,lict.text AS type,lic.name
-       originalname
-FROM   entries e
-       INNER JOIN licenses lic
-               ON e.license_id = lic.id
-       INNER JOIN licensetypes lict
-               ON lic.licensetype_id = lict.id
-       LEFT JOIN licensors lor
-              ON lor.license_id = lic.id
-       LEFT JOIN labels ll
-              ON lor.label_id = ll.id
-       LEFT JOIN countries lc1
-              ON ll.country_id = lc1.id
-WHERE  e.id = 4010; 
+SELECT
+    ll.name AS NAME,
+    lc1.text AS country,
+    lict.text AS TYPE,
+    lic.name originalname
+FROM
+    relatedlicenses rl
+INNER JOIN licenses lic ON
+    rl.license_id = lic.id
+INNER JOIN licensetypes lict ON
+    lic.licensetype_id = lict.id
+LEFT JOIN licensors lor ON
+    lor.license_id = lic.id
+LEFT JOIN labels ll ON
+    lor.label_id = ll.id
+LEFT JOIN countries lc1 ON
+    ll.country_id = lc1.id
+WHERE
+    rl.entry_id = 4010
 
 +---------------------------+---------+-------+----------------------------+
 | name                      | country | type  | originalname               |
@@ -680,7 +698,7 @@ WHERE  e.id = 4010;
 var getInspiredByTieInLicense = function(id) {
     var deferred = Q.defer();
     var connection = db.getConnection();
-    connection.query('select ll.name as name, lc1.text as country, lict.text as type, lic.name as originalname from entries e inner join licenses lic on e.license_id = lic.id inner join licensetypes lict on lic.licensetype_id = lict.id left join licensors lor on lor.license_id = lic.id left join labels ll on lor.label_id = ll.id left join countries lc1 on ll.country_id = lc1.id where e.id = ?', [id], function(error, results, fields) {
+    connection.query('SELECT ll.name AS NAME, lc1.text AS country, lict.text AS TYPE, lic.name originalname FROM relatedlicenses rl INNER JOIN licenses lic ON rl.license_id = lic.id INNER JOIN licensetypes lict ON lic.licensetype_id = lict.id LEFT JOIN licensors lor ON lor.license_id = lic.id LEFT JOIN labels ll ON lor.label_id = ll.id LEFT JOIN countries lc1 ON ll.country_id = lc1.id WHERE rl.entry_id = ?', [id], function(error, results, fields) {
         if (error) {
             throw error;
         }
