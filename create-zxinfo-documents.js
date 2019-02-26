@@ -3,8 +3,16 @@
 dd.mm.yyyy
 
 Changelog:
-30.02.2019 - Technically all game licenses are now stored in a new table called "relatedlicenses".
-29.02.2019 - Internal definition of table "relatedlinks" was changed. (No changes needed)
+25.02.2019 - Technically table "aliases" now has a composite natural key, instead of artificial key "id". (No changes nedded)
+			 Inspired_by and Mod_of moved to new relations table(m, i). JSON changed. Mod_of can not be an array, also contains text for relation type.
+			 Authored moved to new ralations table. No longer uses "frameworks"
+15.02.2019 - Table "relatedlinks" was renamed to "webrefs". relatedlinks + webrefs in JSON. Relatedlinks will be deprecated in the future.
+			 Table "origintypes" was renamed to "sourcetypes"
+			 Column "downloads.origintype_id" was renamed to "downloads.sourcetype_id", and now it's nullable. (No changes nedded)
+			 Column "extras.origintype_id" was renamed to "extras.sourcetype_id", and now it's nullable. (No changes nedded)
+
+12.02.2019 - Technically all game licenses are now stored in a new table called "relatedlicenses".
+29.01.2019 - Internal definition of table "relatedlinks" was changed. (No changes needed)
 19.01.2019 - Technically columns disk_price, microdrive_price, and cartridge_price were moved to table "releases".
 10.05.2018 - Controls changed to Group 'J'
 10.05.2018 - Turntype changed to Group 'N'
@@ -345,8 +353,8 @@ from   releases r
               on d.filetype_id = filet.id
        left join formattypes format
               on d.formattype_id = format.id
-       left join origintypes origint
-              on d.origintype_id = origint.id
+       left join sourcetypes origint
+              on d.sourcetype_id = origint.id
        left join schemetypes schemet
               on d.schemetype_id = schemet.id
 where  r.entry_id = 9408
@@ -371,7 +379,7 @@ ID: 0009362 distribution denied (url is null)
 var getReleases = function(id) {
     var deferred = Q.defer();
     var connection = db.getConnection();
-    connection.query('select distinct r.release_seq as seq, e.title as title, aka.title as as_title, pub.name as name, pc1.text as country, r.release_year as yearofrelease, r.release_price as releaseprice, r.budget_price as budgetprice, r.microdrive_price as microdriveprice, r.disk_price as diskprice, r.cartridge_price as cartridgeprice, file_size as size, file_link as url, filet.text as type, format.text as format, origint.text as origin, d.file_code as code, d.file_barcode as barcode, d.file_dl as dl, schemet.text as encodingscheme from releases r left join aliases aka on aka.entry_id = r.entry_id and aka.release_seq = r.release_seq inner join entries e on e.id = r.entry_id left join publishers p on p.entry_id = r.entry_id and p.release_seq = r.release_seq left join labels pub on p.label_id = pub.id left join countries pc1 on pub.country_id = pc1.id left join downloads d on r.entry_id = d.entry_id and r.release_seq = d.release_seq and d.machinetype_id is not null left join filetypes filet on d.filetype_id = filet.id left join formattypes format on d.formattype_id = format.id left join origintypes origint on d.origintype_id = origint.id left join schemetypes schemet on d.schemetype_id = schemet.id where r.entry_id = ? order by r.release_seq', [id], function(error, results, fields) {
+    connection.query('select distinct r.release_seq as seq, e.title as title, aka.title as as_title, pub.name as name, pc1.text as country, r.release_year as yearofrelease, r.release_price as releaseprice, r.budget_price as budgetprice, r.microdrive_price as microdriveprice, r.disk_price as diskprice, r.cartridge_price as cartridgeprice, file_size as size, file_link as url, filet.text as type, format.text as format, origint.text as origin, d.file_code as code, d.file_barcode as barcode, d.file_dl as dl, schemet.text as encodingscheme from releases r left join aliases aka on aka.entry_id = r.entry_id and aka.release_seq = r.release_seq inner join entries e on e.id = r.entry_id left join publishers p on p.entry_id = r.entry_id and p.release_seq = r.release_seq left join labels pub on p.label_id = pub.id left join countries pc1 on pub.country_id = pc1.id left join downloads d on r.entry_id = d.entry_id and r.release_seq = d.release_seq and d.machinetype_id is not null left join filetypes filet on d.filetype_id = filet.id left join formattypes format on d.formattype_id = format.id left join sourcetypes origint on d.sourcetype_id = origint.id left join schemetypes schemet on d.schemetype_id = schemet.id where r.entry_id = ? order by r.release_seq', [id], function(error, results, fields) {
         if (error) {
             throw error;
         }
@@ -533,17 +541,19 @@ var getRoles = function(id) {
  * Get authored
 
 -- This program was authored with the following tools...
-SELECT tool.title, 
-       pub.NAME AS publisher 
-FROM   frameworks iaut 
-       INNER JOIN entries tool 
-               ON iaut.util_id = tool.id 
-       LEFT JOIN publishers p 
-              ON p.entry_id = tool.id 
-       LEFT JOIN labels pub 
-              ON p.label_id = pub.id 
-WHERE  p.release_seq = 0 
-       AND iaut.entry_id = 30321 
+SELECT
+    tool.title,
+    pub.NAME AS publisher
+FROM
+    relations iaut
+INNER JOIN entries tool ON
+    iaut.original_id = tool.id
+LEFT JOIN publishers p ON
+    p.entry_id = tool.id
+LEFT JOIN labels pub ON
+    p.label_id = pub.id
+WHERE
+    p.release_seq = 0 AND relationtype_id = 'a' AND iaut.entry_id = 30321
 
 +-----------------+--------------+
 | title           | publisher    |
@@ -555,7 +565,7 @@ WHERE  p.release_seq = 0
 var getAuthored = function(id) {
     var deferred = Q.defer();
     var connection = db.getConnection();
-    connection.query('select tool.title, pub.name as publisher from frameworks iaut inner join entries tool on iaut.util_id = tool.id left join publishers p on p.entry_id = tool.id left join labels pub on p.label_id = pub.id where iaut.entry_id = ? and p.release_seq = 0', [id], function(error, results, fields) {
+    connection.query('SELECT tool.title, pub.NAME AS publisher FROM relations iaut INNER JOIN entries tool ON iaut.original_id = tool.id LEFT JOIN publishers p ON p.entry_id = tool.id LEFT JOIN labels pub ON p.label_id = pub.id WHERE p.release_seq = 0 AND relationtype_id = "a" AND iaut.entry_id = ?', [id], function(error, results, fields) {
         if (error) {
             throw error;
         }
@@ -577,16 +587,19 @@ var getAuthored = function(id) {
  * Get Authoring
 
 -- The following programs are known to have been authored with this tool...
-SELECT prog.title AS title, 
-       pub.NAME   AS publisher 
-FROM   frameworks eaut 
-       INNER JOIN entries prog 
-               ON eaut.entry_id = prog.id 
-       LEFT JOIN publishers p 
-              ON p.entry_id = prog.id 
-       LEFT JOIN labels pub 
-              ON p.label_id = pub.id 
-WHERE  eaut.util_id = 30002;
+SELECT
+    prog.title AS title,
+    pub.NAME AS publisher
+FROM
+    relations eaut
+INNER JOIN entries prog ON
+    eaut.entry_id = prog.id
+LEFT JOIN publishers p ON
+    p.entry_id = prog.id
+LEFT JOIN labels pub ON
+    p.label_id = pub.id
+WHERE
+    eaut.relationtype_id = "a" AND eaut.original_id = 30002;
 
 +--------------+----------------------+
 | title        | publisher            |
@@ -599,7 +612,7 @@ WHERE  eaut.util_id = 30002;
 var getAuthoring = function(id) {
     var deferred = Q.defer();
     var connection = db.getConnection();
-    connection.query('select prog.title as title, pub.name as publisher from frameworks eaut inner join entries prog on eaut.entry_id = prog.id left join publishers p on p.entry_id = prog.id left join labels pub on p.label_id = pub.id where eaut.util_id = ?', [id], function(error, results, fields) {
+    connection.query('SELECT prog.title AS title, pub.NAME AS publisher FROM relations eaut INNER JOIN entries prog ON eaut.entry_id = prog.id LEFT JOIN publishers p ON p.entry_id = prog.id LEFT JOIN labels pub ON p.label_id = pub.id WHERE eaut.relationtype_id = "a" AND eaut.original_id = ?', [id], function(error, results, fields) {
         if (error) {
             throw error;
         }
@@ -1137,7 +1150,7 @@ SELECT
     relw.name AS sitename,
     rel.link
 FROM
-    relatedlinks rel
+    webrefs rel
 INNER JOIN websites relw ON
     rel.website_id = relw.id
 WHERE
@@ -1156,7 +1169,7 @@ ORDER BY
 var getRelatedLinks = function(id) {
     var deferred = Q.defer();
     var connection = db.getConnection();
-    connection.query('SELECT relw.name AS sitename,rel.link FROM relatedlinks rel INNER JOIN websites relw ON rel.website_id = relw.id WHERE relw.name NOT IN ("Freebase","The Tipshop","RZX Archive Channel (YouTube)", "ZX81 videos (Youtube)") AND rel.entry_id = ? ORDER BY sitename', [id], function(error, results, fields) {
+    connection.query('SELECT relw.name AS sitename,rel.link FROM webrefs rel INNER JOIN websites relw ON rel.website_id = relw.id WHERE relw.name NOT IN ("Freebase","The Tipshop","RZX Archive Channel (YouTube)", "ZX81 videos (Youtube)") AND rel.entry_id = ? ORDER BY sitename', [id], function(error, results, fields) {
         if (error) {
             throw error;
         }
@@ -1169,7 +1182,7 @@ var getRelatedLinks = function(id) {
             }
             arr.push(item);
         }
-        deferred.resolve({ relatedlinks: arr });
+        deferred.resolve({ relatedlinks: arr, webrefs: arr });
     });
     return deferred.promise;
 }
@@ -1226,7 +1239,7 @@ var getRelatedSites = function(id) {
 var getYouTubeLinks = function(id) {
     var deferred = Q.defer();
     var connection = db.getConnection();
-    connection.query('SELECT relw.name AS sitename,rel.link FROM relatedlinks rel INNER JOIN websites relw ON rel.website_id = relw.id WHERE relw.name IN ("RZX Archive Channel (YouTube)", "ZX81 videos (Youtube)") AND rel.entry_id = ? ORDER BY sitename', [id], function(error, results, fields) {
+    connection.query('SELECT relw.name AS sitename,rel.link FROM webrefs rel INNER JOIN websites relw ON rel.website_id = relw.id WHERE relw.name IN ("RZX Archive Channel (YouTube)", "ZX81 videos (Youtube)") AND rel.entry_id = ? ORDER BY sitename', [id], function(error, results, fields) {
         if (error) {
             throw error;
         }
@@ -1331,113 +1344,6 @@ var getBookTypeIns = function(id) {
     return deferred.promise;
 }
 
-/**
- * DEPRECATED - ALL INFO AVAILABLE IN RELEASES
- * Get Downloads - game files, does not have a machinetype_id
-
---
-SELECT d.file_link    AS url, 
-       file_size      AS size, 
-       filet.text     AS type, 
-       format.text    AS format, 
-       origint.text   AS origin, 
-       d.file_code    AS code, 
-       d.file_barcode AS barcode, 
-       d.file_dl      AS dl, 
-       schemet.text   AS encodingscheme 
-FROM   downloads d 
-       INNER JOIN filetypes filet 
-               ON d.filetype_id = filet.id 
-       INNER JOIN formattypes format 
-               ON d.formattype_id = format.id 
-       INNER JOIN origintypes origint 
-               ON d.origintype_id = origint.id 
-       LEFT JOIN schemetypes schemet 
-              ON d.schemetype_id = schemet.id 
-WHERE  d.file_link IS NOT NULL 
-       AND d.machinetype_id IS NOT NULL 
-       AND d.entry_id = 4010 
-
-+-------------------------------------------------------+-------+-------------------+--------------------+----------------------+------+---------------+--------------+---------------------------+
-| url                                                   | size  | type              | format             | origin               | code | barcode       | dl           | encodingscheme            |
-+-------------------------------------------------------+-------+-------------------+--------------------+----------------------+------+---------------+--------------+---------------------------+
-| /pub/sinclair/games/r/Rambo.tzx.zip                   | 26743 | Tape image        | Perfect TZX tape   | Original release (O) | NULL | 5013156010088 | NULL         | SpeedLock 1               |
-| /pub/sinclair/games/r/Rambo(BUGFIX).tzx.zip           | 25234 | BUGFIX tape image | Perfect TZX tape   | Original release (O) | NULL | 5013156010088 | NULL         | None                      |
-| /pub/sinclair/games/r/Rambo.tap.zip                   | 30083 | Tape image        | (non-TZX) TAP tape | (unspecified)        | NULL | NULL          | NULL         | Undetermined              |
-| /pub/sinclair/games/r/Rambo(BUGFIX).tap.zip           | 25281 | BUGFIX tape image | (non-TZX) TAP tape | (unspecified)        | NULL | NULL          | NULL         | Undetermined              |
-| /pub/sinclair/games/r/Rambo(ErbeSoftwareS.A.).tzx.zip | 27610 | Tape image        | Perfect TZX tape   | Re-release (R)       | NULL | NULL          | M-40060-1985 | Unspecified custom loader |
-| /pub/sinclair/games/r/Rambo(IBSA).tzx.zip             | 27822 | Tape image        | Perfect TZX tape   | Re-release (R)       | NULL | NULL          | M-40060-1985 | Unspecified custom loader |
-| /pub/sinclair/games/r/Rambo(TheHitSquad).tzx.zip      | 32438 | Tape image        | Perfect TZX tape   | Re-release (R)       | MC01 | 5013156410000 | NULL         | SpeedLock 7               |
-+-------------------------------------------------------+-------+-------------------+--------------------+----------------------+------+---------------+--------------+---------------------------+
-
-var getDownloads = function(id) {
-    var deferred = Q.defer();
-    var connection = db.getConnection();
-    connection.query('SELECT d.file_link AS url,file_size AS size,filet.text AS type, format.text AS format, origint.text AS origin, d.file_code AS code,d.file_barcode AS barcode,d.file_dl AS dl, schemet.text AS encodingscheme FROM downloads d INNER JOIN filetypes filet ON d.filetype_id = filet.id INNER JOIN formattypes format ON d.formattype_id = format.id INNER JOIN origintypes origint ON d.origintype_id = origint.id LEFT JOIN schemetypes schemet ON d.schemetype_id = schemet.id WHERE d.file_link IS NOT NULL AND d.machinetype_id IS NOT NULL AND d.entry_id = ?', [id], function(error, results, fields) {
-        if (error) {
-            throw error;
-        }
-        var arr = [];
-        var i = 0;
-        for (; i < results.length; i++) {
-            var downloaditem = {
-                filename: path.basename(results[i].url),
-                url: results[i].url,
-                size: results[i].size,
-                type: results[i].type,
-                format: results[i].format,
-                origin: results[i].origin,
-                code: results[i].code,
-                barcode: results[i].barcode,
-                dl: results[i].dl,
-                encodingscheme: results[i].encodingscheme
-            }
-            arr.push(downloaditem);
-        }
-        deferred.resolve({ downloads: arr });
-    });
-    return deferred.promise;
-}
- */
-
-/**
- * Get additionals (Everything else that is not machine specific and not loading/in-game pictures- simple output)
-
---
-SELECT
-    d.file_link AS url,
-    file_size AS size,
-    filet.text AS type,
-    format.text AS format
-FROM
-    downloads d
-INNER JOIN filetypes filet ON
-    d.filetype_id = filet.id
-INNER JOIN formattypes format ON
-    d.formattype_id = format.id
-WHERE
-    d.machinetype_id IS NULL AND NOT(
-        d.filetype_id IN(-1, 1, 2) AND d.formattype_id = 53
-    ) AND d.entry_id = 4010
-
-+---------------------------------------------------------------------+--------+---------------------------+---------------+
-| url                                                                 | size   | type                      | format        |
-+---------------------------------------------------------------------+--------+---------------------------+---------------+
-| /pub/sinclair/screens/load/r/scr/Rambo.scr                          | 6912   | Loading screen            | Screen dump   |
-| /pub/sinclair/games-info/r/Rambo.txt                                | 5663   | Instructions              | Text document |
-| /pub/sinclair/games-maps/r/Rambo.gif                                | 82755  | Game map                  | Picture       |
-| /pub/sinclair/games-maps/r/Rambo.jpg                                | 104522 | Game map                  | Picture       |
-| /pub/sinclair/games-maps/r/Rambo_3.jpg                              | 560044 | Game map                  | Picture       |
-| /pub/sinclair/games-inlays/r/Rambo.jpg                              | 70713  | Cassette inlay            | Picture       |
-| /pub/sinclair/games-adverts/r/Rambo.jpg                             | 160897 | Advertisement             | Picture       |
-| /pub/sinclair/games-info/r/Rambo(ErbeSoftwareS.A.).txt              | 4725   | Instructions              | Text document |
-| /pub/sinclair/games-inlays/Rereleases/r/Rambo(ErbeSoftwareS.A.).jpg | 109930 | Re-release cassette inlay | Picture       |
-| /pub/sinclair/games-adverts/r/Rambo(ErbeSoftwareS.A.).jpg           | 247901 | Advertisement             | Picture       |
-| /pub/sinclair/games-inlays/Rereleases/r/Rambo(IBSA).jpg             | 65197  | Re-release cassette inlay | Picture       |
-| /pub/sinclair/games-inlays/Rereleases/r/Rambo(TheHitSquad).jpg      | 65527  | Re-release cassette inlay | Picture       |
-+---------------------------------------------------------------------+--------+---------------------------+---------------+
-
- */
 var getAdditionals = function(id) {
     var deferred = Q.defer();
     var connection = db.getConnection();
@@ -1696,25 +1602,33 @@ var getTOSEC = function(id) {
   Manic Miner (3012)
 
   Manic Miner ZX81 (0032032)
+
+  Ku Ku (9889) - mod of Sabre + project future (multuple)
+  MINER WILLY'S NIGHTMARE (30676) - mod of + inspired by
+
 */
 var getModOf = function(id) {
     var deferred = Q.defer();
     var connection = db.getConnection();
-    connection.query('SELECT o.id, e.title AS this_title, e.is_mod, o.title AS title, pub.name AS publisher, m.text, e.original_id FROM entries e INNER JOIN entries o ON e.original_id = o.id LEFT JOIN publishers p ON p.entry_id = o.id LEFT JOIN labels pub ON p.label_id = pub.id LEFT JOIN machinetypes m ON m.id = o.machinetype_id WHERE e.id = ? order by p.release_seq limit 1', [id], function(error, results, fields) {
+    connection.query('SELECT r.original_id AS id, e.title AS this_title, rt.text AS is_mod, o.title AS title, pub.name AS publisher, m.text FROM relations r INNER JOIN entries e ON e.id = r.entry_id INNER JOIN entries o ON o.id = r.original_id LEFT JOIN publishers p ON p.entry_id = o.id AND p.release_seq = 0 LEFT JOIN labels pub ON p.label_id = pub.id INNER JOIN relationtypes rt ON rt.id = r.relationtype_id AND rt.id IN("m", "i") INNER JOIN machinetypes m ON m.id = o.machinetype_id WHERE r.entry_id = ?', [id], function(error, results, fields) {
         if (error) {
             throw error;
         }
-        var item = {};
-        if (results.length > 0) {
-            item = {
-                id: ('0000000' + results[0].id).slice(-7),
-                is_mod: results[0].is_mod,
-                title: results[0].title,
-                publisher: results[0].publisher,
-                machinetype: results[0].text
+        var arr = [];
+
+        for(var i = 0; i < results.length; i++) {
+            var item = {
+                id: ('0000000' + results[i].id).slice(-7),
+                is_mod: results[i].is_mod === 'Mod from' ? 1 : 0,
+                type: results[i].is_mod,
+                title: results[i].title,
+                publisher: results[i].publisher,
+                machinetype: results[i].text
             }
+            item = removeEmpty(item);
+            arr.push(item);
         }
-        deferred.resolve({ mod_of: removeEmpty(item) });
+        deferred.resolve({ mod_of: arr });
     });
     return deferred.promise;
 
@@ -1726,7 +1640,7 @@ var getModOf = function(id) {
 var getModifiedBy = function(id) {
     var deferred = Q.defer();
     var connection = db.getConnection();
-    connection.query('SELECT e.id, e.title, e.is_mod, pub.name AS publisher, m.text FROM entries e LEFT JOIN publishers p ON p.entry_id = e.id LEFT JOIN labels pub ON p.label_id = pub.id INNER JOIN machinetypes m ON m.id = e.machinetype_id WHERE e.original_id = ?', [id], function(error, results, fields) {
+    connection.query('SELECT r.entry_id AS id, e.title AS title, rt.text AS is_mod, pub.name AS publisher, m.text AS TEXT FROM relations r INNER JOIN entries e ON e.id = r.entry_id LEFT JOIN publishers p ON p.entry_id = e.id AND p.release_seq = 0 LEFT JOIN labels pub ON p.label_id = pub.id INNER JOIN relationtypes rt ON rt.id = r.relationtype_id AND rt.id IN("m", "i") INNER JOIN machinetypes m ON m.id = e.machinetype_id WHERE r.original_id = ?', [id], function(error, results, fields) {
         if (error) {
             throw error;
         }
@@ -1735,7 +1649,8 @@ var getModifiedBy = function(id) {
         for (; i < results.length; i++) {
             var item = {
                 id: ('0000000' + results[i].id).slice(-7),
-                is_mod: results[i].is_mod,
+                is_mod: results[i].is_mod === 'Mod from' ? 1 : 0,
+                type: results[i].is_mod,
                 title: results[i].title,
                 publisher: results[i].publisher,
                 machinetype: results[i].text
