@@ -11,6 +11,7 @@
     "lodash": "^4.17.4",
     "mysql": "^2.15.0",
     "q": "^1.5.1",
+    "sharp": "^0.21.3",
     "xmldoc": "^1.1.0"
   },
   "devDependencies": {},

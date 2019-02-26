@@ -687,6 +687,7 @@ LEFT JOIN countries lc1 ON
 WHERE
     rl.entry_id = 4010
 
+1220
 +---------------------------+---------+-------+----------------------------+
 | name                      | country | type  | originalname               |
 +---------------------------+---------+-------+----------------------------+
@@ -698,7 +699,7 @@ WHERE
 var getInspiredByTieInLicense = function(id) {
     var deferred = Q.defer();
     var connection = db.getConnection();
-    connection.query('SELECT ll.name AS NAME, lc1.text AS country, lict.text AS TYPE, lic.name originalname FROM relatedlicenses rl INNER JOIN licenses lic ON rl.license_id = lic.id INNER JOIN licensetypes lict ON lic.licensetype_id = lict.id LEFT JOIN licensors lor ON lor.license_id = lic.id LEFT JOIN labels ll ON lor.label_id = ll.id LEFT JOIN countries lc1 ON ll.country_id = lc1.id WHERE rl.entry_id = ?', [id], function(error, results, fields) {
+    connection.query('SELECT ll.name AS name, lc1.text AS country, lict.text AS type, lic.name originalname FROM relatedlicenses rl INNER JOIN licenses lic ON rl.license_id = lic.id INNER JOIN licensetypes lict ON lic.licensetype_id = lict.id LEFT JOIN licensors lor ON lor.license_id = lic.id LEFT JOIN labels ll ON lor.label_id = ll.id LEFT JOIN countries lc1 ON ll.country_id = lc1.id WHERE rl.entry_id = ?', [id], function(error, results, fields) {
         if (error) {
             throw error;
         }
