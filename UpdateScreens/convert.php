@@ -52,7 +52,7 @@ function convertScreen($id, $scr_file, $out_dir, $out_file, $title) {
 				$scrType = 'lowresgs';
 		        break;
 	 	case 12288:
-				$scrType = 'timex81';
+				$scrType = 'mlt';
 		        break;
 	 	case 12289:
 				$scrType = 'timexhr';
@@ -98,8 +98,10 @@ function convertScreen($id, $scr_file, $out_dir, $out_file, $title) {
 			}
 			file_put_contents($outfile_converted, $binary);
 			$newfilesize = filesize($outfile_converted);
-			// echo "$out_file, size: $newfilesize($size, $scrType)\n";
+			echo "$out_file, size: $newfilesize($size, $scrType)\n";
 			$object = (object) ['filename' => $newfilename, 'url' => '/' . $outfile_converted, 'size' => $newfilesize, 'type' => $type, 'format' => $format, 'title' => $title];
+		} else {
+			echo "HUH!?!?!";
 		}
 		return $object;
 }

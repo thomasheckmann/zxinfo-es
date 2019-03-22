@@ -1,4 +1,8 @@
 /node_modules/
+UpdateScreens/src.org/
+UpdateScreens/thumbs-original/
+UpdateScreens/thumbs/
+data/magazines/json.current/
 *.log
 .DS_Store
 zxscreens.txt

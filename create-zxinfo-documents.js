@@ -3,9 +3,11 @@
 dd.mm.yyyy
 
 Changelog:
-25.02.2019 - Technically table "aliases" now has a composite natural key, instead of artificial key "id". (No changes nedded)
+11.03.2019 - Added The Spectrum Show (Youtube) to YouTube links.
+11.03.2019 - Column "entries.spanish_price" removed. (No changes needed)
+25.02.2019 - Technically table "aliases" now has a composite natural key, instead of artificial key "id". (No changes needed)
 			 Inspired_by and Mod_of moved to new relations table(m, i). JSON changed. Mod_of can not be an array, also contains text for relation type.
-			 Authored moved to new ralations table. No longer uses "frameworks"
+			 Authored moved to new relations table. No longer uses "frameworks"
 15.02.2019 - Table "relatedlinks" was renamed to "webrefs". relatedlinks + webrefs in JSON. Relatedlinks will be deprecated in the future.
 			 Table "origintypes" was renamed to "sourcetypes"
 			 Column "downloads.origintype_id" was renamed to "downloads.sourcetype_id", and now it's nullable. (No changes nedded)
@@ -348,7 +350,7 @@ from   releases r
        left join downloads d
               on r.entry_id = d.entry_id
                  and r.release_seq = d.release_seq
-                 and d.machinetype_id is not null
+                 and d.formattype_id not in (41, 42, 43, 44, 52, 53, 54, 55)
        left join filetypes filet
               on d.filetype_id = filet.id
        left join formattypes format
@@ -379,7 +381,7 @@ ID: 0009362 distribution denied (url is null)
 var getReleases = function(id) {
     var deferred = Q.defer();
     var connection = db.getConnection();
-    connection.query('select distinct r.release_seq as seq, e.title as title, aka.title as as_title, pub.name as name, pc1.text as country, r.release_year as yearofrelease, r.release_price as releaseprice, r.budget_price as budgetprice, r.microdrive_price as microdriveprice, r.disk_price as diskprice, r.cartridge_price as cartridgeprice, file_size as size, file_link as url, filet.text as type, format.text as format, origint.text as origin, d.file_code as code, d.file_barcode as barcode, d.file_dl as dl, schemet.text as encodingscheme from releases r left join aliases aka on aka.entry_id = r.entry_id and aka.release_seq = r.release_seq inner join entries e on e.id = r.entry_id left join publishers p on p.entry_id = r.entry_id and p.release_seq = r.release_seq left join labels pub on p.label_id = pub.id left join countries pc1 on pub.country_id = pc1.id left join downloads d on r.entry_id = d.entry_id and r.release_seq = d.release_seq and d.machinetype_id is not null left join filetypes filet on d.filetype_id = filet.id left join formattypes format on d.formattype_id = format.id left join sourcetypes origint on d.sourcetype_id = origint.id left join schemetypes schemet on d.schemetype_id = schemet.id where r.entry_id = ? order by r.release_seq', [id], function(error, results, fields) {
+    connection.query('select distinct r.release_seq as seq, e.title as title, aka.title as as_title, pub.name as name, pc1.text as country, r.release_year as yearofrelease, r.release_price as releaseprice, r.budget_price as budgetprice, r.microdrive_price as microdriveprice, r.disk_price as diskprice, r.cartridge_price as cartridgeprice, file_size as size, file_link as url, filet.text as type, format.text as format, origint.text as origin, d.file_code as code, d.file_barcode as barcode, d.file_dl as dl, schemet.text as encodingscheme from releases r left join aliases aka on aka.entry_id = r.entry_id and aka.release_seq = r.release_seq inner join entries e on e.id = r.entry_id left join publishers p on p.entry_id = r.entry_id and p.release_seq = r.release_seq left join labels pub on p.label_id = pub.id left join countries pc1 on pub.country_id = pc1.id left join downloads d on r.entry_id = d.entry_id and r.release_seq = d.release_seq and d.formattype_id not in (41, 42, 43, 44, 52, 53, 54, 55) left join filetypes filet on d.filetype_id = filet.id left join formattypes format on d.formattype_id = format.id left join sourcetypes origint on d.sourcetype_id = origint.id left join schemetypes schemet on d.schemetype_id = schemet.id where r.entry_id = ? order by r.release_seq', [id], function(error, results, fields) {
         if (error) {
             throw error;
         }
@@ -1239,7 +1241,7 @@ var getRelatedSites = function(id) {
 var getYouTubeLinks = function(id) {
     var deferred = Q.defer();
     var connection = db.getConnection();
-    connection.query('SELECT relw.name AS sitename,rel.link FROM webrefs rel INNER JOIN websites relw ON rel.website_id = relw.id WHERE relw.name IN ("RZX Archive Channel (YouTube)", "ZX81 videos (Youtube)") AND rel.entry_id = ? ORDER BY sitename', [id], function(error, results, fields) {
+    connection.query('SELECT relw.name AS sitename,rel.link FROM webrefs rel INNER JOIN websites relw ON rel.website_id = relw.id WHERE relw.name IN ("RZX Archive Channel (YouTube)", "ZX81 videos (Youtube)", "The Spectrum Show (Youtube)") AND rel.entry_id = ? ORDER BY sitename', [id], function(error, results, fields) {
         if (error) {
             throw error;
         }
@@ -1347,7 +1349,7 @@ var getBookTypeIns = function(id) {
 var getAdditionals = function(id) {
     var deferred = Q.defer();
     var connection = db.getConnection();
-    connection.query('SELECT d.file_link AS url, file_size AS size, filet.text AS type, format.text AS format FROM downloads d INNER JOIN filetypes filet ON d.filetype_id = filet.id INNER JOIN formattypes format ON d.formattype_id = format.id WHERE d.machinetype_id IS NULL AND NOT( d.filetype_id IN(-1, 1, 2) AND d.formattype_id = 53 ) AND d.entry_id = ?', [id], function(error, results, fields) {
+    connection.query('SELECT d.file_link AS url, file_size AS size, filet.text AS type, format.text AS format FROM downloads d INNER JOIN filetypes filet ON d.filetype_id = filet.id INNER JOIN formattypes format ON d.formattype_id = format.id WHERE d.formattype_id in (41, 42, 43, 44, 52, 53, 54, 55) AND NOT( d.filetype_id IN(-1, 1, 2) AND d.formattype_id = 53 ) AND d.entry_id = ?', [id], function(error, results, fields) {
         if (error) {
             throw error;
         }
