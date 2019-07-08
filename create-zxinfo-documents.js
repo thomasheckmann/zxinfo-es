@@ -3,6 +3,12 @@
 dd.mm.yyyy
 
 Changelog:
+08.07.2019 - In the next upcoming ZXDB update, column "formattype_id" won't be used anymore. This column will still exist in all file-related tables (so it doesn't break SQL queries in sites that were not updated yet), but it will be always NULL.
+			 https://spectrumcomputing.co.uk/forums/viewtopic.php?f=32&t=636&start=110
+			 https://spectrumcomputing.co.uk/forums/viewtopic.php?f=32&t=636&start=150
+		   - table "formattypes" and columns "formattype_id" will be removed in the next ZXDB update.
+		     https://spectrumcomputing.co.uk/forums/viewtopic.php?f=32&t=636&start=170
+
 11.03.2019 - Added The Spectrum Show (Youtube) to YouTube links.
 11.03.2019 - Column "entries.spanish_price" removed. (No changes needed)
 25.02.2019 - Technically table "aliases" now has a composite natural key, instead of artificial key "id". (No changes needed)
@@ -37,6 +43,8 @@ docker exec -i zxdb mysql -uroot -pzxdb1234 zxdb -e "select * from controltypes;
 COPY/PASTE into https://ozh.github.io/ascii-tables/
 
 COPY/PASTE RESULT INTO COMMENTS
+
+SUBLIME: (\s){2,} -> Space
 
 */
 
@@ -325,10 +333,10 @@ select distinct r.release_seq  as seq,
                 r.microdrive_price as microdriveprice,
                 r.disk_price as diskprice,
                 r.cartridge_price as cartridgeprice,
-                file_size      as size,
-                file_link      as url,
+                d.file_size      as size,
+                d.file_link      as url,
                 filet.text     as type,
-                format.text    as format,
+                ex.text    as format,
                 origint.text   as origin,
                 d.file_code    as code,
                 d.file_barcode as barcode,
@@ -348,40 +356,37 @@ from   releases r
        left join countries pc1
               on pub.country_id = pc1.id
        left join downloads d
-              on r.entry_id = d.entry_id
-                 and r.release_seq = d.release_seq
-                 and d.formattype_id not in (41, 42, 43, 44, 52, 53, 54, 55)
+              on d.entry_id = r.entry_id and d.release_seq = r.release_seq and (d.filetype_id IN (46, 47) OR d.filetype_id BETWEEN 8 AND 22)
        left join filetypes filet
               on d.filetype_id = filet.id
-       left join formattypes format
-              on d.formattype_id = format.id
+      left join extensions ex on right(d.file_link, length(ex.ext)) = ex.ext
        left join sourcetypes origint
               on d.sourcetype_id = origint.id
        left join schemetypes schemet
               on d.schemetype_id = schemet.id
-where  r.entry_id = 9408
+where  r.entry_id = 2259
 order  by r.release_seq
 
 ID: 2000011 as title
 ID: 0003012 releases with year
 ID: 0009362 distribution denied (url is null)
-+-----+------------+----------+------------------------+---------+------+------+--------+----------------------+--------+---------+--------------+----------------------------+
-| seq | title      | as_title | name                   | country | size | type | format | origin               | code   | barcode | dl           | encodingscheme             |
-+-----+------------+----------+------------------------+---------+------+------+--------+----------------------+--------+---------+--------------+----------------------------+
-| 0   | Sabre Wulf | NULL     | Ultimate Play The Game | UK      | NULL | ?    | NULL   | Original release (O) | 481007 | NULL    | NULL         | None                       |
-| 0   | Sabre Wulf | NULL     | Ultimate Play The Game | UK      | NULL | ?    | NULL   | Original release (O) | 481007 | NULL    | NULL         | SpeedLock 1                |
-| 1   | Sabre Wulf | NULL     | ABC Soft               | Spain   | NULL | ?    | NULL   | Re-release (R)       | SP156  | NULL    | M-13947-1985 | None                       |
-| 2   | Sabre Wulf | NULL     | Dro Soft               | Spain   | NULL | ?    | NULL   | Re-release (R)       | 2MT157 | NULL    | M-11303-198? | Alkatraz Protection System |
-| 3   | Sabre Wulf | NULL     | Erbe Software S.A.     | Spain   | NULL | ?    | NULL   | Re-release (R)       | NULL   | NULL    | NULL         | None                       |
-| 4   | Sabre Wulf | NULL     | Iveson Software S.A.   | Spain   | NULL | ?    | NULL   | Re-release (R)       | 1004   | NULL    | NULL         | None                       |
-| 5   | Sabre Wulf | NULL     | Microbyte [1]          | Spain   | NULL | ?    | NULL   | Re-release (R)       | NULL   | NULL    | NULL         | None                       |
-+-----+------------+----------+------------------------+---------+------+------+--------+----------------------+--------+---------+--------------+----------------------------+
+
++-----+-----------------+---------------------------------------+--------------------+---------+---------------+--------------+-------------+-----------------+-----------+----------------+-------+---------------------------------------------------------------+------------+--------------------+----------------------+------+---------------+--------------+----------------+
+| seq | title           | as_title                              | name               | country | yearofrelease | releaseprice | budgetprice | microdriveprice | diskprice | cartridgeprice | size  | url                                                           | type       | format             | origin               | code | barcode       | dl           | encodingscheme |
++-----+-----------------+---------------------------------------+--------------------+---------+---------------+--------------+-------------+-----------------+-----------+----------------+-------+---------------------------------------------------------------+------------+--------------------+----------------------+------+---------------+--------------+----------------+
+| 0   | Head over Heels | Foot and Mouth                        | Ocean Software Ltd | UK      | 1987          | £7.95        | NULL        | NULL            | NULL      | NULL           | 38570 | /pub/sinclair/games/h/HeadOverHeels.tzx.zip                   | Tape image | Perfect tape (TZX) | Original release (O) | NULL | 5013156011085 | NULL         | SpeedLock 2    |
+| 0   | Head over Heels | Foot and Mouth                        | Ocean Software Ltd | UK      | 1987          | £7.95        | NULL        | NULL            | NULL      | NULL           | 37132 | /pub/sinclair/games/h/HeadOverHeels.tap.zip                   | Tape image | Tape (TAP)         | NULL                 | NULL | NULL          | NULL         | Undetermined   |
+| 1   | Head over Heels | NULL                                  | EDOS               | UK      | NULL          | NULL         | NULL        | NULL            | NULL      | NULL           | NULL  | NULL                                                          | NULL       | NULL               | NULL                 | NULL | NULL          | NULL         | NULL           |
+| 2   | Head over Heels | NULL                                  | Erbe Software S.A. | Spain   | 1987          | NULL         | NULL        | NULL            | NULL      | NULL           | 37158 | /pub/sinclair/games/h/HeadOverHeels(ErbeSoftwareS.A.).tzx.zip | Tape image | Perfect tape (TZX) | Re-release (R)       | NULL | NULL          | M-11919-1987 | None           |
+| 3   | Head over Heels | NULL                                  | IBSA               | Spain   | 1987          | NULL         | NULL        | NULL            | NULL      | NULL           | NULL  | NULL                                                          | NULL       | NULL               | NULL                 | NULL | NULL          | NULL         | NULL           |
+| 4   | Head over Heels | ARCADE COLLECTION 12: Head over Heels | The Hit Squad      | UK      | 1990          | £2.99        | NULL        | NULL            | NULL      | NULL           | 38504 | /pub/sinclair/games/h/HeadOverHeels(TheHitSquad).tzx.zip      | Tape image | Perfect tape (TZX) | Re-release (R)       | AC12 | 5013156410802 | NULL         | SpeedLock 2    |
++-----+-----------------+---------------------------------------+--------------------+---------+---------------+--------------+-------------+-----------------+-----------+----------------+-------+---------------------------------------------------------------+------------+--------------------+----------------------+------+---------------+--------------+----------------+
 
  */
 var getReleases = function(id) {
     var deferred = Q.defer();
     var connection = db.getConnection();
-    connection.query('select distinct r.release_seq as seq, e.title as title, aka.title as as_title, pub.name as name, pc1.text as country, r.release_year as yearofrelease, r.release_price as releaseprice, r.budget_price as budgetprice, r.microdrive_price as microdriveprice, r.disk_price as diskprice, r.cartridge_price as cartridgeprice, file_size as size, file_link as url, filet.text as type, format.text as format, origint.text as origin, d.file_code as code, d.file_barcode as barcode, d.file_dl as dl, schemet.text as encodingscheme from releases r left join aliases aka on aka.entry_id = r.entry_id and aka.release_seq = r.release_seq inner join entries e on e.id = r.entry_id left join publishers p on p.entry_id = r.entry_id and p.release_seq = r.release_seq left join labels pub on p.label_id = pub.id left join countries pc1 on pub.country_id = pc1.id left join downloads d on r.entry_id = d.entry_id and r.release_seq = d.release_seq and d.formattype_id not in (41, 42, 43, 44, 52, 53, 54, 55) left join filetypes filet on d.filetype_id = filet.id left join formattypes format on d.formattype_id = format.id left join sourcetypes origint on d.sourcetype_id = origint.id left join schemetypes schemet on d.schemetype_id = schemet.id where r.entry_id = ? order by r.release_seq', [id], function(error, results, fields) {
+    connection.query('select distinct r.release_seq as seq, e.title as title, aka.title as as_title, pub.name as name, pc1.text as country, r.release_year as yearofrelease, r.release_price as releaseprice, r.budget_price as budgetprice, r.microdrive_price as microdriveprice, r.disk_price as diskprice, r.cartridge_price as cartridgeprice, d.file_size as size, d.file_link as url, filet.text as type, ex.text as format, origint.text as origin, d.file_code as code, d.file_barcode as barcode, d.file_dl as dl, schemet.text as encodingscheme from releases r left join aliases aka on aka.entry_id = r.entry_id and aka.release_seq = r.release_seq inner join entries e on e.id = r.entry_id left join publishers p on p.entry_id = r.entry_id and p.release_seq = r.release_seq left join labels pub on p.label_id = pub.id left join countries pc1 on pub.country_id = pc1.id left join downloads d on d.entry_id = r.entry_id and d.release_seq = r.release_seq and (d.filetype_id IN (46, 47) OR d.filetype_id BETWEEN 8 AND 22) left join filetypes filet on d.filetype_id = filet.id left join extensions ex on right(d.file_link, length(ex.ext)) = ex.ext left join sourcetypes origint on d.sourcetype_id = origint.id left join schemetypes schemet on d.schemetype_id = schemet.id where r.entry_id = ? order by r.release_seq', [id], function(error, results, fields) {
         if (error) {
             throw error;
         }
@@ -928,11 +933,11 @@ GAME
 HARDWARE
 BOOKS
 
-SELECT
+SELECT -- COMPILATIONS
     d.file_link AS url,
     d.file_size AS size,
     filet.text AS type,
-    FORMAT.text AS format,
+    ex.text AS format,
     e.title as title
 FROM
     compilations c
@@ -942,75 +947,74 @@ INNER JOIN downloads d ON
     e.id = d.entry_id AND d.release_seq = 0
 INNER JOIN filetypes filet ON
     d.filetype_id = filet.id
-INNER JOIN formattypes FORMAT ON
-    d.formattype_id = FORMAT.id
+INNER JOIN extensions ex on right(d.file_link, length(ex.ext)) = ex.ext AND (ex.text like 'Picture%' OR ex.text like 'Screen dump%')
 WHERE
-    d.filetype_id IN(1, 2) AND d.formattype_id IN (52, 53) AND c.compilation_id = 11196
+    d.filetype_id IN(1, 2) AND c.compilation_id = 11196 
 UNION 
-SELECT
+SELECT -- GAME
     d.file_link AS url,
     file_size AS size,
     filet.text AS type,
-    FORMAT.text AS format,
+    ex.text AS format,
     null AS title
 FROM
     downloads d
 INNER JOIN filetypes filet ON
     d.filetype_id = filet.id
-INNER JOIN formattypes FORMAT ON
-    d.formattype_id = FORMAT.id
+INNER JOIN extensions ex on right(d.file_link, length(ex.ext)) = ex.ext AND (ex.text like 'Picture%' OR ex.text like 'Screen dump%')
 WHERE
-    d.machinetype_id IS NULL AND d.filetype_id IN(1, 2) AND d.formattype_id IN (52, 53) AND d.entry_id = 11196
+    d.machinetype_id IS NULL AND d.filetype_id IN(1, 2) AND d.entry_id = 11196
 UNION 
-SELECT
+SELECT -- HARDWARE
     d.file_link AS url,
     file_size AS size,
-    filet.text AS type,
-    FORMAT.text AS format,
+    filet.text AS type,    
+    ex.text AS format,
     null AS title
 FROM
     downloads d
 INNER JOIN filetypes filet ON
     d.filetype_id = filet.id
-INNER JOIN formattypes FORMAT ON
-    d.formattype_id = FORMAT.id
+INNER JOIN extensions ex on right(d.file_link, length(ex.ext)) = ex.ext AND (ex.text like 'Picture%')
 INNER JOIN entries e ON
     d.entry_id = e.id
 WHERE
-    (e.genretype_id BETWEEN 91 AND 108) AND d.filetype_id IN(53) AND d.formattype_id IN (53) AND d.entry_id = 1000192 -- 91-108=hardware, 53=hardware thumb
+    (e.genretype_id BETWEEN 91 AND 108) AND d.filetype_id IN(53) AND d.entry_id = 1000192 -- 91-108=hardware, 53=hardware thumb
 UNION
-SELECT
+SELECT -- BOOKS
     d.file_link AS url,
     file_size AS size,
     "Loading screen" as type,
-    FORMAT.text AS format,
+    ex.text AS format,
     null AS title
 FROM
     downloads d
-INNER JOIN formattypes FORMAT ON
-    d.formattype_id = FORMAT.id
+INNER JOIN extensions ex on right(d.file_link, length(ex.ext)) = ex.ext AND (ex.text like 'Picture%')
 INNER JOIN entries e ON
     d.entry_id = e.id
 WHERE
-    (e.genretype_id BETWEEN 83 AND 90) AND d.filetype_id IN(45) AND d.formattype_id IN (53) AND d.entry_id = 2000237
+    (e.genretype_id BETWEEN 83 AND 90) AND d.filetype_id IN(45) AND d.entry_id = 2000237
 
-+----------------------------------------------------------+-------+----------------+---------+
-| url                                                      | size  | type           | format  |
-+----------------------------------------------------------+-------+----------------+---------+
-| /pub/sinclair/screens/load/k/gif/Kung-FuMaster.gif       | 6324  | Loading screen | Picture |
-| /pub/sinclair/screens/in-game/k/Kung-FuMaster.gif        | 5603  | In-game screen | Picture |
-| /pub/sinclair/screens/load/t/gif/TopGun.gif              | 4288  | Loading screen | Picture |
-| /pub/sinclair/screens/in-game/t/TopGun.gif               | 3914  | In-game screen | Picture |
-| /pub/sinclair/screens/load/j/gif/JackTheNipper.gif       | 5841  | Loading screen | Picture |
-| /pub/sinclair/screens/in-game/j/JackTheNipper.gif        | 4391  | In-game screen | Picture |
-| /pub/sinclair/screens/load/a/gif/AufWiedersehenMonty.gif | 6632  | Loading screen | Picture |
-| /pub/sinclair/screens/in-game/a/AufWiedersehenMonty.gif  | 5878  | In-game screen | Picture |
-| /pub/sinclair/screens/load/s/gif/SuperCycle.gif          | 3068  | Loading screen | Picture |
-| /pub/sinclair/screens/in-game/s/SuperCycle.gif           | 4944  | In-game screen | Picture |
-| /pub/sinclair/screens/load/g/gif/Gauntlet.scr            | 6912  | Loading screen | Screen dump |
-| /pub/sinclair/screens/in-game/g/Gauntlet.gif             | 4252  | In-game screen | Picture |
-| /pub/sinclair/screens/in-game/123/6GameActionPack.gif    | 23915 | In-game screen | Picture |
-+----------------------------------------------------------+-------+----------------+---------+
++---------------------------------------------------------------------+--------+--------------------+-------------------+-----------------------+
+| url                                                                 | size   | type               | format            | title                 |
++---------------------------------------------------------------------+--------+--------------------+-------------------+-----------------------+
+| /pub/sinclair/screens/in-game/k/Kung-FuMaster.gif                   | 5603   | Running screen     | Picture (GIF)     | Kung-Fu Master        |
+| /pub/sinclair/screens/in-game/t/TopGun.gif                          | 3914   | Running screen     | Picture (GIF)     | Top Gun               |
+| /pub/sinclair/screens/in-game/j/JackTheNipper.gif                   | 4391   | Running screen     | Picture (GIF)     | Jack the Nipper       |
+| /pub/sinclair/screens/in-game/a/AufWiedersehenMonty.gif             | 5878   | Running screen     | Picture (GIF)     | Auf Wiedersehen Monty |
+| /pub/sinclair/screens/in-game/s/SuperCycle.gif                      | 4944   | Running screen     | Picture (GIF)     | Super Cycle           |
+| /pub/sinclair/screens/in-game/g/Gauntlet.gif                        | 4252   | Running screen     | Picture (GIF)     | Gauntlet              |
+| /pub/sinclair/screens/load/k/scr/Kung-FuMaster.scr                  | 6912   | Loading screen     | Screen dump (SCR) | Kung-Fu Master        |
+| /pub/sinclair/screens/load/t/scr/TopGun.scr                         | 6912   | Loading screen     | Screen dump (SCR) | Top Gun               |
+| /pub/sinclair/screens/load/j/scr/JackTheNipper.scr                  | 6912   | Loading screen     | Screen dump (SCR) | Jack the Nipper       |
+| /pub/sinclair/screens/load/a/scr/AufWiedersehenMonty.scr            | 6912   | Loading screen     | Screen dump (SCR) | Auf Wiedersehen Monty |
+| /pub/sinclair/screens/load/s/scr/SuperCycle.scr                     | 6912   | Loading screen     | Screen dump (SCR) | Super Cycle           |
+| /pub/sinclair/screens/load/g/scr/Gauntlet.scr                       | 6912   | Loading screen     | Screen dump (SCR) | Gauntlet              |
+| /pub/sinclair/screens/in-game/123/6GameActionPack.gif               | 23915  | Running screen     | Picture (GIF)     | NULL                  |
+| /zxdb/sinclair/pics/hw/ZXInterface1.jpg                             | NULL   | Hardware thumbnail | Picture (JPG)     | NULL                  |
+| /pub/sinclair/books-pics/m/MasteringMachineCodeOnYourZXSpectrum.jpg | 179560 | Loading screen     | Picture (JPG)     | NULL                  |
+| /zxdb/sinclair/pics/books/MasteringMachineCodeOnYourZXSpectrum.jpg  | NULL   | Loading screen     | Picture (JPG)     | NULL                  |
++---------------------------------------------------------------------+--------+--------------------+-------------------+-----------------------+
 
 ZXDB Update:
 If Screen Dump and Picture both exists, Picture is removed(only scr + ifl references), need to convert to Picture
@@ -1038,7 +1042,7 @@ More screens: 0030237
 var getScreens = function(id) {
     var deferred = Q.defer();
     var connection = db.getConnection();
-    connection.query('SELECT d.file_link AS url, d.file_size AS size, filet.text AS type, FORMAT.text AS format, e.title as title FROM compilations c INNER JOIN entries e ON c.entry_id = e.id INNER JOIN downloads d ON e.id = d.entry_id AND d.release_seq = 0 INNER JOIN filetypes filet ON d.filetype_id = filet.id INNER JOIN formattypes FORMAT ON d.formattype_id = FORMAT.id WHERE d.filetype_id IN(1, 2) AND d.formattype_id IN (52, 53) AND c.compilation_id = ? UNION SELECT d.file_link AS url, file_size AS size, filet.text AS type, FORMAT.text AS format, null as title FROM downloads d INNER JOIN filetypes filet ON d.filetype_id = filet.id INNER JOIN formattypes FORMAT ON d.formattype_id = FORMAT.id WHERE d.machinetype_id IS NULL AND d.filetype_id IN(1, 2) AND d.formattype_id IN (52, 53) AND d.entry_id = ? UNION SELECT d.file_link AS url, file_size AS size, "Loading screen" AS type, FORMAT.text AS format, null AS title FROM downloads d INNER JOIN formattypes FORMAT ON d.formattype_id = FORMAT.id INNER JOIN entries e ON d.entry_id = e.id WHERE (e.genretype_id BETWEEN 91 AND 108) AND d.filetype_id IN(53) AND d.formattype_id IN (53) AND d.entry_id = ? UNION SELECT d.file_link AS url, file_size AS size, "Loading screen" as type, FORMAT.text AS format, null AS title FROM downloads d INNER JOIN formattypes FORMAT ON d.formattype_id = FORMAT.id INNER JOIN entries e ON d.entry_id = e.id WHERE (e.genretype_id BETWEEN 83 AND 90) AND d.filetype_id IN(45) AND d.formattype_id IN (53) AND d.entry_id = ?', [id, id, id, id], function(error, results, fields) {
+    connection.query('SELECT d.file_link AS url, d.file_size AS size, filet.text AS type, ex.text AS format, e.title as title FROM compilations c INNER JOIN entries e ON c.entry_id = e.id INNER JOIN downloads d ON e.id = d.entry_id AND d.release_seq = 0 INNER JOIN filetypes filet ON d.filetype_id = filet.id INNER JOIN extensions ex on right(d.file_link, length(ex.ext)) = ex.ext AND (ex.text like "Picture%" OR ex.text like "Screen dump%") WHERE d.filetype_id IN(1, 2) AND c.compilation_id = ? UNION SELECT d.file_link AS url, file_size AS size, filet.text AS type, ex.text AS format, null AS title FROM downloads d INNER JOIN filetypes filet ON d.filetype_id = filet.id INNER JOIN extensions ex on right(d.file_link, length(ex.ext)) = ex.ext AND (ex.text like "Picture%" OR ex.text like "Screen dump%") WHERE d.machinetype_id IS NULL AND d.filetype_id IN(1, 2) AND d.entry_id = ? UNION SELECT d.file_link AS url, file_size AS size, filet.text AS type, ex.text AS format, null AS title FROM downloads d INNER JOIN filetypes filet ON d.filetype_id = filet.id INNER JOIN extensions ex on right(d.file_link, length(ex.ext)) = ex.ext AND (ex.text like "Picture%") INNER JOIN entries e ON d.entry_id = e.id WHERE (e.genretype_id BETWEEN 91 AND 108) AND d.filetype_id IN(53) AND d.entry_id = ? UNION SELECT d.file_link AS url, file_size AS size, "Loading screen" as type, ex.text AS format, null AS title FROM downloads d INNER JOIN extensions ex on right(d.file_link, length(ex.ext)) = ex.ext AND (ex.text like "Picture%") INNER JOIN entries e ON d.entry_id = e.id WHERE (e.genretype_id BETWEEN 83 AND 90) AND d.filetype_id IN(45) AND d.entry_id = ?', [id, id, id, id], function(error, results, fields) {
         if (error) {
             throw error;
         }
@@ -1047,7 +1051,7 @@ var getScreens = function(id) {
         for (; i < results.length; i++) {
             if (results[i].url == undefined) {;
             } else {
-                if (results[i].format == 'Picture') {
+                if (results[i].format.startsWith('Picture')) {  // Picture (GIF), Picture (JPG)
                     var downloaditem = {
                         filename: path.basename(results[i].url),
                         url: results[i].url,
@@ -1346,10 +1350,51 @@ var getBookTypeIns = function(id) {
     return deferred.promise;
 }
 
+
+/**
+
+SELECT
+    d.file_link AS url,
+    file_size AS size,
+    filet.text AS type,
+    ex.text AS format
+FROM
+    downloads d
+INNER JOIN filetypes filet ON
+    d.filetype_id = filet.id
+INNER JOIN extensions ex on right(d.file_link, length(ex.ext)) = ex.ext
+WHERE
+	NOT(filetype_id IN (46, 47) OR filetype_id BETWEEN 8 AND 22) AND d.entry_id = 2259
+
+
++-----------------------------------------------------------------------------+---------+-----------------------------------------------+-------------------+
+| url                                                                         | size    | type                                          | format            |
++-----------------------------------------------------------------------------+---------+-----------------------------------------------+-------------------+
+| /pub/sinclair/games-info/h/HeadOverHeels(ErbeSoftwareS.A.).pdf              | 68634   | Instructions                                  | Document (PDF)    |
+| /pub/sinclair/games-info/h/HeadOverHeels.pdf                                | 1827379 | Scanned instructions                          | Document (PDF)    |
+| /pub/sinclair/games-info/h/HeadOverHeels.txt                                | 22346   | Instructions                                  | Document (TXT)    |
+| /pub/sinclair/games-info/h/HeadOverHeels_2.txt                              | 40501   | Instructions                                  | Document (TXT)    |
+| /pub/sinclair/music/ay/games/h/HeadOverHeels.ay.zip                         | 2404    | Ripped in-game and theme music in AY format   | Music (AY)        |
+| /pub/sinclair/music/mp3/HeadOverHeels.mp3.zip                               | 4630304 | Sampled in-game and theme music in MP3 format | Music (MP3)       |
+| /pub/sinclair/screens/in-game/h/HeadOverHeels.gif                           | 6878    | Running screen                                | Picture (GIF)     |
+| /pub/sinclair/games-adverts/h/HeadOverHeels.jpg                             | 282410  | Advertisement                                 | Picture (JPG)     |
+| /pub/sinclair/games-inlays/Rereleases/h/HeadOverHeels(ErbeSoftwareS.A.).jpg | 81611   | Re-release cassette inlay                     | Picture (JPG)     |
+| /pub/sinclair/games-maps/h/HeadOverHeels.jpg                                | 471394  | Game map                                      | Picture (JPG)     |
+| /pub/sinclair/games-maps/h/HeadOverHeels_2.jpg                              | 604773  | Game map                                      | Picture (JPG)     |
+| /pub/sinclair/games-maps/h/HeadOverHeels_3.jpg                              | 470666  | Game map                                      | Picture (JPG)     |
+| /zxdb/sinclair/entries/0002259/HeadOverHeels(HitSquad).jpg                  | NULL    | Re-release cassette inlay                     | Picture (JPG)     |
+| /zxdb/sinclair/entries/0002259/HeadOverHeels.jpg                            | NULL    | Cassette inlay                                | Picture (JPG)     |
+| /pub/sinclair/games-maps/h/HeadOverHeels_4.png                              | 1439896 | Game map                                      | Picture (PNG)     |
+| /zxdb/sinclair/pokes/h/Head over Heels (1987)(Ocean Software).pok           | NULL    | POK pokes file                                | Pokes (POK)       |
+| /pub/sinclair/screens/load/h/scr/HeadOverHeels.scr                          | 6912    | Loading screen                                | Screen dump (SCR) |
++-----------------------------------------------------------------------------+---------+-----------------------------------------------+-------------------+
+
+*/
+
 var getAdditionals = function(id) {
     var deferred = Q.defer();
     var connection = db.getConnection();
-    connection.query('SELECT d.file_link AS url, file_size AS size, filet.text AS type, format.text AS format FROM downloads d INNER JOIN filetypes filet ON d.filetype_id = filet.id INNER JOIN formattypes format ON d.formattype_id = format.id WHERE d.formattype_id in (41, 42, 43, 44, 52, 53, 54, 55) AND NOT( d.filetype_id IN(-1, 1, 2) AND d.formattype_id = 53 ) AND d.entry_id = ?', [id], function(error, results, fields) {
+    connection.query('SELECT d.file_link AS url, file_size AS size, filet.text AS type, ex.text AS format FROM downloads d INNER JOIN filetypes filet ON d.filetype_id = filet.id INNER JOIN extensions ex on right(d.file_link, length(ex.ext)) = ex.ext WHERE NOT(filetype_id IN (46, 47) OR filetype_id BETWEEN 8 AND 22) AND d.entry_id = ?', [id], function(error, results, fields) {
         if (error) {
             throw error;
         }
