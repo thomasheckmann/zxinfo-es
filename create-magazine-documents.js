@@ -98,20 +98,58 @@ var getIssues = function(id) {
 }
 
 /**
-id  referencetype_id  entry_id  label_id  topic_id  issue_id  page  is_supplement   link  link2   feature_id  
-
-select
-mr.id 
-rt.text
-from magrefs mr
-left join referencetypes rt on rt.id = mr.referencetype_id
+SELECT
+    mr.id,
+    rt.text AS referencetype,
+    mr.entry_id,
+    e.title AS entry_title,
+    ml.name AS magrefs_name,
+    mr.page,
+    mr.is_supplement,
+    mr.link,
+    mr.link2,
+    t.name AS topic,
+    tt.text AS topictype,
+    lt.name AS topic_name,
+    t.comments,
+    f.name AS feature,
+    f.version,
+    l.name AS feature_name,
+    l2.name AS feature_name2,
+    h.title AS host_title,
+    h.link AS host_link
+FROM
+    magrefs mr
+LEFT JOIN referencetypes rt ON
+    rt.id = mr.referencetype_id
+LEFT JOIN entries e ON
+    e.id = mr.entry_id
+LEFT JOIN labels ml ON
+    ml.id = mr.label_id
+LEFT JOIN topics t ON
+    t.id = mr.topic_id
+LEFT JOIN topictypes tt ON
+    tt.id = t.topictype_id
+LEFT JOIN labels lt ON
+    lt.id = t.label_id
+LEFT JOIN features f ON
+    f.id = mr.feature_id
+LEFT JOIN labels l ON
+    l.id = f.label_id
+LEFT JOIN labels l2 ON
+    l2.id = f.label2_id
+LEFT JOIN hosts h ON
+    h.id = f.host_id
+WHERE
+    mr.issue_id = 1
+ORDER BY PAGE ASC
 
 */
 var getMagRefs = function(issue_id) {
     var done = false;
     var arr = [];
     var connection = db.getConnection();
-    connection.query('SELECT mr.id, rt.text AS referencetype, mr.entry_id, e.title as entry_title, ml.name as magrefs_name, mr.page, mr.is_supplement, mr.link, mr.link2, t.name AS topic, tt.text AS topictype, lt.name as topic_name, t.comment, f.name AS feature, f.version, l.name as feature_name, l2.name as feature_name2, h.title as host_title, h.link as host_link FROM magrefs mr LEFT JOIN referencetypes rt ON rt.id = mr.referencetype_id LEFT JOIN entries e ON e.id = mr.entry_id LEFT JOIN labels ml ON ml.id = mr.label_id LEFT JOIN topics t ON t.id = mr.topic_id LEFT JOIN topictypes tt ON tt.id = t.topictype_id LEFT JOIN labels lt ON lt.id = t.label_id LEFT JOIN features f ON f.id = mr.feature_id LEFT JOIN labels l ON l.id = f.label_id LEFT JOIN labels l2 ON l2.id = f.label2_id LEFT JOIN hosts h on h.id = f.host_id WHERE mr.issue_id = ? ORDER BY page asc', [issue_id], function(error, results, fields) {
+    connection.query('SELECT mr.id, rt.text AS referencetype, mr.entry_id, e.title as entry_title, ml.name as magrefs_name, mr.page, mr.is_supplement, mr.link, mr.link2, t.name AS topic, tt.text AS topictype, lt.name as topic_name, t.comments, f.name AS feature, f.version, l.name as feature_name, l2.name as feature_name2, h.title as host_title, h.link as host_link FROM magrefs mr LEFT JOIN referencetypes rt ON rt.id = mr.referencetype_id LEFT JOIN entries e ON e.id = mr.entry_id LEFT JOIN labels ml ON ml.id = mr.label_id LEFT JOIN topics t ON t.id = mr.topic_id LEFT JOIN topictypes tt ON tt.id = t.topictype_id LEFT JOIN labels lt ON lt.id = t.label_id LEFT JOIN features f ON f.id = mr.feature_id LEFT JOIN labels l ON l.id = f.label_id LEFT JOIN labels l2 ON l2.id = f.label2_id LEFT JOIN hosts h on h.id = f.host_id WHERE mr.issue_id = ? ORDER BY page asc', [issue_id], function(error, results, fields) {
         if (error) {
             throw error;
         }
@@ -129,7 +167,7 @@ var getMagRefs = function(issue_id) {
                 topic: results[i].topic,
                 topictype: results[i].topictype,
                 topic_nama: results[i].topic_nama,
-                comment: results[i].comment,
+                comment: results[i].comments,
                 features: results[i].feature,
                 version: results[i].version,
                 feature_name: results[i].feature_name,
@@ -151,13 +189,27 @@ var getMagRefs = function(issue_id) {
 }
 
 /**
-SELECT * FROM magfiles mf WHERE issue_id in (select id from issues where magazine_id = 51)
+
+SELECT
+    ft.text AS filetype,
+    mf.page,
+    mf.file_link,
+    mf.file_date,
+    mf.file_size,
+    mf.comments
+FROM
+    magfiles mf
+LEFT JOIN filetypes ft ON
+    ft.id = mf.filetype_id
+WHERE
+    issue_id = 2065
+
 */
 var getMagFiles = function(issue_id) {
     var done = false;
     var arr = [];
     var connection = db.getConnection();
-    connection.query('SELECT ft.text as filetype, fmt.text as formattype, mf.page, mf.file_link, mf.file_date, mf.file_size, mf.comments FROM magfiles mf LEFT JOIN filetypes ft on ft.id = mf.filetype_id LEFT JOIN formattypes fmt on fmt.id = mf.formattype_id WHERE issue_id = ?', [issue_id], function(error, results, fields) {
+    connection.query('SELECT ft.text AS filetype, mf.page, mf.file_link, mf.file_date, mf.file_size, mf.comments FROM magfiles mf LEFT JOIN filetypes ft ON ft.id = mf.filetype_id WHERE issue_id = ?', [issue_id], function(error, results, fields) {
         if (error) {
             throw error;
         }
@@ -165,7 +217,6 @@ var getMagFiles = function(issue_id) {
         for (; i < results.length; i++) {
             var file = {
                 filetype: results[i].filetype,
-                formattype: results[i].formattype,
                 page: results[i].page,
                 file_link: results[i].file_link,
                 file_date: results[i].file_date,
