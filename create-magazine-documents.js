@@ -1,5 +1,12 @@
 /**
 
+dd.mm.yyyy
+
+Changelog:
+09.04.2020 - is_electronic field removed from table magazines
+	- new "type" = [paper, tape, disk] (is_electronic type is one of tape or disk)
+	- hosts removed from features (keep host_title + host_link but empty)
+
 DOCUMENTATION HELPER:
 docker exec -i zxdb mysql -uroot -pzxdb1234 zxdb -e "select * from controltypes;"
 
@@ -47,14 +54,14 @@ select m.name, m.is_electronic, i.text as language, m.link_mask, m.archive_mask 
 var getMagazineInfo = function(id) {
     var deferred = Q.defer();
     var connection = db.getConnection();
-    connection.query('select m.name, m.is_electronic, i.text as language, m.link_mask, m.archive_mask from magazines m left join idioms i on i.id = m.idiom_id where m.id = ?', [id], function(error, results, fields) {
+    connection.query('select m.name, i.text as language, m.link_mask, m.archive_mask from magazines m left join idioms i on i.id = m.idiom_id where m.id = ?', [id], function(error, results, fields) {
         if (error) {
             throw error;
         }
 
         var doc = {
             name: results[0].name.trim(),
-            is_electronic: results[0].is_electronic === '1' ? true : false,
+            is_electronic: results[0].is_electronic = '', // == '1' ? true : false,
             language: results[0].language,
             link_mask: results[0].link_mask,
             archive_mask: results[0].archive_mask
@@ -149,7 +156,7 @@ var getMagRefs = function(issue_id) {
     var done = false;
     var arr = [];
     var connection = db.getConnection();
-    connection.query('SELECT mr.id, rt.text AS referencetype, mr.entry_id, e.title as entry_title, ml.name as magrefs_name, mr.page, mr.is_supplement, mr.link, mr.link2, t.name AS topic, tt.text AS topictype, lt.name as topic_name, t.comments, f.name AS feature, f.version, l.name as feature_name, l2.name as feature_name2, h.title as host_title, h.link as host_link FROM magrefs mr LEFT JOIN referencetypes rt ON rt.id = mr.referencetype_id LEFT JOIN entries e ON e.id = mr.entry_id LEFT JOIN labels ml ON ml.id = mr.label_id LEFT JOIN topics t ON t.id = mr.topic_id LEFT JOIN topictypes tt ON tt.id = t.topictype_id LEFT JOIN labels lt ON lt.id = t.label_id LEFT JOIN features f ON f.id = mr.feature_id LEFT JOIN labels l ON l.id = f.label_id LEFT JOIN labels l2 ON l2.id = f.label2_id LEFT JOIN hosts h on h.id = f.host_id WHERE mr.issue_id = ? ORDER BY page asc', [issue_id], function(error, results, fields) {
+    connection.query('SELECT mr.id, mr.is_supplement, rt.text AS referencetype, mr.entry_id, e.title AS entry_title, mr.page, t.name AS topic, tt.text AS topictype, lt.name AS topic_name, f.name AS feature, f.version, l.name AS feature_name, l2.name AS feature_name2 FROM magrefs mr LEFT JOIN referencetypes rt ON rt.id = mr.referencetype_id LEFT JOIN entries e ON e.id = mr.entry_id LEFT JOIN topics t ON t.id = mr.topic_id LEFT JOIN topictypes tt ON tt.id = t.topictype_id LEFT JOIN labels lt ON lt.id = t.label_id LEFT JOIN features f ON f.id = mr.feature_id LEFT JOIN labels l ON l.id = f.label_id LEFT JOIN labels l2 ON l2.id = f.label2_id WHERE mr.issue_id = ? ORDER BY mr.page ASC', [issue_id], function(error, results, fields) {
         if (error) {
             throw error;
         }
@@ -172,8 +179,8 @@ var getMagRefs = function(issue_id) {
                 version: results[i].version,
                 feature_name: results[i].feature_name,
                 feature_name2: results[i].feature_name2,
-                host_title: results[i].host_title,
-                host_link: results[i].host_link
+                host_title: "",
+                host_link: ""
             }
             arr.push(removeEmpty(ref));
         }

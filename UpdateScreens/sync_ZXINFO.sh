@@ -14,3 +14,7 @@
 # sync to Hetzner ZXINFO.dk
 echo "TRANSFER EXPORT FILES TO HOST: http://195.201.118.208/"
 rsync -avz zxscreens -e 'ssh -i ~/.ssh/thishost-rsync-key' kolbeck@zxinfo.dk:/www/sinclair/media
+
+# ignore backup folder
+rsync -avz mirror/spectrumcomputing.co.uk/zxdb -e 'ssh -i ~/.ssh/thishost-rsync-key' kolbeck@zxinfo.dk:/www/sinclair/media
+rsync -avz mirror/spectrumcomputing.co.uk/pub -e 'ssh -i ~/.ssh/thishost-rsync-key' kolbeck@zxinfo.dk:/www/sinclair/media
