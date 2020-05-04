@@ -1,8 +1,10 @@
+*.log
+.DS_Store
 /node_modules/
+UpdateScreens/sc_zxdb.txt
 UpdateScreens/src.org/
 UpdateScreens/thumbs-original/
 UpdateScreens/thumbs/
 data/magazines/json.current/
-*.log
-.DS_Store
 zxscreens.txt
+test_es.js

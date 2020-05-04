@@ -3,6 +3,32 @@
 dd.mm.yyyy
 
 Changelog:
+
+01.05.2020 - Compilation Contents can reference titles not in ZXDB yet
+26.04.2020 - Aligned output items for:
+			 Series (added id, machinetype (entry_id will be DEPRECATED))
+			 Compilation Content (added id, machinetype)
+			 In compilation (added id, machinetype)
+			 Authoring (added id, machinetype)
+			 Authored (added id, machinetype)
+			 Modified by (added machinetype)
+
+			 Sorting:
+			 getPublisher: ORDER BY pub.name, pc1.text
+			 getReleases: ORDER BY r.release_seq, pub.name, pc1.text
+			 getRoles: ORDER by name, rt.text
+			 getAuthored: ORDER BY tool.title, pub.name
+			 getAuthoring: ORDER BY prog.title, pub.name
+			 getControls: ORDER BY g.name
+			 getInspiredByTieInLicense: ORDER BY ll.name
+			 getInCompilation: ORDER BY comp.title, pub.name
+			 getAdditionals: ORDER BY filet.text, ex.text
+			 getModOf: ORDER BY o.title, pub.name
+			 getModifiedBy: ORDER BY e.title, pub.name
+
+			 Fixed: InCompilation - multiple e.g. Elite 1601
+			 Fixed: getCompilationContent. A title can be in a compilation with different alias - 23208
+
 20.08.2019 - I'm also planning to remove columns "link" and "link2" from table "magrefs" in the next ZXDB update.
 			 https://spectrumcomputing.co.uk/forums/viewtopic.php?f=32&t=636&p=25373&hilit=magrefs.link#p25373
 08.07.2019 - In the next upcoming ZXDB update, column "formattype_id" won't be used anymore. This column will still exist in all file-related tables (so it doesn't break SQL queries in sites that were not updated yet), but it will be always NULL.
@@ -50,17 +76,17 @@ SUBLIME: (\s){2,} -> Space
 
 */
 
-'use strict';
+"use strict";
 
-var db = require('./dbConfig');
+var db = require("./dbConfig");
 
-var json_output_dir = 'data/processed/json/';
+var json_output_dir = "data/processed/json/";
 
-var Q = require('q');
-var jsonfile = require('jsonfile')
-var path = require('path');
-var allcombinations = require('allcombinations')
-var _ = require('lodash');
+var Q = require("q");
+var jsonfile = require("jsonfile");
+var path = require("path");
+var allcombinations = require("allcombinations");
+var _ = require("lodash");
 
 /*********************************************
 UTILITY FUNCTIONS
@@ -69,69 +95,85 @@ UTILITY FUNCTIONS
 /*
     Remove empty properties from a JSON object. Only first level
  */
-var removeEmpty = function(item) {
-    for (var property in item) {
-        if (item.hasOwnProperty(property)) {
-            var value = item[property];
-            if (value === undefined || value === null || value.length === 0 ||  (Object.keys(value).length === 0) && value.constructor === Object) {
-                delete item[property];
-            }
-        }
+var removeEmpty = function (item) {
+  for (var property in item) {
+    if (item.hasOwnProperty(property)) {
+      var value = item[property];
+      if (
+        value === undefined ||
+        value === null ||
+        value.length === 0 ||
+        (Object.keys(value).length === 0 && value.constructor === Object)
+      ) {
+        delete item[property];
+      }
     }
+  }
 
-    return item;
-}
-
-Array.prototype.contains = function(element) {
-    return this.indexOf(element) > -1;
+  return item;
 };
 
-var priceHelper = function(price, id) {
-    var amount, currency, license;
-    if (price == null) {
-        return undefined;
-    } else if (["Freeware", "P&P only", "Public Domain", "Rental", "GPL", "Creative Commons", "Commercial", "Commercial / Full price"].contains(price)) {
-        license = price;
-    } else if (price.startsWith("£")) {
-        currency = "£";
-        amount = price.substring(1, price.length);
-    } else if (price.startsWith("$")) {
-        currency = "$";
-        amount = price.substring(1, price.length);
-    } else if (price.startsWith("€")) {
-        currency = "€";
-        amount = price.substring(1, price.length);
-    } else if (price.startsWith("Lit.")) {
-        currency = "Lit.";
-        amount = price.substring(5, price.length);
-    } else if (price.endsWith("ptas.")) {
-        amount = price.substring(0, price.indexOf(" ptas."));
-        currency = "ptas.";
-    } else if (price.endsWith("DM")) {
-        amount = price.substring(0, price.indexOf(" DM"));
-        currency = "DM";
-    } else if (price.endsWith("Sk")) {
-        amount = price.substring(0, price.indexOf(" Sk"));
-        currency = "Sk";
-    } else if (price.endsWith("Fr.")) {
-        amount = price.substring(0, price.indexOf(" Fr."));
-        currency = "Fr.";
-    } else if (price.endsWith("HUF")) {
-        amount = price.substring(0, price.indexOf(" HUF"));
-        currency = "HUF";
-    } else if (price.endsWith("zloty")) {
-        amount = price.substring(0, price.indexOf(" zloty"));
-        currency = "zloty";
-    } else if (price.endsWith("dinarjev")) {
-        amount = price.substring(0, price.indexOf(" dinarjev"));
-        currency = "dinarjev";
-    } else {
-        amount = price;
-        currency = "N/A";
-        // console.error("ERROR: ", id + " UNKNOWN PRICE: ", price);
-    }
-    return { amount: amount, currency: currency, license: license };
-}
+Array.prototype.contains = function (element) {
+  return this.indexOf(element) > -1;
+};
+
+var priceHelper = function (price, id) {
+  var amount, currency, license;
+  if (price == null) {
+    return undefined;
+  } else if (
+    [
+      "Freeware",
+      "P&P only",
+      "Public Domain",
+      "Rental",
+      "GPL",
+      "Creative Commons",
+      "Commercial",
+      "Commercial / Full price",
+    ].contains(price)
+  ) {
+    license = price;
+  } else if (price.startsWith("£")) {
+    currency = "£";
+    amount = price.substring(1, price.length);
+  } else if (price.startsWith("$")) {
+    currency = "$";
+    amount = price.substring(1, price.length);
+  } else if (price.startsWith("€")) {
+    currency = "€";
+    amount = price.substring(1, price.length);
+  } else if (price.startsWith("Lit.")) {
+    currency = "Lit.";
+    amount = price.substring(5, price.length);
+  } else if (price.endsWith("ptas.")) {
+    amount = price.substring(0, price.indexOf(" ptas."));
+    currency = "ptas.";
+  } else if (price.endsWith("DM")) {
+    amount = price.substring(0, price.indexOf(" DM"));
+    currency = "DM";
+  } else if (price.endsWith("Sk")) {
+    amount = price.substring(0, price.indexOf(" Sk"));
+    currency = "Sk";
+  } else if (price.endsWith("Fr.")) {
+    amount = price.substring(0, price.indexOf(" Fr."));
+    currency = "Fr.";
+  } else if (price.endsWith("HUF")) {
+    amount = price.substring(0, price.indexOf(" HUF"));
+    currency = "HUF";
+  } else if (price.endsWith("zloty")) {
+    amount = price.substring(0, price.indexOf(" zloty"));
+    currency = "zloty";
+  } else if (price.endsWith("dinarjev")) {
+    amount = price.substring(0, price.indexOf(" dinarjev"));
+    currency = "dinarjev";
+  } else {
+    amount = price;
+    currency = "N/A";
+    // console.error("ERROR: ", id + " UNKNOWN PRICE: ", price);
+  }
+  return { amount: amount, currency: currency, license: license };
+};
 
 /**
   Returns content type based on genre type (e.g. Book, Covertape etc...)
@@ -141,20 +183,20 @@ var priceHelper = function(price, id) {
   * Books
 
  */
-var contenttype = function(genretype) {
-    var result = "SOFTWARE";
-    if (genretype < 84) {
-        result = "SOFTWARE";
-    } else if (genretype < 91) {
-        result = "BOOK";
-    } else if (genretype < 109) {
-        result = "HARDWARE";
-    } else {
-        result = "SOFTWARE";
-    }
+var contenttype = function (genretype) {
+  var result = "SOFTWARE";
+  if (genretype < 84) {
+    result = "SOFTWARE";
+  } else if (genretype < 91) {
+    result = "BOOK";
+  } else if (genretype < 109) {
+    result = "HARDWARE";
+  } else {
+    result = "SOFTWARE";
+  }
 
-    return result;
-}
+  return result;
+};
 
 /**
  * Get basic info
@@ -217,80 +259,91 @@ SELECT * FROM `releases` WHERE release_year is not null and release_month is not
 +-----------+----------------------------+---------------+-----------------+-----------------+-----------------+-----------------+---------------------+------+-----------------+---------------------+---------------+--------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+----------------+-----------+------------+------------+--------+--------+-----------+-----------+-----------+-----------+-----------+-------------------------------------------------------------------------------------------------+----------------+-----------+------------+------------+----------+--+----------------------------------------------+--------+--+--+-------------------------------+-----------+-----------+-----------+-----------+-----------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+------+------+----+
 
  */
-var getBasicInfo = function(id) {
-    var deferred = Q.defer();
-    var connection = db.getConnection();
-    connection.query('SELECT e.title AS fulltitle, aka.title AS alsoknownas, r.release_year AS yearofrelease, r.release_month AS monthofrelease, r.release_day AS dayofrelease, machinet.text AS machinetype, e.max_players AS numberofplayers, (SELECT GROUP_CONCAT(g.name) FROM members turn INNER JOIN groups g ON turn.group_id = g.id and g.grouptype_id = "N" WHERE turn.entry_id = e.id) AS multiplayermode, (SELECT GROUP_CONCAT(g.name) FROM members turn INNER JOIN groups g ON turn.group_id = g.id and g.grouptype_id = "Y" WHERE turn.entry_id = e.id) AS multiplayertype, e.genretype_id AS genretype, entryt.text AS type, e.book_isbn AS isbn, idm.text AS messagelanguage, pubt.text AS originalpublication, r.release_price AS originalprice, availt.text AS availability, e.known_errors AS known_errors, e.comments AS remarks, e.spot_comments AS spotcomments, sc.score AS score, sc.votes AS votes FROM entries e LEFT JOIN releases r ON r.entry_id = e.id LEFT JOIN aliases aka ON aka.entry_id = r.entry_id AND aka.release_seq = r.release_seq LEFT JOIN availabletypes availt ON e.availabletype_id = availt.id LEFT JOIN machinetypes machinet ON e.machinetype_id = machinet.id LEFT JOIN genretypes entryt ON e.genretype_id = entryt.id LEFT JOIN publicationtypes pubt ON e.publicationtype_id = pubt.id LEFT JOIN idioms idm ON e.idiom_id = idm.id LEFT JOIN scores sc ON sc.entry_id = e.id WHERE e.id = ? AND(r.release_seq = 0 OR r.release_seq IS NULL );', [id], function(error, results, fields) {
-        if (error) {
-            throw error;
-        }
+var getBasicInfo = function (id) {
+  var deferred = Q.defer();
+  var connection = db.getConnection();
+  connection.query(
+    'SELECT e.title AS fulltitle, aka.title AS alsoknownas, r.release_year AS yearofrelease, r.release_month AS monthofrelease, r.release_day AS dayofrelease, machinet.text AS machinetype, e.max_players AS numberofplayers, (SELECT GROUP_CONCAT(g.name) FROM members turn INNER JOIN groups g ON turn.group_id = g.id and g.grouptype_id = "N" WHERE turn.entry_id = e.id) AS multiplayermode, (SELECT GROUP_CONCAT(g.name) FROM members turn INNER JOIN groups g ON turn.group_id = g.id and g.grouptype_id = "Y" WHERE turn.entry_id = e.id) AS multiplayertype, e.genretype_id AS genretype, entryt.text AS type, e.book_isbn AS isbn, idm.text AS messagelanguage, pubt.text AS originalpublication, r.release_price AS originalprice, availt.text AS availability, e.known_errors AS known_errors, e.comments AS remarks, e.spot_comments AS spotcomments, sc.score AS score, sc.votes AS votes FROM entries e LEFT JOIN releases r ON r.entry_id = e.id LEFT JOIN aliases aka ON aka.entry_id = r.entry_id AND aka.release_seq = r.release_seq LEFT JOIN availabletypes availt ON e.availabletype_id = availt.id LEFT JOIN machinetypes machinet ON e.machinetype_id = machinet.id LEFT JOIN genretypes entryt ON e.genretype_id = entryt.id LEFT JOIN publicationtypes pubt ON e.publicationtype_id = pubt.id LEFT JOIN idioms idm ON e.idiom_id = idm.id LEFT JOIN scores sc ON sc.entry_id = e.id WHERE e.id = ? AND(r.release_seq = 0 OR r.release_seq IS NULL );',
+    [id],
+    function (error, results, fields) {
+      if (error) {
+        throw error;
+      }
 
-        var originalprice = [];
-        var orgPrice = priceHelper(results[0].originalprice, id);
-        if (orgPrice != undefined) { originalprice.push(orgPrice) };
+      var originalprice = [];
+      var orgPrice = priceHelper(results[0].originalprice, id);
+      if (orgPrice != undefined) {
+        originalprice.push(orgPrice);
+      }
 
-        var entrytypes, type, subtype;
-        if (results[0].type == undefined) {; //console.error("ERROR: ", id + ": MISSING type");
-        } else {
-            entrytypes = results[0].type.split(": ");
-            type = entrytypes[0];
-            subtype = entrytypes[1];
-        }
+      var entrytypes, type, subtype;
+      if (results[0].type == undefined) {
+        //console.error("ERROR: ", id + ": MISSING type");
+      } else {
+        entrytypes = results[0].type.split(": ");
+        type = entrytypes[0];
+        subtype = entrytypes[1];
+      }
 
-        // filter original publication: add 'normal' #19
-        var entry_content_type = contenttype(results[0].genretype);
-        var originalpublication = results[0].originalpublication;
+      // filter original publication: add 'normal' #19
+      var entry_content_type = contenttype(results[0].genretype);
+      var originalpublication = results[0].originalpublication;
 
-        // If entry is software and NOT a compilation, default should be "Standard" (will be available in filter)
-        if (entry_content_type == "SOFTWARE" && type !== "Compilation") {
-            originalpublication = originalpublication == null ? "Standard" : originalpublication;
-        }
+      // If entry is software and NOT a compilation, default should be "Standard" (will be available in filter)
+      if (entry_content_type == "SOFTWARE" && type !== "Compilation") {
+        originalpublication = originalpublication == null ? "Standard" : originalpublication;
+      }
 
-        var doc = {
-            contenttype: entry_content_type,
-            fulltitle: results[0].fulltitle,
-            alsoknownas: results[0].alsoknownas,
-            yearofrelease: results[0].yearofrelease,
-            monthofrelease: results[0].monthofrelease,
-            dayofrelease: results[0].dayofrelease,
-            machinetype: results[0].machinetype,
-            numberofplayers: results[0].numberofplayers,
-            multiplayermode: results[0].multiplayermode,
-            multiplayertype: results[0].multiplayertype,
-            type: type,
-            subtype: subtype,
-            isbn: results[0].isbn,
-            messagelanguage: results[0].messagelanguage,
-            originalpublication: originalpublication,
-            originalprice: originalprice,
-            availability: results[0].availability,
-            knownerrors: results[0].known_errors,
-            remarks: results[0].remarks,
-            spotcomments: results[0].spotcomments,
-            score: {
-                score: results[0].score,
-                votes: results[0].votes
-            }
-        }
-        deferred.resolve(removeEmpty(doc));
-    });
-    return deferred.promise;
+      var doc = {
+        contenttype: entry_content_type,
+        fulltitle: results[0].fulltitle,
+        alsoknownas: results[0].alsoknownas,
+        yearofrelease: results[0].yearofrelease,
+        monthofrelease: results[0].monthofrelease,
+        dayofrelease: results[0].dayofrelease,
+        machinetype: results[0].machinetype,
+        numberofplayers: results[0].numberofplayers,
+        multiplayermode: results[0].multiplayermode,
+        multiplayertype: results[0].multiplayertype,
+        type: type,
+        subtype: subtype,
+        isbn: results[0].isbn,
+        messagelanguage: results[0].messagelanguage,
+        originalpublication: originalpublication,
+        originalprice: originalprice,
+        availability: results[0].availability,
+        knownerrors: results[0].known_errors,
+        remarks: results[0].remarks,
+        spotcomments: results[0].spotcomments,
+        score: {
+          score: results[0].score,
+          votes: results[0].votes,
+        },
+      };
+      deferred.resolve(removeEmpty(doc));
+    }
+  );
+  return deferred.promise;
 
-    // return deferred.promise;
-}
+  // return deferred.promise;
+};
 
 /**
  * Get publisher
 
  -- Main publisher
-SELECT pub.name AS name,pc1.text AS country
-FROM   publishers p
-       INNER JOIN labels pub
-               ON p.label_id = pub.id
-       LEFT JOIN countries pc1
-              ON pub.country_id = pc1.id
-WHERE  p.entry_id = 4010
-   AND p.release_seq = 0 
+SELECT
+    pub.name AS name,
+    pc1.text AS country
+FROM
+    publishers p
+INNER JOIN labels pub ON
+    p.label_id = pub.id
+LEFT JOIN countries pc1 ON
+    pub.country_id = pc1.id
+WHERE
+    p.entry_id = 12747 AND p.release_seq = 0
+ORDER BY pub.name, pc1.text
 
 +--------------------+---------+
 | name               | country |
@@ -299,26 +352,30 @@ WHERE  p.entry_id = 4010
 +--------------------+---------+
 
  */
-var getPublisher = function(id) {
-    var deferred = Q.defer();
-    var connection = db.getConnection();
-    connection.query('select pub.name as name, pc1.text as country from publishers p inner join labels pub on p.label_id = pub.id left join countries pc1 on pub.country_id = pc1.id where p.entry_id = ? and p.release_seq = 0', [id], function(error, results, fields) {
-        if (error) {
-            throw error;
-        }
-        var arr = [];
-        var i = 0;
-        for (; i < results.length; i++) {
-            var item = {
-                name: results[i].name,
-                country: results[i].country,
-            }
-            arr.push(removeEmpty(item));
-        }
-        deferred.resolve({ publisher: arr });
-    });
-    return deferred.promise;
-}
+var getPublisher = function (id) {
+  var deferred = Q.defer();
+  var connection = db.getConnection();
+  connection.query(
+    "SELECT pub.name AS name, pc1.text AS country FROM publishers p INNER JOIN labels pub ON p.label_id = pub.id LEFT JOIN countries pc1 ON pub.country_id = pc1.id WHERE p.entry_id = ? AND p.release_seq = 0 ORDER BY pub.name, pc1.text",
+    [id],
+    function (error, results, fields) {
+      if (error) {
+        throw error;
+      }
+      var arr = [];
+      var i = 0;
+      for (; i < results.length; i++) {
+        var item = {
+          name: results[i].name,
+          country: results[i].country,
+        };
+        arr.push(removeEmpty(item));
+      }
+      deferred.resolve({ publisher: arr });
+    }
+  );
+  return deferred.promise;
+};
 
 /**
  * Get re-released by
@@ -367,7 +424,7 @@ from   releases r
        left join schemetypes schemet
               on d.schemetype_id = schemet.id
 where  r.entry_id = 2259
-order  by r.release_seq
+order  by r.release_seq, pub.name, pc1.text
 
 ID: 2000011 as title
 ID: 0003012 releases with year
@@ -385,44 +442,47 @@ ID: 0009362 distribution denied (url is null)
 +-----+-----------------+---------------------------------------+--------------------+---------+---------------+--------------+-------------+-----------------+-----------+----------------+-------+---------------------------------------------------------------+------------+--------------------+----------------------+------+---------------+--------------+----------------+
 
  */
-var getReleases = function(id) {
-    var deferred = Q.defer();
-    var connection = db.getConnection();
-    connection.query('select distinct r.release_seq as seq, e.title as title, aka.title as as_title, pub.name as name, pc1.text as country, r.release_year as yearofrelease, r.release_price as releaseprice, r.budget_price as budgetprice, r.microdrive_price as microdriveprice, r.disk_price as diskprice, r.cartridge_price as cartridgeprice, d.file_size as size, d.file_link as url, filet.text as type, ex.text as format, origint.text as origin, d.file_code as code, d.file_barcode as barcode, d.file_dl as dl, schemet.text as encodingscheme from releases r left join aliases aka on aka.entry_id = r.entry_id and aka.release_seq = r.release_seq inner join entries e on e.id = r.entry_id left join publishers p on p.entry_id = r.entry_id and p.release_seq = r.release_seq left join labels pub on p.label_id = pub.id left join countries pc1 on pub.country_id = pc1.id left join downloads d on d.entry_id = r.entry_id and d.release_seq = r.release_seq and (d.filetype_id IN (46, 47) OR d.filetype_id BETWEEN 8 AND 22) left join filetypes filet on d.filetype_id = filet.id left join extensions ex on right(d.file_link, length(ex.ext)) = ex.ext left join sourcetypes origint on d.sourcetype_id = origint.id left join schemetypes schemet on d.schemetype_id = schemet.id where r.entry_id = ? order by r.release_seq', [id], function(error, results, fields) {
-        if (error) {
-            throw error;
-        }
-        var arr = [];
-        var i = 0;
-        for (; i < results.length; i++) {
-            var item = {
-                release: results[i].seq,
-                publisher: results[i].name,
-                country: results[i].country,
-                as_title: results[i].as_title,
-                yearofrelease: results[i].yearofrelease,
-                releaseprice: results[i].releaseprice,
-                budgetprice: results[i].budgetprice,
-                microdriveprice: results[i].microdriveprice,
-                diskprice: results[i].diskprice,
-                cartridgeprice: results[i].cartridgeprice,
-                url: results[i].url,
-                size: results[i].size,
-                type: results[i].type,
-                format: results[i].format,
-                origin: results[i].origin,
-                code: results[i].code,
-                barcode: results[i].barcode,
-                dl: results[i].dl,
-                encodingscheme: results[i].encodingscheme
-
-            }
-            arr.push(removeEmpty(item));
-        }
-        deferred.resolve({ releases: arr });
-    });
-    return deferred.promise;
-}
+var getReleases = function (id) {
+  var deferred = Q.defer();
+  var connection = db.getConnection();
+  connection.query(
+    "select distinct r.release_seq as seq, e.title as title, aka.title as as_title, pub.name as name, pc1.text as country, r.release_year as yearofrelease, r.release_price as releaseprice, r.budget_price as budgetprice, r.microdrive_price as microdriveprice, r.disk_price as diskprice, r.cartridge_price as cartridgeprice, d.file_size as size, d.file_link as url, filet.text as type, ex.text as format, origint.text as origin, d.file_code as code, d.file_barcode as barcode, d.file_dl as dl, schemet.text as encodingscheme from releases r left join aliases aka on aka.entry_id = r.entry_id and aka.release_seq = r.release_seq inner join entries e on e.id = r.entry_id left join publishers p on p.entry_id = r.entry_id and p.release_seq = r.release_seq left join labels pub on p.label_id = pub.id left join countries pc1 on pub.country_id = pc1.id left join downloads d on d.entry_id = r.entry_id and d.release_seq = r.release_seq and (d.filetype_id IN (46, 47) OR d.filetype_id BETWEEN 8 AND 22) left join filetypes filet on d.filetype_id = filet.id left join extensions ex on right(d.file_link, length(ex.ext)) = ex.ext left join sourcetypes origint on d.sourcetype_id = origint.id left join schemetypes schemet on d.schemetype_id = schemet.id where r.entry_id = ? order by r.release_seq, pub.name, pc1.text",
+    [id],
+    function (error, results, fields) {
+      if (error) {
+        throw error;
+      }
+      var arr = [];
+      var i = 0;
+      for (; i < results.length; i++) {
+        var item = {
+          release: results[i].seq,
+          publisher: results[i].name,
+          country: results[i].country,
+          as_title: results[i].as_title,
+          yearofrelease: results[i].yearofrelease,
+          releaseprice: results[i].releaseprice,
+          budgetprice: results[i].budgetprice,
+          microdriveprice: results[i].microdriveprice,
+          diskprice: results[i].diskprice,
+          cartridgeprice: results[i].cartridgeprice,
+          url: results[i].url,
+          size: results[i].size,
+          type: results[i].type,
+          format: results[i].format,
+          origin: results[i].origin,
+          code: results[i].code,
+          barcode: results[i].barcode,
+          dl: results[i].dl,
+          encodingscheme: results[i].encodingscheme,
+        };
+        arr.push(removeEmpty(item));
+      }
+      deferred.resolve({ releases: arr });
+    }
+  );
+  return deferred.promise;
+};
 
 /**
  * Get authors
@@ -471,36 +531,40 @@ ORDER BY
 +-------------------+-------------+----------------------+---------------+-----------+
 
 */
-var getAuthors = function(id) {
-    var deferred = Q.defer();
-    var connection = db.getConnection();
-    connection.query('SELECT dev.name AS dev_name, ac1.text AS dev_country, team.name AS group_name, tc1.text AS group_country FROM authors aut INNER JOIN labels dev ON aut.label_id = dev.id LEFT JOIN countries ac1 ON dev.country_id = ac1.id LEFT JOIN labels team ON aut.team_id = team.id LEFT JOIN countries tc1 ON team.country_id = tc1.id WHERE aut.entry_id = ? ORDER BY group_name, dev_name', [id], function(error, results, fields) {
-        if (error) {
-            throw error;
+var getAuthors = function (id) {
+  var deferred = Q.defer();
+  var connection = db.getConnection();
+  connection.query(
+    "SELECT dev.name AS dev_name, ac1.text AS dev_country, team.name AS group_name, tc1.text AS group_country FROM authors aut INNER JOIN labels dev ON aut.label_id = dev.id LEFT JOIN countries ac1 ON dev.country_id = ac1.id LEFT JOIN labels team ON aut.team_id = team.id LEFT JOIN countries tc1 ON team.country_id = tc1.id WHERE aut.entry_id = ? ORDER BY group_name, dev_name",
+    [id],
+    function (error, results, fields) {
+      if (error) {
+        throw error;
+      }
+      var arr = [];
+      var i = 0;
+      var groupArray;
+      var authorArray = [];
+      for (; i < results.length; i++) {
+        if (groupArray != results[i].group_name) {
+          if (authorArray.length > 0) {
+            arr.push({ authors: authorArray, group: groupArray });
+          }
+          groupArray = results[i].group_name;
+          authorArray = [];
         }
-        var arr = [];
-        var i = 0;
-        var groupArray;
-        var authorArray = [];
-        for (; i < results.length; i++) {
-            if (groupArray != results[i].group_name) {
-                if (authorArray.length > 0) {
-                    arr.push({ authors: authorArray, group: groupArray })
-                }
-                groupArray = results[i].group_name;
-                authorArray = [];
-            }
-            if (!authorArray.includes(results[i].dev_name.trim())) {
-                authorArray.push(removeEmpty({ name: results[i].dev_name.trim(), country: results[i].dev_country}));
-            }
+        if (!authorArray.includes(results[i].dev_name.trim())) {
+          authorArray.push(removeEmpty({ name: results[i].dev_name.trim(), country: results[i].dev_country }));
         }
-        if (authorArray.length > 0) {
-            arr.push({ authors: authorArray, group: groupArray })
-        }
-        deferred.resolve({ authors: arr });
-    });
-    return deferred.promise;
-}
+      }
+      if (authorArray.length > 0) {
+        arr.push({ authors: authorArray, group: groupArray });
+      }
+      deferred.resolve({ authors: arr });
+    }
+  );
+  return deferred.promise;
+};
 
 /**
  * Get Roles
@@ -510,7 +574,7 @@ SELECT title, l.name, rt.text AS role FROM roles r
 INNER JOIN entries e ON e.id = r.entry_id
 INNER JOIN labels l ON l.id = r.label_id
 INNER JOIN roletypes rt on rt.id = r.roletype_id
-WHERE r.entry_id = 26834 ORDER BY name
+WHERE r.entry_id = 26834 ORDER BY name, rt.text
 
 +---------------+---------------------+
 | name          | role                |
@@ -525,34 +589,40 @@ WHERE r.entry_id = 26834 ORDER BY name
 +---------------+---------------------+
 
 */
-var getRoles = function(id) {
-    var deferred = Q.defer();
-    var connection = db.getConnection();
-    connection.query('SELECT title, l.name, rt.text AS role FROM roles r INNER JOIN entries e ON e.id = r.entry_id INNER JOIN labels l ON l.id = r.label_id INNER JOIN roletypes rt on rt.id = r.roletype_id WHERE r.entry_id = ? ORDER by name', [id], function(error, results, fields) {
-        if (error) {
-            throw error;
-        }
-        var arr = [];
-        var i = 0;
-        for (; i < results.length; i++) {
-            var item = {
-                name: results[i].name,
-                role: results[i].role
-            }
-            arr.push(item);
-        }
-        deferred.resolve({ roles: arr });
-    });
-    return deferred.promise;
-}
+var getRoles = function (id) {
+  var deferred = Q.defer();
+  var connection = db.getConnection();
+  connection.query(
+    "SELECT title, l.name, rt.text AS role FROM roles r INNER JOIN entries e ON e.id = r.entry_id INNER JOIN labels l ON l.id = r.label_id INNER JOIN roletypes rt on rt.id = r.roletype_id WHERE r.entry_id = ? ORDER by name, rt.text",
+    [id],
+    function (error, results, fields) {
+      if (error) {
+        throw error;
+      }
+      var arr = [];
+      var i = 0;
+      for (; i < results.length; i++) {
+        var item = {
+          name: results[i].name,
+          role: results[i].role,
+        };
+        arr.push(item);
+      }
+      deferred.resolve({ roles: arr });
+    }
+  );
+  return deferred.promise;
+};
 
 /**
  * Get authored
 
 -- This program was authored with the following tools...
 SELECT
+    tool.id,
     tool.title,
-    pub.NAME AS publisher
+    pub.name AS publisher,
+    machinet.text AS machinetype
 FROM
     relations iaut
 INNER JOIN entries tool ON
@@ -561,83 +631,110 @@ LEFT JOIN publishers p ON
     p.entry_id = tool.id
 LEFT JOIN labels pub ON
     p.label_id = pub.id
+LEFT JOIN machinetypes machinet ON
+    tool.machinetype_id = machinet.id
 WHERE
-    p.release_seq = 0 AND relationtype_id = 'a' AND iaut.entry_id = 30321
+	p.release_seq = 0 AND relationtype_id = 'a' AND iaut.entry_id = 30321
+ORDER BY
+	tool.title, pub.name
 
-+-----------------+--------------+
-| title           | publisher    |
-+-----------------+--------------+
-| NIRVANA+ ENGINE | Einar Saukas |
-+-----------------+--------------+
++-------+-----------------+--------------+----------------------+
+|  id   |      title      |  publisher   |     machinetype      |
++-------+-----------------+--------------+----------------------+
+| 27996 | ZX7             | Einar Saukas | ZX-Spectrum 48K      |
+| 30002 | NIRVANA+ ENGINE | Einar Saukas | ZX-Spectrum 48K/128K |
++-------+-----------------+--------------+----------------------+
+
 
  */
-var getAuthored = function(id) {
-    var deferred = Q.defer();
-    var connection = db.getConnection();
-    connection.query('SELECT tool.title, pub.NAME AS publisher FROM relations iaut INNER JOIN entries tool ON iaut.original_id = tool.id LEFT JOIN publishers p ON p.entry_id = tool.id LEFT JOIN labels pub ON p.label_id = pub.id WHERE p.release_seq = 0 AND relationtype_id = "a" AND iaut.entry_id = ?', [id], function(error, results, fields) {
-        if (error) {
-            throw error;
-        }
-        var arr = [];
-        var i = 0;
-        for (; i < results.length; i++) {
-            var item = {
-                title: results[i].title,
-                publisher: results[i].publisher
-            }
-            arr.push(item);
-        }
-        deferred.resolve({ authored: arr });
-    });
-    return deferred.promise;
-}
+var getAuthored = function (id) {
+  var deferred = Q.defer();
+  var connection = db.getConnection();
+  connection.query(
+    'SELECT tool.id, tool.title, pub.name AS publisher, machinet.text AS machinetype FROM relations iaut INNER JOIN entries tool ON iaut.original_id = tool.id LEFT JOIN publishers p ON p.entry_id = tool.id LEFT JOIN labels pub ON p.label_id = pub.id LEFT JOIN machinetypes machinet ON tool.machinetype_id = machinet.id WHERE p.release_seq = 0 AND relationtype_id = "a" AND iaut.entry_id = ? ORDER BY tool.title, pub.name',
+    [id],
+    function (error, results, fields) {
+      if (error) {
+        throw error;
+      }
+      var arr = [];
+      var i = 0;
+      for (; i < results.length; i++) {
+        var item = {
+          id: results[i].id,
+          title: results[i].title,
+          publisher: results[i].publisher,
+          machinetype: results[i].machinetype,
+        };
+        arr.push(item);
+      }
+      deferred.resolve({ authored: arr });
+    }
+  );
+  return deferred.promise;
+};
 
 /**
  * Get Authoring
 
 -- The following programs are known to have been authored with this tool...
 SELECT
+    prog.id AS id,
     prog.title AS title,
-    pub.NAME AS publisher
+    pub.name AS publisher,
+    machinet.text AS machinetype
 FROM
     relations eaut
 INNER JOIN entries prog ON
     eaut.entry_id = prog.id
 LEFT JOIN publishers p ON
-    p.entry_id = prog.id
+    p.entry_id = prog.id AND p.release_seq = 0
 LEFT JOIN labels pub ON
     p.label_id = pub.id
+LEFT JOIN machinetypes machinet ON
+    prog.machinetype_id = machinet.id
 WHERE
-    eaut.relationtype_id = "a" AND eaut.original_id = 30002;
+    eaut.relationtype_id = "a" AND eaut.original_id = 30002
+ORDER BY
+	prog.title, pub.name
 
-+--------------+----------------------+
-| title        | publisher            |
-+--------------+----------------------+
-| Snake Escape | Einar Saukas         |
-| Pietro Bros  | Cristian M. Gonzalez |
-+--------------+----------------------+
++-------+--------------+----------------------+----------------------+
+|  id   |    title     |      publisher       |     machinetype      |
++-------+--------------+----------------------+----------------------+
+| 30321 | Snake Escape | Einar Saukas         | ZX-Spectrum 48K/128K |
+| 30347 | Pietro Bros  | Cristian M. Gonzalez | ZX-Spectrum 48K/128K |
+| 30426 | Bomberman    | NULL                 | ZX-Spectrum 48K      |
+| 32231 | Gandalf      | Cristian M. Gonzalez | ZX-Spectrum 128K     |
+| 34687 | Manic Pietro | Cristian M. Gonzalez | ZX-Spectrum 128K     |
++-------+--------------+----------------------+----------------------+
 
 */
-var getAuthoring = function(id) {
-    var deferred = Q.defer();
-    var connection = db.getConnection();
-    connection.query('SELECT prog.title AS title, pub.NAME AS publisher FROM relations eaut INNER JOIN entries prog ON eaut.entry_id = prog.id LEFT JOIN publishers p ON p.entry_id = prog.id LEFT JOIN labels pub ON p.label_id = pub.id WHERE eaut.relationtype_id = "a" AND eaut.original_id = ?', [id], function(error, results, fields) {
-        if (error) {
-            throw error;
-        }
-        var arr = [];
-        var i = 0;
-        for (; i < results.length; i++) {
-            var item = {
-                title: results[i].title,
-                publisher: results[i].publisher
-            }
-            arr.push(item);
-        }
-        deferred.resolve({ authoring: arr });
-    });
-    return deferred.promise;
-}
+var getAuthoring = function (id) {
+  var deferred = Q.defer();
+  var connection = db.getConnection();
+  connection.query(
+    'SELECT prog.id AS id, prog.title AS title, pub.name AS publisher, machinet.text AS machinetype FROM relations eaut INNER JOIN entries prog ON eaut.entry_id = prog.id LEFT JOIN publishers p ON p.entry_id = prog.id AND p.release_seq = 0 LEFT JOIN labels pub ON p.label_id = pub.id LEFT JOIN machinetypes machinet ON prog.machinetype_id = machinet.id WHERE eaut.relationtype_id = "a" AND eaut.original_id = ? ORDER BY prog.title, pub.name',
+    [id],
+    function (error, results, fields) {
+      if (error) {
+        throw error;
+      }
+      var arr = [];
+      var i = 0;
+      for (; i < results.length; i++) {
+        var item = {
+          id: results[i].id,
+          title: results[i].title,
+          publisher: results[i].publisher,
+          machinetype: results[i].machinetype,
+        };
+        arr.push(item);
+      }
+      deferred.resolve({ authoring: arr });
+    }
+  );
+  return deferred.promise;
+};
 
 /**
  * Get controls
@@ -655,6 +752,8 @@ INNER JOIN grouptypes groupt ON
     g.grouptype_id = groupt.id AND groupt.id = 'J'
 WHERE
     feat.entry_id = 2259
+ORDER BY
+	g.name
 
 +---------------------+
 | name                |
@@ -667,32 +766,36 @@ WHERE
 +---------------------+
 
  */
-var getControls = function(id) {
-    var deferred = Q.defer();
-    var connection = db.getConnection();
-    connection.query('SELECT g.name, groupt.id, groupt.text FROM members feat INNER JOIN groups g ON feat.group_id = g.id INNER JOIN grouptypes groupt ON g.grouptype_id = groupt.id AND groupt.id = \'J\' WHERE feat.entry_id = ?', [id], function(error, results, fields) {
-        if (error) {
-            throw error;
-        }
-        var arr = [];
-        var i = 0;
-        for (; i < results.length; i++) {
-            var control = { control: results[i].name };
-            arr.push(control);
-        }
-        deferred.resolve({ controls: arr });
-    });
-    return deferred.promise;
-}
+var getControls = function (id) {
+  var deferred = Q.defer();
+  var connection = db.getConnection();
+  connection.query(
+    "SELECT g.name, groupt.id, groupt.text FROM members feat INNER JOIN groups g ON feat.group_id = g.id INNER JOIN grouptypes groupt ON g.grouptype_id = groupt.id AND groupt.id = 'J' WHERE feat.entry_id = ? ORDER BY g.name",
+    [id],
+    function (error, results, fields) {
+      if (error) {
+        throw error;
+      }
+      var arr = [];
+      var i = 0;
+      for (; i < results.length; i++) {
+        var control = { control: results[i].name };
+        arr.push(control);
+      }
+      deferred.resolve({ controls: arr });
+    }
+  );
+  return deferred.promise;
+};
 
 /**
  * Get inspired / tie-in license
 
  -- This program was licensed from or inspired by...
 SELECT
-    ll.name AS NAME,
+    ll.name AS name,
     lc1.text AS country,
-    lict.text AS TYPE,
+    lict.text AS type,
     lic.name originalname
 FROM
     relatedlicenses rl
@@ -707,7 +810,9 @@ LEFT JOIN labels ll ON
 LEFT JOIN countries lc1 ON
     ll.country_id = lc1.id
 WHERE
-    rl.entry_id = 4010
+	rl.entry_id = 4010
+ORDER BY
+	ll.name
 
 1220
 +---------------------------+---------+-------+----------------------------+
@@ -718,34 +823,37 @@ WHERE
 +---------------------------+---------+-------+----------------------------+
 
  */
-var getInspiredByTieInLicense = function(id) {
-    var deferred = Q.defer();
-    var connection = db.getConnection();
-    connection.query('SELECT ll.name AS name, lc1.text AS country, lict.text AS type, lic.name originalname FROM relatedlicenses rl INNER JOIN licenses lic ON rl.license_id = lic.id INNER JOIN licensetypes lict ON lic.licensetype_id = lict.id LEFT JOIN licensors lor ON lor.license_id = lic.id LEFT JOIN labels ll ON lor.label_id = ll.id LEFT JOIN countries lc1 ON ll.country_id = lc1.id WHERE rl.entry_id = ?', [id], function(error, results, fields) {
-        if (error) {
-            throw error;
+var getInspiredByTieInLicense = function (id) {
+  var deferred = Q.defer();
+  var connection = db.getConnection();
+  connection.query(
+    "SELECT ll.name AS name, lc1.text AS country, lict.text AS type, lic.name originalname FROM relatedlicenses rl INNER JOIN licenses lic ON rl.license_id = lic.id INNER JOIN licensetypes lict ON lic.licensetype_id = lict.id LEFT JOIN licensors lor ON lor.license_id = lic.id LEFT JOIN labels ll ON lor.label_id = ll.id LEFT JOIN countries lc1 ON ll.country_id = lc1.id WHERE rl.entry_id = ? ORDER BY ll.name",
+    [id],
+    function (error, results, fields) {
+      if (error) {
+        throw error;
+      }
+      var doc;
+      if (results.length == 0) {
+        doc = undefined;
+      } else {
+        doc = [];
+        var i = 0;
+        for (; i < results.length; i++) {
+          var item = {
+            name: results[i].name,
+            country: results[i].country,
+            type: results[i].type,
+            originalname: results[i].originalname,
+          };
+          doc.push(item);
         }
-        var doc;
-        if (results.length == 0) {
-            doc = undefined;
-        } else {
-            doc = [];
-            var i = 0;
-            for (; i < results.length; i++) {
-                var item = {
-                    name: results[i].name,
-                    country: results[i].country,
-                    type: results[i].type,
-                    originalname: results[i].originalname
-                };
-                doc.push(item);
-            }
-
-        }
-        deferred.resolve({ licensed: doc });
-    });
-    return deferred.promise;
-}
+      }
+      deferred.resolve({ licensed: doc });
+    }
+  );
+  return deferred.promise;
+};
 
 /**
  * Get series
@@ -754,9 +862,11 @@ var getInspiredByTieInLicense = function(id) {
 
 -- This program belongs in the following series (with these other titles)...
 SELECT DISTINCT
+    prog.id AS id,
     prog.title AS title,
     prog.id AS entry_id,
     pub.NAME AS publisher,
+    machinet.text AS machinetype,
     g.name AS groupname,
     groupt.id AS grouptype
 FROM
@@ -771,12 +881,14 @@ INNER JOIN members others ON
     others.group_id = g.id
 INNER JOIN entries prog ON
     others.entry_id = prog.id
+LEFT JOIN machinetypes machinet ON
+    prog.machinetype_id = machinet.id
 LEFT JOIN publishers p ON
     p.entry_id = prog.id
 LEFT JOIN labels pub ON
     p.label_id = pub.id
 WHERE
-    e.id = 28465 AND(
+    e.id = 3012 AND(
         (
             p.label_id IS NOT NULL AND p.release_seq = 0
         ) OR(
@@ -784,39 +896,47 @@ WHERE
         )
     )
 ORDER BY
-    g.NAME,
+    g.name,
     others.series_seq ASC
 
-+-------+-------------------+-----------+-----------+
-| title |     publisher     | groupname | grouptype |
-+-------+-------------------+-----------+-----------+
-|  1942 | Elite Systems Ltd |      1942 | S         |
-|  1943 | Go!               |      1942 | S         |
-+-------+-------------------+-----------+-----------+
+
++------+------------------+----------+-----------------------+-----------------+-------------+-----------+
+|  id  |      title       | entry_id |       publisher       |   machinetype   |  groupname  | grouptype |
++------+------------------+----------+-----------------------+-----------------+-------------+-----------+
+| 3012 | Manic Miner      |     3012 | Bug-Byte Software Ltd | ZX-Spectrum 48K | Miner Willy | S         |
+| 2589 | Jet Set Willy    |     2589 | Software Projects Ltd | ZX-Spectrum 48K | Miner Willy | S         |
+| 2595 | Jet Set Willy II |     2595 | Software Projects Ltd | ZX-Spectrum 48K | Miner Willy | S         |
++------+------------------+----------+-----------------------+-----------------+-------------+-----------+
 
  */
-var getSeries = function(id) {
-    var deferred = Q.defer();
-    var connection = db.getConnection();
-    connection.query('SELECT DISTINCT prog.title AS title, prog.id as entry_id, pub.NAME AS publisher, g.name as groupname, groupt.id as grouptype FROM entries e INNER JOIN members memb ON memb.entry_id = e.id INNER JOIN groups g ON memb.group_id = g.id INNER JOIN grouptypes groupt ON g.grouptype_id = groupt.id AND groupt.id = "S" INNER JOIN members others ON others.group_id = g.id INNER JOIN entries prog ON others.entry_id = prog.id LEFT JOIN publishers p ON p.entry_id = prog.id LEFT JOIN labels pub ON p.label_id = pub.id WHERE e.id = ? AND ((p.label_id IS NOT NULL AND p.release_seq = 0) OR (p.label_id IS NULL AND p.release_seq IS NULL)) ORDER BY g.NAME, others.series_seq ASC', [id], function(error, results, fields) {
-        if (error) {
-            throw error;
-        }
-        var arr = [];
-        var i = 0;
-        for (; i < results.length; i++) {
-            var item = {
-                title: results[i].title,
-                entry_id: results[i].entry_id,
-                publisher: results[i].publisher,
-                groupname: results[i].groupname
-            }
-            arr.push(item);
-        }
-        deferred.resolve({ series: arr });
-    });
-    return deferred.promise;
-}
+var getSeries = function (id) {
+  var deferred = Q.defer();
+  var connection = db.getConnection();
+  connection.query(
+    'SELECT DISTINCT prog.id AS id, prog.title AS title, prog.id AS entry_id, pub.NAME AS publisher, machinet.text AS machinetype, g.name AS groupname, groupt.id AS grouptype FROM entries e INNER JOIN members memb ON memb.entry_id = e.id INNER JOIN groups g ON memb.group_id = g.id INNER JOIN grouptypes groupt ON g.grouptype_id = groupt.id AND groupt.id = "S" INNER JOIN members others ON others.group_id = g.id INNER JOIN entries prog ON others.entry_id = prog.id LEFT JOIN machinetypes machinet ON prog.machinetype_id = machinet.id LEFT JOIN publishers p ON p.entry_id = prog.id LEFT JOIN labels pub ON p.label_id = pub.id WHERE e.id = ? AND( ( p.label_id IS NOT NULL AND p.release_seq = 0 ) OR( p.label_id IS NULL AND p.release_seq IS NULL ) ) ORDER BY g.name, others.series_seq ASC',
+    [id],
+    function (error, results, fields) {
+      if (error) {
+        throw error;
+      }
+      var arr = [];
+      var i = 0;
+      for (; i < results.length; i++) {
+        var item = {
+          id: results[i].id,
+          entry_id: results[i].entry_id,
+          title: results[i].title,
+          publisher: results[i].publisher,
+          machinetype: results[i].machinetype,
+          groupname: results[i].groupname,
+        };
+        arr.push(item);
+      }
+      deferred.resolve({ series: arr });
+    }
+  );
+  return deferred.promise;
+};
 
 /**
  * Get Other Systems
@@ -839,26 +959,30 @@ ORDER  BY plat.id;
 +---------------------------------------------------------+--------------------+
 
 */
-var getOtherSystems = function(id) {
-    var deferred = Q.defer();
-    var connection = db.getConnection();
-    connection.query('SELECT p.link_system, plat.text FROM ports p INNER JOIN platforms plat ON p.platform_id = plat.id WHERE p.entry_id = ? ORDER BY plat.id', [id], function(error, results, fields) {
-        if (error) {
-            throw error;
-        }
-        var arr = [];
-        var i = 0;
-        for (; i < results.length; i++) {
-            var item = {
-                name: results[i].text,
-                url: results[i].link_system
-            }
-            arr.push(item);
-        }
-        deferred.resolve({ othersystems: arr });
-    });
-    return deferred.promise;
-}
+var getOtherSystems = function (id) {
+  var deferred = Q.defer();
+  var connection = db.getConnection();
+  connection.query(
+    "SELECT p.link_system, plat.text FROM ports p INNER JOIN platforms plat ON p.platform_id = plat.id WHERE p.entry_id = ? ORDER BY plat.id",
+    [id],
+    function (error, results, fields) {
+      if (error) {
+        throw error;
+      }
+      var arr = [];
+      var i = 0;
+      for (; i < results.length; i++) {
+        var item = {
+          name: results[i].text,
+          url: results[i].link_system,
+        };
+        arr.push(item);
+      }
+      deferred.resolve({ othersystems: arr });
+    }
+  );
+  return deferred.promise;
+};
 
 /**
  * Get contents - content of compilation
@@ -867,14 +991,19 @@ var getOtherSystems = function(id) {
 SELECT
     ecomp.tape_side AS tape_side,
     ecomp.tape_seq AS tape_seq,
-    ecomp.prog_seq AS prog_seq,
+	ecomp.prog_seq AS prog_seq,
+	ecomp.alias AS alias,
+	item.id as id,
     item.title AS title,
     ll.name AS publisher,
-    evart.text as variation
+	evart.text as variation,
+	machinet.text as machinetype
 FROM
     compilations ecomp
-INNER JOIN entries item ON
+LEFT JOIN entries item ON
     ecomp.entry_id = item.id
+LEFT JOIN machinetypes machinet ON
+    item.machinetype_id = machinet.id
 INNER JOIN variationtypes evart ON
     ecomp.variationtype_id = evart.id
 LEFT JOIN publishers p ON
@@ -888,43 +1017,60 @@ WHERE
 ORDER BY
   tape_side, tape_seq, prog_seq
 
-+-----------+----------+----------+---------------------------+----------------------+
-| tape_side | tape_seq | prog_seq | title                     | publisher            |
-+-----------+----------+----------+---------------------------+----------------------+
-| A         | 1        | 1        | Wizball                   | Ocean Software Ltd   |
-| A         | 1        | 2        | Head over Heels           | Ocean Software Ltd   |
-| B         | 1        | 1        | Arkanoid                  | Imagine Software Ltd |
-| B         | 1        | 2        | Cobra                     | Ocean Software Ltd   |
-| A         | 2        | 1        | Frankie Goes to Hollywood | Ocean Software Ltd   |
-| A         | 2        | 2        | Great Escape, The         | Ocean Software Ltd   |
-| B         | 2        | 1        | Short Circuit             | Ocean Software Ltd   |
-| B         | 2        | 2        | Yie Ar Kung-Fu            | Imagine Software Ltd |
-+-----------+----------+----------+---------------------------+----------------------+
 
- */
-var getCompilationContent = function(id) {
-    var deferred = Q.defer();
-    var connection = db.getConnection();
-    connection.query('SELECT ecomp.tape_side AS tape_side, ecomp.tape_seq AS tape_seq, ecomp.prog_seq AS prog_seq, item.title AS title, ll.name AS publisher, evart.text as variation FROM compilations ecomp INNER JOIN entries item ON ecomp.entry_id = item.id INNER JOIN variationtypes evart ON ecomp.variationtype_id = evart.id LEFT JOIN publishers p ON p.entry_id = ecomp.entry_id LEFT JOIN labels ll ON p.label_id = ll.id LEFT JOIN countries lc1 ON ll.country_id = lc1.id WHERE ((p.label_id IS NOT NULL AND p.release_seq = 0) OR (p.label_id IS NULL AND p.release_seq IS NULL)) AND ecomp.compilation_id = ? ORDER BY tape_side, tape_seq, prog_seq', [id], function(error, results, fields) {
-        if (error) {
-            throw error;
++-----------+----------+----------+------+---------------------------+----------------------+--------------+----------------------+
+| tape_side | tape_seq | prog_seq |  id  |           title           |      publisher       |  variation   |      machinetype     |
++-----------+----------+----------+------+---------------------------+----------------------+--------------+----------------------+
+| A         |        1 |        1 | 5713 | Wizball                   | Ocean Software Ltd   | Full version | ZX-Spectrum 48K/128K |
+| A         |        1 |        2 | 2259 | Head over Heels           | Ocean Software Ltd   | Full version | ZX-Spectrum 48K/128K |
+| A         |        2 |        1 | 1854 | Frankie Goes to Hollywood | Ocean Software Ltd   | Full version | ZX-Spectrum 48K      |
+| A         |        2 |        2 | 2125 | The Great Escape          | Ocean Software Ltd   | Full version | ZX-Spectrum 48K      |
+| B         |        1 |        1 |  255 | Arkanoid                  | Imagine Software Ltd | Full version | ZX-Spectrum 48K      |
+| B         |        1 |        2 |  996 | Cobra                     | Ocean Software Ltd   | Full version | ZX-Spectrum 48K      |
+| B         |        2 |        1 | 4469 | Short Circuit             | Ocean Software Ltd   | Full version | ZX-Spectrum 48K/128K |
+| B         |        2 |        2 | 5822 | Yie Ar Kung-Fu            | Imagine Software Ltd | Full version | ZX-Spectrum 48K/128K |
++-----------+----------+----------+------+---------------------------+----------------------+--------------+----------------------+
+
+*/
+var getCompilationContent = function (id) {
+  var deferred = Q.defer();
+  var connection = db.getConnection();
+  connection.query(
+    "SELECT ecomp.tape_side AS tape_side, ecomp.tape_seq AS tape_seq, ecomp.prog_seq AS prog_seq, ecomp.alias AS alias, item.id as id, item.title AS title, ll.name AS publisher, evart.text as variation, machinet.text as machinetype FROM compilations ecomp LEFT JOIN entries item ON ecomp.entry_id = item.id LEFT JOIN machinetypes machinet ON item.machinetype_id = machinet.id INNER JOIN variationtypes evart ON ecomp.variationtype_id = evart.id LEFT JOIN publishers p ON p.entry_id = ecomp.entry_id LEFT JOIN labels ll ON p.label_id = ll.id LEFT JOIN countries lc1 ON ll.country_id = lc1.id WHERE ((p.label_id IS NOT NULL AND p.release_seq = 0) OR (p.label_id IS NULL AND p.release_seq IS NULL)) AND ecomp.compilation_id = ? ORDER BY tape_side, tape_seq, prog_seq",
+    [id],
+    function (error, results, fields) {
+      if (error) {
+        throw error;
+      }
+      var arr = [];
+      var i = 0;
+      for (; i < results.length; i++) {
+        var title = "";
+        if (results[i].title && results[i].alias) {
+          title = results[i].alias + " [" + results[i].title + "]";
+        } else if (results[i].title && !results[i].alias) {
+          title = results[i].title;
+        } else if (!results[i].title && results[i].alias) {
+          title = results[i].alias;
+        } else {
+          title = "N/A";
         }
-        var arr = [];
-        var i = 0;
-        for (; i < results.length; i++) {
-            var item = {
-                side: 'Tape ' + results[i].tape_seq + ", side " + results[i].tape_side,
-                title: results[i].title,
-                publisher: results[i].publisher,
-                sequence: results[i].prog_seq,
-                variation: results[i].variation
-            }
-            arr.push(item);
-        }
-        deferred.resolve({ contents: arr });
-    });
-    return deferred.promise;
-}
+        var item = {
+          side: "Tape " + results[i].tape_seq + ", side " + results[i].tape_side,
+          id: results[i].id,
+          title: title,
+          publisher: results[i].publisher,
+          machinetype: results[i].machinetype,
+          sequence: results[i].prog_seq,
+          variation: results[i].variation,
+        };
+        arr.push(item);
+      }
+      deferred.resolve({ contents: arr });
+    }
+  );
+  return deferred.promise;
+};
 
 /**
 * If compilation, get loading + in-game screens from content.
@@ -1041,77 +1187,97 @@ If Screen Dump and Picture both exists, Picture is removed(only scr + ifl refere
 More screens: 0030237
 
 */
-var getScreens = function(id) {
-    var deferred = Q.defer();
-    var connection = db.getConnection();
-    connection.query('SELECT d.file_link AS url, d.file_size AS size, filet.text AS type, ex.text AS format, e.title as title FROM compilations c INNER JOIN entries e ON c.entry_id = e.id INNER JOIN downloads d ON e.id = d.entry_id AND d.release_seq = 0 INNER JOIN filetypes filet ON d.filetype_id = filet.id INNER JOIN extensions ex on right(d.file_link, length(ex.ext)) = ex.ext AND (ex.text like "Picture%" OR ex.text like "Screen dump%") WHERE d.filetype_id IN(1, 2) AND c.compilation_id = ? UNION SELECT d.file_link AS url, file_size AS size, filet.text AS type, ex.text AS format, null AS title FROM downloads d INNER JOIN filetypes filet ON d.filetype_id = filet.id INNER JOIN extensions ex on right(d.file_link, length(ex.ext)) = ex.ext AND (ex.text like "Picture%" OR ex.text like "Screen dump%") WHERE d.machinetype_id IS NULL AND d.filetype_id IN(1, 2) AND d.entry_id = ? UNION SELECT d.file_link AS url, file_size AS size, filet.text AS type, ex.text AS format, null AS title FROM downloads d INNER JOIN filetypes filet ON d.filetype_id = filet.id INNER JOIN extensions ex on right(d.file_link, length(ex.ext)) = ex.ext AND (ex.text like "Picture%") INNER JOIN entries e ON d.entry_id = e.id WHERE (e.genretype_id BETWEEN 91 AND 108) AND d.filetype_id IN(53) AND d.entry_id = ? UNION SELECT d.file_link AS url, file_size AS size, "Loading screen" as type, ex.text AS format, null AS title FROM downloads d INNER JOIN extensions ex on right(d.file_link, length(ex.ext)) = ex.ext AND (ex.text like "Picture%") INNER JOIN entries e ON d.entry_id = e.id WHERE (e.genretype_id BETWEEN 83 AND 90) AND d.filetype_id IN(45) AND d.entry_id = ?', [id, id, id, id], function(error, results, fields) {
-        if (error) {
-            throw error;
-        }
-        var arr = [];
-        var i = 0;
-        for (; i < results.length; i++) {
-            if (results[i].url == undefined) {;
-            } else {
-                if (results[i].format.startsWith('Picture')) {  // Picture (GIF), Picture (JPG)
-                    var downloaditem = {
-                        filename: path.basename(results[i].url),
-                        url: results[i].url,
-                        size: results[i].size,
-                        type: results[i].type,
-                        format: results[i].format,
-                        title: results[i].title
-                    }
-                    arr.push(removeEmpty(downloaditem));
-                } else {
-                    /** screen dump, write info to file (to be processed later) **/
-                    var zerofilled = ('0000000' + id).slice(-7);
-                    var screen_type;
+var getScreens = function (id) {
+  var deferred = Q.defer();
+  var connection = db.getConnection();
+  connection.query(
+    'SELECT d.file_link AS url, d.file_size AS size, filet.text AS type, ex.text AS format, e.title as title FROM compilations c INNER JOIN entries e ON c.entry_id = e.id INNER JOIN downloads d ON e.id = d.entry_id AND d.release_seq = 0 INNER JOIN filetypes filet ON d.filetype_id = filet.id INNER JOIN extensions ex on right(d.file_link, length(ex.ext)) = ex.ext AND (ex.text like "Picture%" OR ex.text like "Screen dump%") WHERE d.filetype_id IN(1, 2) AND c.compilation_id = ? UNION SELECT d.file_link AS url, file_size AS size, filet.text AS type, ex.text AS format, null AS title FROM downloads d INNER JOIN filetypes filet ON d.filetype_id = filet.id INNER JOIN extensions ex on right(d.file_link, length(ex.ext)) = ex.ext AND (ex.text like "Picture%" OR ex.text like "Screen dump%") WHERE d.machinetype_id IS NULL AND d.filetype_id IN(1, 2) AND d.entry_id = ? UNION SELECT d.file_link AS url, file_size AS size, filet.text AS type, ex.text AS format, null AS title FROM downloads d INNER JOIN filetypes filet ON d.filetype_id = filet.id INNER JOIN extensions ex on right(d.file_link, length(ex.ext)) = ex.ext AND (ex.text like "Picture%") INNER JOIN entries e ON d.entry_id = e.id WHERE (e.genretype_id BETWEEN 91 AND 108) AND d.filetype_id IN(53) AND d.entry_id = ? UNION SELECT d.file_link AS url, file_size AS size, "Loading screen" as type, ex.text AS format, null AS title FROM downloads d INNER JOIN extensions ex on right(d.file_link, length(ex.ext)) = ex.ext AND (ex.text like "Picture%") INNER JOIN entries e ON d.entry_id = e.id WHERE (e.genretype_id BETWEEN 83 AND 90) AND d.filetype_id IN(45) AND d.entry_id = ?',
+    [id, id, id, id],
+    function (error, results, fields) {
+      if (error) {
+        throw error;
+      }
+      var arr = [];
+      var i = 0;
+      for (; i < results.length; i++) {
+        if (results[i].url == undefined) {
+        } else {
+          if (results[i].format.startsWith("Picture")) {
+            // Picture (GIF), Picture (JPG)
+            var downloaditem = {
+              filename: path.basename(results[i].url),
+              url: results[i].url,
+              size: results[i].size,
+              type: results[i].type,
+              format: results[i].format,
+              title: results[i].title,
+            };
+            arr.push(removeEmpty(downloaditem));
+          } else {
+            /** screen dump, write info to file (to be processed later) **/
+            var zerofilled = ("0000000" + id).slice(-7);
+            var screen_type;
 
-                    /** In-game renamed to Running screen **/
-                    if (results[i].type == 'Loading screen') {
-                        screen_type = 'load';
-                    } else {
-                        screen_type = 'run';
-                    }
-                    var new_filename = path.basename(results[i].url, path.extname(results[i].url));
-                    if (path.basename(results[i].url).indexOf("-" + screen_type + "-") == -1) {
-                        new_filename = new_filename + '-' + screen_type;
-                    }
-                    if (results[i].title == null) {
-                        results[i].title = '';
-                    }
-                    console.error(screen_type + "\t" + zerofilled + "\t" + results[i].url + "\t" + ('/zxscreens/' + zerofilled + "/") + "\t" + new_filename + "\t" + results[i].title);
-                }
+            /** In-game renamed to Running screen **/
+            if (results[i].type == "Loading screen") {
+              screen_type = "load";
+            } else {
+              screen_type = "run";
             }
+            var new_filename = path.basename(results[i].url, path.extname(results[i].url));
+            if (path.basename(results[i].url).indexOf("-" + screen_type + "-") == -1) {
+              new_filename = new_filename + "-" + screen_type;
+            }
+            if (results[i].title == null) {
+              results[i].title = "";
+            }
+            console.error(
+              screen_type +
+                "\t" +
+                zerofilled +
+                "\t" +
+                results[i].url +
+                "\t" +
+                ("/zxscreens/" + zerofilled + "/") +
+                "\t" +
+                new_filename +
+                "\t" +
+                results[i].title
+            );
+          }
         }
-        deferred.resolve({ screens: arr });
-    });
-    return deferred.promise;
-}
+      }
+      deferred.resolve({ screens: arr });
+    }
+  );
+  return deferred.promise;
+};
 
 /**
  * Get features
 
 -- (C)ompetition - Tron256(17819)
 -- (F)eature - Lunar Jetman(9372)
--- (M)ajor Clone - Gulpman(2175)
--- (N)amed - LED Storm(9369)
+-- (N)amed - LED Storm(9369) - Turntype changed to Group 'N'
 -- (T)hemed - Valhalla(7152)
 -- (U)Unnamed - Alpha-Beth(10966)
 
+-- (M)ajor Clone - Gulpman(2175) -- DEPRECATED
+
 -- This program contains the following features... / participated in the following competitions...
 -- Competition, Feature, Major Clone, Themed Group
-SELECT g.name, 
-       groupt.id,
-       groupt.text 
-FROM   members feat 
-       INNER JOIN groups g 
-               ON feat.group_id = g.id 
-       INNER JOIN grouptypes groupt 
-               ON g.grouptype_id = groupt.id 
-                  AND groupt.id <> "S" 
-WHERE  feat.entry_id = 176; 
+SELECT
+    g.name,
+    groupt.id,
+    groupt.text
+FROM
+    members feat
+INNER JOIN groups g ON
+    feat.group_id = g.id
+INNER JOIN grouptypes groupt ON
+    g.grouptype_id = groupt.id AND groupt.id = ?
+WHERE
+    feat.entry_id = ?
 
 +----------------------------+----+----------------------+
 |            name            | id |         text         |
@@ -1127,27 +1293,31 @@ WHERE  feat.entry_id = 176;
 +----------------------------+----+----------------------+
 
  */
-var getFeatures = function(id, grouptype_id, groupname) {
-    var deferred = Q.defer();
-    var connection = db.getConnection();
-    connection.query('select g.name, groupt.id, groupt.text from members feat inner join groups g on feat.group_id = g.id inner join grouptypes groupt on g.grouptype_id = groupt.id and groupt.id = ? where feat.entry_id = ?', [grouptype_id, id], function(error, results, fields) {
-        if (error) {
-            throw error;
-        }
-        var arr = [];
-        var i = 0;
-        for (; i < results.length; i++) {
-            var item = {
-                name: results[i].name
-            }
-            arr.push(item);
-        }
-        var obj = {};
-        obj[groupname] = arr;
-        deferred.resolve(obj);
-    });
-    return deferred.promise;
-}
+var getFeatures = function (id, grouptype_id, groupname) {
+  var deferred = Q.defer();
+  var connection = db.getConnection();
+  connection.query(
+    "select g.name, groupt.id, groupt.text from members feat inner join groups g on feat.group_id = g.id inner join grouptypes groupt on g.grouptype_id = groupt.id and groupt.id = ? where feat.entry_id = ?",
+    [grouptype_id, id],
+    function (error, results, fields) {
+      if (error) {
+        throw error;
+      }
+      var arr = [];
+      var i = 0;
+      for (; i < results.length; i++) {
+        var item = {
+          name: results[i].name,
+        };
+        arr.push(item);
+      }
+      var obj = {};
+      obj[groupname] = arr;
+      deferred.resolve(obj);
+    }
+  );
+  return deferred.promise;
+};
 
 /**
  * Get relatedlinks
@@ -1174,145 +1344,171 @@ ORDER BY
 +-----------+-----------------------------------------------------------------+
 
  */
-var getRelatedLinks = function(id) {
-    var deferred = Q.defer();
-    var connection = db.getConnection();
-    connection.query('SELECT relw.name AS sitename,rel.link FROM webrefs rel INNER JOIN websites relw ON rel.website_id = relw.id WHERE relw.name NOT IN ("Freebase","The Tipshop","RZX Archive Channel (YouTube)", "ZX81 videos (Youtube)") AND rel.entry_id = ? ORDER BY sitename', [id], function(error, results, fields) {
-        if (error) {
-            throw error;
-        }
-        var arr = [];
-        var i = 0;
-        for (; i < results.length; i++) {
-            var item = {
-                sitename: results[i].sitename,
-                link: results[i].link
-            }
-            arr.push(item);
-        }
-        deferred.resolve({ relatedlinks: arr, webrefs: arr });
-    });
-    return deferred.promise;
-}
-
-
+var getRelatedLinks = function (id) {
+  var deferred = Q.defer();
+  var connection = db.getConnection();
+  connection.query(
+    'SELECT relw.name AS sitename,rel.link FROM webrefs rel INNER JOIN websites relw ON rel.website_id = relw.id WHERE relw.name NOT IN ("Freebase","The Tipshop","RZX Archive Channel (YouTube)", "ZX81 videos (Youtube)") AND rel.entry_id = ? ORDER BY sitename',
+    [id],
+    function (error, results, fields) {
+      if (error) {
+        throw error;
+      }
+      var arr = [];
+      var i = 0;
+      for (; i < results.length; i++) {
+        var item = {
+          sitename: results[i].sitename,
+          link: results[i].link,
+        };
+        arr.push(item);
+      }
+      deferred.resolve({ relatedlinks: arr, webrefs: arr });
+    }
+  );
+  return deferred.promise;
+};
 
 function replaceMask(input, pattern, value) {
-    var result = input;
-    var found = input.match(pattern);
-    if (found != null) {
-        var template = found[0];
-        var padding = found[1];
-        var zero = ("0".repeat(padding) + value).slice(-padding);
-        if (padding == 1) { // N = 1, plain value
-            zero = value;
-        }
-        var re = new RegExp(template, "g");
-        result = input.replace(re, zero);
+  var result = input;
+  var found = input.match(pattern);
+  if (found != null) {
+    var template = found[0];
+    var padding = found[1];
+    var zero = ("0".repeat(padding) + value).slice(-padding);
+    if (padding == 1) {
+      // N = 1, plain value
+      zero = value;
     }
-    return result;
+    var re = new RegExp(template, "g");
+    result = input.replace(re, zero);
+  }
+  return result;
 }
 /**
 
   Other sites integrated with ZXDB
 
 */
-var getRelatedSites = function(id) {
-    var deferred = Q.defer();
-    var connection = db.getConnection();
-    connection.query('SELECT name as sitename, link_mask FROM websites WHERE name NOT IN ("ZXInfo") AND link_mask is NOT NULL ORDER BY sitename', function(error, results, fields) {
-        if (error) {
-            throw error;
-        }
-        var arr = [];
-        var i = 0;
-        for (; i < results.length; i++) {
-            var link = replaceMask(results[i].link_mask, /{e(\d)+}/i, parseInt(id));
-            var item = {
-                sitename: results[i].sitename,
-                link: link
-            }
-            arr.push(item);
-        }
-        deferred.resolve({ relatedsites: arr });
-    });
-    return deferred.promise;
-}
+var getRelatedSites = function (id) {
+  var deferred = Q.defer();
+  var connection = db.getConnection();
+  connection.query(
+    'SELECT name as sitename, link_mask FROM websites WHERE name NOT IN ("ZXInfo") AND link_mask is NOT NULL ORDER BY sitename',
+    function (error, results, fields) {
+      if (error) {
+        throw error;
+      }
+      var arr = [];
+      var i = 0;
+      for (; i < results.length; i++) {
+        var link = replaceMask(results[i].link_mask, /{e(\d)+}/i, parseInt(id));
+        var item = {
+          sitename: results[i].sitename,
+          link: link,
+        };
+        arr.push(item);
+      }
+      deferred.resolve({ relatedsites: arr });
+    }
+  );
+  return deferred.promise;
+};
 
 /**
 
   YouTube Links
 
 */
-var getYouTubeLinks = function(id) {
-    var deferred = Q.defer();
-    var connection = db.getConnection();
-    connection.query('SELECT relw.name AS sitename,rel.link FROM webrefs rel INNER JOIN websites relw ON rel.website_id = relw.id WHERE relw.name IN ("RZX Archive Channel (YouTube)", "ZX81 videos (Youtube)", "The Spectrum Show (Youtube)") AND rel.entry_id = ? ORDER BY sitename', [id], function(error, results, fields) {
-        if (error) {
-            throw error;
-        }
-        var arr = [];
-        var i = 0;
-        for (; i < results.length; i++) {
-            var item = {
-                sitename: results[i].sitename,
-                link: results[i].link
-            }
-            arr.push(item);
-        }
-        deferred.resolve({ youtubelinks: arr });
-    });
-    return deferred.promise;
-}
+var getYouTubeLinks = function (id) {
+  var deferred = Q.defer();
+  var connection = db.getConnection();
+  connection.query(
+    'SELECT relw.name AS sitename,rel.link FROM webrefs rel INNER JOIN websites relw ON rel.website_id = relw.id WHERE relw.name IN ("RZX Archive Channel (YouTube)", "ZX81 videos (Youtube)", "The Spectrum Show (Youtube)", "TV Advert (YouTube)") AND rel.entry_id = ? ORDER BY sitename',
+    [id],
+    function (error, results, fields) {
+      if (error) {
+        throw error;
+      }
+      var arr = [];
+      var i = 0;
+      for (; i < results.length; i++) {
+        var item = {
+          sitename: results[i].sitename,
+          link: results[i].link,
+        };
+        arr.push(item);
+      }
+      deferred.resolve({ youtubelinks: arr });
+    }
+  );
+  return deferred.promise;
+};
 
 /**
  * Get inCompilation
 
  -- This program appeared on the following compilations...
-SELECT comp.title AS title,pub.name AS publisher,entryt.text AS type
-FROM   compilations icomp
-       INNER JOIN entries comp
-         ON icomp.compilation_id = comp.id
-       LEFT JOIN genretypes entryt
-         ON comp.genretype_id = entryt.id
-       LEFT JOIN publishers p
-              ON p.entry_id = comp.id
-       LEFT JOIN labels pub
-         ON p.label_id = pub.id
-WHERE  icomp.entry_id = 4010
-   AND p.release_seq = 0; 
-
-+----------------------------+--------------------+-------------+
-| title                      | publisher          | type        |
-+----------------------------+--------------------+-------------+
-| Screen Heroes              | Ocean Software Ltd | Compilation |
-| They Sold a Million 3      | The Hit Squad      | Compilation |
-| Live Ammo                  | Ocean Software Ltd | Compilation |
-| 40 Principales Vol. 4, Los | Erbe Software S.A. | Compilation |
-+----------------------------+--------------------+-------------+
+SELECT DISTINCT -- DISTINCT, as it can contained multiple times in a compilation with differet aliaes, eg. Elite 1601
+    comp.id AS id,
+    comp.title AS title,
+    pub.name AS publisher,
+    entryt.text AS type,
+    machinet.text AS machinetype
+FROM
+    compilations icomp
+INNER JOIN entries comp ON
+    icomp.compilation_id = comp.id
+LEFT JOIN genretypes entryt ON
+    comp.genretype_id = entryt.id
+LEFT JOIN publishers p ON
+    p.entry_id = comp.id
+LEFT JOIN labels pub ON
+    p.label_id = pub.id
+LEFT JOIN machinetypes machinet ON
+    comp.machinetype_id = machinet.id
+WHERE
+	icomp.entry_id = 4010 AND p.release_seq = 0
+ORDER BY
+	comp.title, pub.name
+	
++-------+---------------------------+--------------------+-------------+--------------------+
+|  id   |           title           |     publisher      |    type     |    machinetype     |
++-------+---------------------------+--------------------+-------------+--------------------+
+| 11348 | Screen Heroes             | Ocean Software Ltd | Compilation | ZX-Spectrum 48K    |
+| 11373 | They Sold a Million 3     | The Hit Squad      | Compilation | ZX-Spectrum 48K    |
+| 11858 | Live Ammo                 | Ocean Software Ltd | Compilation | ZX-Spectrum 48K    |
+| 14250 | Los 40 Principales Vol. 4 | Erbe Software S.A. | Compilation | ZX-Spectrum 128 +3 |
++-------+---------------------------+--------------------+-------------+--------------------+
 
  */
-var getInCompilations = function(id) {
-    var deferred = Q.defer();
-    var connection = db.getConnection();
-    connection.query('select comp.title as title, pub.name as publisher, entryt.text as type from compilations icomp inner join entries comp on icomp.compilation_id = comp.id left join genretypes entryt on comp.genretype_id = entryt.id left join publishers p on p.entry_id = comp.id left join labels pub on p.label_id = pub.id where icomp.entry_id = ? and p.release_seq = 0', [id], function(error, results, fields) {
-        if (error) {
-            throw error;
-        }
-        var arr = [];
-        var i = 0;
-        for (; i < results.length; i++) {
-            var item = {
-                title: results[i].title,
-                publisher: results[i].publisher,
-                type: results[i].type
-            }
-            arr.push(item);
-        }
-        deferred.resolve({ incompilations: arr });
-    });
-    return deferred.promise;
-}
+var getInCompilations = function (id) {
+  var deferred = Q.defer();
+  var connection = db.getConnection();
+  connection.query(
+    "SELECT DISTINCT comp.id as id, comp.title AS title, pub.name AS publisher, entryt.text AS type, machinet.text AS machinetype FROM compilations icomp INNER JOIN entries comp ON icomp.compilation_id = comp.id LEFT JOIN genretypes entryt ON comp.genretype_id = entryt.id LEFT JOIN publishers p ON p.entry_id = comp.id LEFT JOIN labels pub ON p.label_id = pub.id LEFT JOIN machinetypes machinet ON comp.machinetype_id = machinet.id WHERE icomp.entry_id = ? AND p.release_seq = 0 ORDER BY comp.title, pub.name",
+    [id],
+    function (error, results, fields) {
+      if (error) {
+        throw error;
+      }
+      var arr = [];
+      var i = 0;
+      for (; i < results.length; i++) {
+        var item = {
+          id: results[i].id,
+          title: results[i].title,
+          publisher: results[i].publisher,
+          type: results[i].type,
+          machinetype: results[i].machinetype,
+        };
+        arr.push(item);
+      }
+      deferred.resolve({ incompilations: arr });
+    }
+  );
+  return deferred.promise;
+};
 
 /**
  * Get BookTypeIn
@@ -1331,27 +1527,30 @@ WHERE  bti.entry_id = 770;
 +-----------------------+---------+
 
  */
-var getBookTypeIns = function(id) {
-    var deferred = Q.defer();
-    var connection = db.getConnection();
-    connection.query('select * from booktypeins bti inner join entries book on bti.book_id = book.id where bti.entry_id = ?', [id], function(error, results, fields) {
-        if (error) {
-            throw error;
-        }
-        var arr = [];
-        var i = 0;
-        for (; i < results.length; i++) {
-            var item = {
-                title: results[i].title,
-                bookid: results[i].book_id
-            }
-            arr.push(item);
-        }
-        deferred.resolve({ booktypeins: arr });
-    });
-    return deferred.promise;
-}
-
+var getBookTypeIns = function (id) {
+  var deferred = Q.defer();
+  var connection = db.getConnection();
+  connection.query(
+    "select * from booktypeins bti inner join entries book on bti.book_id = book.id where bti.entry_id = ?",
+    [id],
+    function (error, results, fields) {
+      if (error) {
+        throw error;
+      }
+      var arr = [];
+      var i = 0;
+      for (; i < results.length; i++) {
+        var item = {
+          title: results[i].title,
+          bookid: results[i].book_id,
+        };
+        arr.push(item);
+      }
+      deferred.resolve({ booktypeins: arr });
+    }
+  );
+  return deferred.promise;
+};
 
 /**
 
@@ -1364,10 +1563,13 @@ FROM
     downloads d
 INNER JOIN filetypes filet ON
     d.filetype_id = filet.id
-INNER JOIN extensions ex on right(d.file_link, length(ex.ext)) = ex.ext
-WHERE
-	NOT(filetype_id IN (46, 47) OR filetype_id BETWEEN 8 AND 22) AND d.entry_id = 2259
-
+INNER JOIN extensions ex ON
+    RIGHT(d.file_link, LENGTH(ex.ext)) = ex.ext
+WHERE NOT
+    (
+        filetype_id IN(46, 47) OR filetype_id BETWEEN 8 AND 22
+	) AND d.entry_id = 2259
+ORDER BY filet.text, ex.text
 
 +-----------------------------------------------------------------------------+---------+-----------------------------------------------+-------------------+
 | url                                                                         | size    | type                                          | format            |
@@ -1393,31 +1595,36 @@ WHERE
 
 */
 
-var getAdditionals = function(id) {
-    var deferred = Q.defer();
-    var connection = db.getConnection();
-    connection.query('SELECT d.file_link AS url, file_size AS size, filet.text AS type, ex.text AS format FROM downloads d INNER JOIN filetypes filet ON d.filetype_id = filet.id INNER JOIN extensions ex on right(d.file_link, length(ex.ext)) = ex.ext WHERE NOT(filetype_id IN (46, 47) OR filetype_id BETWEEN 8 AND 22) AND d.entry_id = ?', [id], function(error, results, fields) {
-        if (error) {
-            throw error;
+var getAdditionals = function (id) {
+  var deferred = Q.defer();
+  var connection = db.getConnection();
+  connection.query(
+    "SELECT d.file_link AS url, file_size AS size, filet.text AS type, ex.text AS format FROM downloads d INNER JOIN filetypes filet ON d.filetype_id = filet.id INNER JOIN extensions ex on right(d.file_link, length(ex.ext)) = ex.ext WHERE NOT(filetype_id IN (46, 47) OR filetype_id BETWEEN 8 AND 22) AND d.entry_id = ? ORDER BY filet.text, ex.text",
+    [id],
+    function (error, results, fields) {
+      if (error) {
+        throw error;
+      }
+      var arr = [];
+      var i = 0;
+      for (; i < results.length; i++) {
+        if (results[i].url == undefined) {
+          // console.log(id + ": empty additionals: ");
+        } else {
+          var downloaditem = {
+            url: results[i].url,
+            size: results[i].size,
+            type: results[i].type,
+            format: results[i].format,
+          };
+          arr.push(removeEmpty(downloaditem));
         }
-        var arr = [];
-        var i = 0;
-        for (; i < results.length; i++) {
-            if (results[i].url == undefined) {; // console.log(id + ": empty additionals: ");
-            } else {
-                var downloaditem = {
-                    url: results[i].url,
-                    size: results[i].size,
-                    type: results[i].type,
-                    format: results[i].format
-                }
-                arr.push(removeEmpty(downloaditem));
-            }
-        }
-        deferred.resolve({ additionals: arr });
-    });
-    return deferred.promise;
-}
+      }
+      deferred.resolve({ additionals: arr });
+    }
+  );
+  return deferred.promise;
+};
 
 /**
  * Get Adverts
@@ -1487,31 +1694,35 @@ ORDER  BY date_year,date_month,pageno
 +--------------------------+-----------+---------+--------+---------------+----------------------+-------------------------------------------------------------------------------------------------------------------+
 
  */
-var getAdverts = function(id) {
-    var deferred = Q.defer();
-    var connection = db.getConnection();
-    connection.query('select m.name as magazine, i.date_year as issueyear, i.date_month as issueno, ref.page as pageno, reft.text as magazine_type, f.name as magazine_text, m.link_mask from entries e inner join magrefs ref on ref.entry_id = e.id inner join features f on ref.feature_id = f.id inner join referencetypes reft on ref.referencetype_id = reft.id inner join issues i on ref.issue_id = i.id inner join magazines m on i.magazine_id = m.id where e.id = ? and ref.referencetype_id in (1, 2, 3, 15) order by date_year, date_month, pageno', [id], function(error, results, fields) {
-        if (error) {
-            throw error;
-        }
-        var arr = [];
-        var i = 0;
-        for (; i < results.length; i++) {
-            var item = {
-                magazine: results[i].magazine,
-                issueyear: results[i].issueyear,
-                issueno: results[i].issueno,
-                page: results[i].pageno + "",
-                pageno: results[i].pageno,
-                magazine_type: results[i].magazine_type,
-                link_mask: results[i].link_mask
-            }
-            arr.push(removeEmpty(item));
-        }
-        deferred.resolve({ adverts: arr });
-    });
-    return deferred.promise;
-}
+var getAdverts = function (id) {
+  var deferred = Q.defer();
+  var connection = db.getConnection();
+  connection.query(
+    "select m.name as magazine, i.date_year as issueyear, i.date_month as issueno, ref.page as pageno, reft.text as magazine_type, f.name as magazine_text, m.link_mask from entries e inner join magrefs ref on ref.entry_id = e.id inner join features f on ref.feature_id = f.id inner join referencetypes reft on ref.referencetype_id = reft.id inner join issues i on ref.issue_id = i.id inner join magazines m on i.magazine_id = m.id where e.id = ? and ref.referencetype_id in (1, 2, 3, 15) order by date_year, date_month, pageno",
+    [id],
+    function (error, results, fields) {
+      if (error) {
+        throw error;
+      }
+      var arr = [];
+      var i = 0;
+      for (; i < results.length; i++) {
+        var item = {
+          magazine: results[i].magazine,
+          issueyear: results[i].issueyear,
+          issueno: results[i].issueno,
+          page: results[i].pageno + "",
+          pageno: results[i].pageno,
+          magazine_type: results[i].magazine_type,
+          link_mask: results[i].link_mask,
+        };
+        arr.push(removeEmpty(item));
+      }
+      deferred.resolve({ adverts: arr });
+    }
+  );
+  return deferred.promise;
+};
 
 /**
 Reviews: referencetype = 10
@@ -1557,91 +1768,97 @@ ORDER  BY date_year,date_month,date_day,pageno
 +--------------------------+-----------+------------+----------+-------------+---------+--------+---------------+----------------------------------------------+-----------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------+
 
 */
-var getMagazineReviews = function(id) {
-    var deferred = Q.defer();
-    var connection = db.getConnection();
-    connection.query('SELECT m.name AS magazine,i.date_year AS issueyear,i.date_month AS issuemonth,i.date_day AS issueday, i.volume as issuevolume, i.number AS issueno, ref.page AS pageno,reft.text AS magazine_type,f.name AS magazine_text, m.link_mask FROM entries e INNER JOIN magrefs ref ON ref.entry_id = e.id INNER JOIN features f ON ref.feature_id = f.id INNER JOIN referencetypes reft ON ref.referencetype_id = reft.id INNER JOIN issues i ON ref.issue_id = i.id INNER JOIN magazines m ON i.magazine_id = m.id WHERE e.id = ? AND ref.referencetype_id IN ( 10 ) ORDER BY date_year,date_month,pageno', [id], function(error, results, fields) {
-        if (error) {
-            throw error;
-        }
-        var arr = [];
-        var i = 0;
-        for (; i < results.length; i++) {
-            var item = {
-                magazine: results[i].magazine,
-                issueyear: results[i].issueyear,
-                issuemonth: results[i].issuemonth,
-                issueday: results[i].issueday,
-                issueno: results[i].issueno,
-                issuevolume: results[i].issuevolume,
-                page: results[i].pageno + "",
-                pageno: results[i].pageno,
-                magazine_type: results[i].magazine_type,
-                link_mask: results[i].link_mask
-            }
-            arr.push(removeEmpty(item));
-        }
-        deferred.resolve({ magazinereview: arr });
-    });
-    return deferred.promise;
-}
+var getMagazineReviews = function (id) {
+  var deferred = Q.defer();
+  var connection = db.getConnection();
+  connection.query(
+    "SELECT m.name AS magazine,i.date_year AS issueyear,i.date_month AS issuemonth,i.date_day AS issueday, i.volume as issuevolume, i.number AS issueno, ref.page AS pageno,reft.text AS magazine_type,f.name AS magazine_text, m.link_mask FROM entries e INNER JOIN magrefs ref ON ref.entry_id = e.id INNER JOIN features f ON ref.feature_id = f.id INNER JOIN referencetypes reft ON ref.referencetype_id = reft.id INNER JOIN issues i ON ref.issue_id = i.id INNER JOIN magazines m ON i.magazine_id = m.id WHERE e.id = ? AND ref.referencetype_id IN ( 10 ) ORDER BY date_year,date_month,pageno",
+    [id],
+    function (error, results, fields) {
+      if (error) {
+        throw error;
+      }
+      var arr = [];
+      var i = 0;
+      for (; i < results.length; i++) {
+        var item = {
+          magazine: results[i].magazine,
+          issueyear: results[i].issueyear,
+          issuemonth: results[i].issuemonth,
+          issueday: results[i].issueday,
+          issueno: results[i].issueno,
+          issuevolume: results[i].issuevolume,
+          page: results[i].pageno + "",
+          pageno: results[i].pageno,
+          magazine_type: results[i].magazine_type,
+          link_mask: results[i].link_mask,
+        };
+        arr.push(removeEmpty(item));
+      }
+      deferred.resolve({ magazinereview: arr });
+    }
+  );
+  return deferred.promise;
+};
 
 /**
  * Get MagazineRefs
 
 The rest, not IN (1, 2, 3, 10, 15)
  */
-var getMagazineRefs = function(id) {
-    var deferred = Q.defer();
-    var connection = db.getConnection();
-    connection.query('select m.name as magazine, i.date_year as issueyear, i.date_month as issueno, ref.page as pageno, reft.text as magazine_type, f.name as magazine_text, m.link_mask from entries e inner join magrefs ref on ref.entry_id = e.id inner join features f on ref.feature_id = f.id inner join referencetypes reft on ref.referencetype_id = reft.id inner join issues i on ref.issue_id = i.id inner join magazines m on i.magazine_id = m.id where e.id = ? and ref.referencetype_id not in (1, 2, 3, 10, 15) order by magazine_type, date_year, date_month', [id], function(error, results, fields) {
-        if (error) {
-            throw error;
-        }
-        var arr = [];
-        var i = 0;
-        for (; i < results.length; i++) {
-            var item = {
-                magazine: results[i].magazine,
-                issueyear: results[i].issueyear,
-                issueno: results[i].issueno,
-                page: results[i].pageno + "",
-                pageno: results[i].pageno,
-                magazine_type: results[i].magazine_type + ' - ' + results[i].magazine_text,
-                link_mask: results[i].link_mask
-            }
-            arr.push(removeEmpty(item));
-        }
-        deferred.resolve({ magrefs: arr });
-    });
-    return deferred.promise;
-}
-
+var getMagazineRefs = function (id) {
+  var deferred = Q.defer();
+  var connection = db.getConnection();
+  connection.query(
+    "select m.name as magazine, i.date_year as issueyear, i.date_month as issueno, ref.page as pageno, reft.text as magazine_type, f.name as magazine_text, m.link_mask from entries e inner join magrefs ref on ref.entry_id = e.id inner join features f on ref.feature_id = f.id inner join referencetypes reft on ref.referencetype_id = reft.id inner join issues i on ref.issue_id = i.id inner join magazines m on i.magazine_id = m.id where e.id = ? and ref.referencetype_id not in (1, 2, 3, 10, 15) order by magazine_type, date_year, date_month",
+    [id],
+    function (error, results, fields) {
+      if (error) {
+        throw error;
+      }
+      var arr = [];
+      var i = 0;
+      for (; i < results.length; i++) {
+        var item = {
+          magazine: results[i].magazine,
+          issueyear: results[i].issueyear,
+          issueno: results[i].issueno,
+          page: results[i].pageno + "",
+          pageno: results[i].pageno,
+          magazine_type: results[i].magazine_type + " - " + results[i].magazine_text,
+          link_mask: results[i].link_mask,
+        };
+        arr.push(removeEmpty(item));
+      }
+      deferred.resolve({ magrefs: arr });
+    }
+  );
+  return deferred.promise;
+};
 
 /**
   get tosec references, requires temporary table 'tmp_tosec'
 */
 
-var getTOSEC = function(id) {
-    var deferred = Q.defer();
-    var connection = db.getConnection();
-    connection.query('SELECT * FROM tmp_tosec WHERE zxdb_id = ?', [id], function(error, results, fields) {
-        if (error) {
-            throw error;
-        }
-        var arr = [];
-        var i = 0;
-        for (; i < results.length; i++) {
-            var item = {
-                url: results[i].path
-            }
-            arr.push(item);
-        }
-        deferred.resolve({ tosec: arr });
-    });
-    return deferred.promise;
-}
-
+var getTOSEC = function (id) {
+  var deferred = Q.defer();
+  var connection = db.getConnection();
+  connection.query("SELECT * FROM tmp_tosec WHERE zxdb_id = ?", [id], function (error, results, fields) {
+    if (error) {
+      throw error;
+    }
+    var arr = [];
+    var i = 0;
+    for (; i < results.length; i++) {
+      var item = {
+        url: results[i].path,
+      };
+      arr.push(item);
+    }
+    deferred.resolve({ tosec: arr });
+  });
+  return deferred.promise;
+};
 
 /**
   This title Manic Miner Hard (30440) is a modification of
@@ -1652,257 +1869,338 @@ var getTOSEC = function(id) {
   Ku Ku (9889) - mod of Sabre + project future (multuple)
   MINER WILLY'S NIGHTMARE (30676) - mod of + inspired by
 
+  SELECT
+    r.original_id AS id,
+    e.title AS this_title,
+    rt.text AS is_mod,
+    o.title AS title,
+    pub.name AS publisher,
+    m.text
+FROM
+    relations r
+INNER JOIN entries e ON
+    e.id = r.entry_id
+INNER JOIN entries o ON
+    o.id = r.original_id
+LEFT JOIN publishers p ON
+    p.entry_id = o.id AND p.release_seq = 0
+LEFT JOIN labels pub ON
+    p.label_id = pub.id
+INNER JOIN relationtypes rt ON
+    rt.id = r.relationtype_id AND rt.id IN("m", "i")
+INNER JOIN machinetypes m ON
+    m.id = o.machinetype_id
+WHERE
+	r.entry_id = 9889
+ORDER BY o.title, pub.name
+
+
++------+------------+----------+----------------+------------------------+-----------------+
+|  id  | this_title |  is_mod  |     title      |       publisher        |      text       |
++------+------------+----------+----------------+------------------------+-----------------+
+| 3899 | Ku-Ku      | Mod from | Project Future | Micromania             | ZX-Spectrum 48K |
+| 9408 | Ku-Ku      | Mod from | Sabre Wulf     | Ultimate Play The Game | ZX-Spectrum 48K |
++------+------------+----------+----------------+------------------------+-----------------+
+
+
 */
-var getModOf = function(id) {
-    var deferred = Q.defer();
-    var connection = db.getConnection();
-    connection.query('SELECT r.original_id AS id, e.title AS this_title, rt.text AS is_mod, o.title AS title, pub.name AS publisher, m.text FROM relations r INNER JOIN entries e ON e.id = r.entry_id INNER JOIN entries o ON o.id = r.original_id LEFT JOIN publishers p ON p.entry_id = o.id AND p.release_seq = 0 LEFT JOIN labels pub ON p.label_id = pub.id INNER JOIN relationtypes rt ON rt.id = r.relationtype_id AND rt.id IN("m", "i") INNER JOIN machinetypes m ON m.id = o.machinetype_id WHERE r.entry_id = ?', [id], function(error, results, fields) {
-        if (error) {
-            throw error;
-        }
-        var arr = [];
+var getModOf = function (id) {
+  var deferred = Q.defer();
+  var connection = db.getConnection();
+  connection.query(
+    'SELECT r.original_id AS id, e.title AS this_title, rt.text AS is_mod, o.title AS title, pub.name AS publisher, m.text FROM relations r INNER JOIN entries e ON e.id = r.entry_id INNER JOIN entries o ON o.id = r.original_id LEFT JOIN publishers p ON p.entry_id = o.id AND p.release_seq = 0 LEFT JOIN labels pub ON p.label_id = pub.id INNER JOIN relationtypes rt ON rt.id = r.relationtype_id AND rt.id IN("m", "i") INNER JOIN machinetypes m ON m.id = o.machinetype_id WHERE r.entry_id = ? ORDER BY o.title, pub.name',
+    [id],
+    function (error, results, fields) {
+      if (error) {
+        throw error;
+      }
+      var arr = [];
 
-        for(var i = 0; i < results.length; i++) {
-            var item = {
-                id: ('0000000' + results[i].id).slice(-7),
-                is_mod: results[i].is_mod === 'Mod from' ? 1 : 0,
-                type: results[i].is_mod,
-                title: results[i].title,
-                publisher: results[i].publisher,
-                machinetype: results[i].text
-            }
-            item = removeEmpty(item);
-            arr.push(item);
-        }
-        deferred.resolve({ mod_of: arr });
-    });
-    return deferred.promise;
-
-}
+      for (var i = 0; i < results.length; i++) {
+        var item = {
+          id: ("0000000" + results[i].id).slice(-7),
+          is_mod: results[i].is_mod === "Mod from" ? 1 : 0,
+          type: results[i].is_mod,
+          title: results[i].title,
+          publisher: results[i].publisher,
+          machinetype: results[i].text,
+        };
+        item = removeEmpty(item);
+        arr.push(item);
+      }
+      deferred.resolve({ mod_of: arr });
+    }
+  );
+  return deferred.promise;
+};
 
 /**
-  This title Manic Miner (3012) are modified by these titles:  
+  This title Manic Miner (3012) are modified by these titles:
+
+SELECT
+    r.entry_id AS id,
+    e.title AS title,
+    rt.text AS is_mod,
+    pub.name AS publisher,
+    m.text AS machinetype
+FROM
+    relations r
+INNER JOIN entries e ON
+    e.id = r.entry_id
+LEFT JOIN publishers p ON
+    p.entry_id = e.id AND p.release_seq = 0
+LEFT JOIN labels pub ON
+    p.label_id = pub.id
+INNER JOIN relationtypes rt ON
+    rt.id = r.relationtype_id AND rt.id IN("m", "i")
+INNER JOIN machinetypes m ON
+    m.id = e.machinetype_id
+WHERE
+	r.original_id = 3012
+ORDER BY
+    e.title, pub.name
+	
++-------+-------------------------+-------------+----------------------+------------------------+
+|  id   |          title          |   is_mod    |      publisher       |      machinetype       |
++-------+-------------------------+-------------+----------------------+------------------------+
+| 14491 | Winer Milly             | Inspired by | Magnum Computing     | ZX-Spectrum 48K        |
+| 17539 | Manic Miner ZX81        | Inspired by | Ales Martinik        | ZX-Spectrum 128K       |
+| 32113 | Pac Manic Miner Man     | Inspired by | NULL                 | ZX-Spectrum 128 +2A/+3 |
+| 34299 | Thoroughly Modern Willy | Inspired by | NULL                 | ZX-Spectrum 48K        |
+| 34687 | Manic Pietro            | Inspired by | Cristian M. Gonzalez | ZX-Spectrum 128K       |
+|  3014 | Manic Miner 2           | Mod from    | Schultze             | ZX-Spectrum 48K        |
+|  ...  |           ...           | ...         | ...                  | ...                    |
++-------+-------------------------+-------------+----------------------+------------------------+
+
 */
-var getModifiedBy = function(id) {
-    var deferred = Q.defer();
-    var connection = db.getConnection();
-    connection.query('SELECT r.entry_id AS id, e.title AS title, rt.text AS is_mod, pub.name AS publisher, m.text AS TEXT FROM relations r INNER JOIN entries e ON e.id = r.entry_id LEFT JOIN publishers p ON p.entry_id = e.id AND p.release_seq = 0 LEFT JOIN labels pub ON p.label_id = pub.id INNER JOIN relationtypes rt ON rt.id = r.relationtype_id AND rt.id IN("m", "i") INNER JOIN machinetypes m ON m.id = e.machinetype_id WHERE r.original_id = ?', [id], function(error, results, fields) {
-        if (error) {
-            throw error;
-        }
-        var arr = [];
-        var i = 0;
-        for (; i < results.length; i++) {
-            var item = {
-                id: ('0000000' + results[i].id).slice(-7),
-                is_mod: results[i].is_mod === 'Mod from' ? 1 : 0,
-                type: results[i].is_mod,
-                title: results[i].title,
-                publisher: results[i].publisher,
-                machinetype: results[i].text
-            }
-            arr.push(removeEmpty(item));
-        }
-        deferred.resolve({ modified_by: arr });
-    });
-    return deferred.promise;
+var getModifiedBy = function (id) {
+  var deferred = Q.defer();
+  var connection = db.getConnection();
+  connection.query(
+    'SELECT r.entry_id AS id, e.title AS title, rt.text AS is_mod, pub.name AS publisher, m.text AS machinetype FROM relations r INNER JOIN entries e ON e.id = r.entry_id LEFT JOIN publishers p ON p.entry_id = e.id AND p.release_seq = 0 LEFT JOIN labels pub ON p.label_id = pub.id INNER JOIN relationtypes rt ON rt.id = r.relationtype_id AND rt.id IN("m", "i") INNER JOIN machinetypes m ON m.id = e.machinetype_id WHERE r.original_id = ? ORDER BY e.title, pub.name',
+    [id],
+    function (error, results, fields) {
+      if (error) {
+        throw error;
+      }
+      var arr = [];
+      var i = 0;
+      for (; i < results.length; i++) {
+        var item = {
+          id: ("0000000" + results[i].id).slice(-7),
+          is_mod: results[i].is_mod === "Mod from" ? 1 : 0,
+          type: results[i].is_mod,
+          title: results[i].title,
+          publisher: results[i].publisher,
+          machinetype: results[i].machinetype,
+        };
+        arr.push(removeEmpty(item));
+      }
+      deferred.resolve({ modified_by: arr });
+    }
+  );
+  return deferred.promise;
+};
 
-}
+var getTitlesForSuggestions = function (id) {
+  var deferred = Q.defer();
+  var connection = db.getConnection();
+  connection.query(
+    "SELECT title FROM entries e where e.id = ? UNION SELECT aka.title AS title FROM aliases aka LEFT JOIN entries e ON e.id = aka.entry_id WHERE e.id = ? UNION SELECT aka.entry_title AS title FROM search_by_titles aka LEFT JOIN entries e ON e.id = aka.entry_id WHERE id = ?",
+    [id, id, id],
+    function (error, results, fields) {
+      if (error) {
+        throw error;
+      }
+      var arr = [];
+      var i = 0;
+      for (; i < results.length; i++) {
+        arr.push.apply(arr, createSuggestions(results[i].title));
+      }
+      deferred.resolve({ titlesuggest: arr });
+    }
+  );
+  return deferred.promise;
+};
 
-var getTitlesForSuggestions = function(id) {
-    var deferred = Q.defer();
-    var connection = db.getConnection();
-    connection.query('SELECT title FROM entries e where e.id = ? UNION SELECT aka.title AS title FROM aliases aka LEFT JOIN entries e ON e.id = aka.entry_id WHERE e.id = ? UNION SELECT aka.entry_title AS title FROM search_by_titles aka LEFT JOIN entries e ON e.id = aka.entry_id WHERE id = ?', [id, id, id], function(error, results, fields) {
-        if (error) {
-            throw error;
-        }
-        var arr = [];
-        var i = 0;
-        for (; i < results.length; i++) {
-            arr.push.apply(arr, createSuggestions(results[i].title));
-        }
-        deferred.resolve({ titlesuggest: arr });
-    });
-    return deferred.promise;
-
-}
-
-var getAuthorsForSuggestions = function(id) {
-    var deferred = Q.defer();
-    var connection = db.getConnection();
-    connection.query('SELECT DISTINCT dev.id AS id, dev.name AS name FROM authors aut INNER JOIN labels dev ON aut.label_id = dev.id WHERE aut.entry_id = ? ORDER BY dev.name ASC', [id], function(error, results, fields) {
-        if (error) {
-            throw error;
-        }
-        var arr = [];
-        var metadata = [];
-        var i = 0;
-        for (; i < results.length; i++) {
-            var autsug = createSuggestions(results[i].name);
-            var item = { name: results[i].name, alias: autsug };
-            metadata.push(item);
-            arr.push.apply(arr, autsug);
-        }
-        deferred.resolve({ authorsuggest: arr, "metadata_author": metadata });
-    });
-    return deferred.promise;
-
-}
+var getAuthorsForSuggestions = function (id) {
+  var deferred = Q.defer();
+  var connection = db.getConnection();
+  connection.query(
+    "SELECT DISTINCT dev.id AS id, dev.name AS name FROM authors aut INNER JOIN labels dev ON aut.label_id = dev.id WHERE aut.entry_id = ? ORDER BY dev.name ASC",
+    [id],
+    function (error, results, fields) {
+      if (error) {
+        throw error;
+      }
+      var arr = [];
+      var metadata = [];
+      var i = 0;
+      for (; i < results.length; i++) {
+        var autsug = createSuggestions(results[i].name);
+        var item = { name: results[i].name, alias: autsug };
+        metadata.push(item);
+        arr.push.apply(arr, autsug);
+      }
+      deferred.resolve({ authorsuggest: arr, metadata_author: metadata });
+    }
+  );
+  return deferred.promise;
+};
 
 /**
  * Suggestion functions
  */
 
 function createSuggestions(title) {
-    // split title by space, comma, dash, colon, semi-colon
-    var titlewords = title.toLowerCase().split(/[\: ,-]+/);
-    // if more than 5 words, keep first 5 only (to limit combinations)
-    if (titlewords.length > 3) {
-        var tmpArray = [];
-        var ii = 0;
-        for (; ii < 4; ii++) {
-            tmpArray.push(titlewords[ii]);
-        }
-        titlewords = tmpArray;
+  // split title by space, comma, dash, colon, semi-colon
+  var titlewords = title.toLowerCase().split(/[\: ,-]+/);
+  // if more than 5 words, keep first 5 only (to limit combinations)
+  if (titlewords.length > 3) {
+    var tmpArray = [];
+    var ii = 0;
+    for (; ii < 4; ii++) {
+      tmpArray.push(titlewords[ii]);
     }
+    titlewords = tmpArray;
+  }
 
-    // clean titlewords
-    // remove everything not 0-9, A-Z
-    // get rid of 'a', 'of' etc
+  // clean titlewords
+  // remove everything not 0-9, A-Z
+  // get rid of 'a', 'of' etc
 
-    var titlewordsCleaned = [];
-    titlewords.forEach(function(value) {
-        var word = value.replace(/\W/g, '');
-        if (word.length > 2) {
-            titlewordsCleaned.push(word);
-        }
+  var titlewordsCleaned = [];
+  titlewords.forEach(function (value) {
+    var word = value.replace(/\W/g, "");
+    if (word.length > 2) {
+      titlewordsCleaned.push(word);
+    }
+  });
+
+  var cs = Array.from(allcombinations(titlewordsCleaned));
+  var input = [title];
+  cs.forEach(function (v) {
+    var inputLine = "";
+    v.forEach(function (w) {
+      inputLine += " " + w;
     });
+    input.push(inputLine.trim());
+  });
 
-    var cs = Array.from(allcombinations(titlewordsCleaned));
-    var input = [title];
-    cs.forEach(function(v) {
-        var inputLine = "";
-        v.forEach(function(w) {
-            inputLine += " " + w;
-        });
-        input.push(inputLine.trim());
-    });
+  input = _.uniqWith(input, _.isEqual);
 
-    input = _.uniqWith(input, _.isEqual);
-
-    return input;
+  return input;
 }
-
 
 /*
  * #############################################
  */
 
+var zxdb_doc = function (id) {
+  var done = false;
+  Q.all([
+    getBasicInfo(id),
+    getPublisher(id),
+    getReleases(id),
+    getAuthors(id),
+    getRoles(id),
+    getAuthored(id),
+    getAuthoring(id),
+    getControls(id),
+    getInspiredByTieInLicense(id),
+    getOtherSystems(id),
+    getCompilationContent(id),
+    getScreens(id),
+    getSeries(id), // "S", "series"
+    getFeatures(id, "F", "features"),
+    getFeatures(id, "C", "competition"),
+    getFeatures(id, "M", "majorclone"),
+    getFeatures(id, "T", "themedgroup"),
+    getFeatures(id, "U", "unsortedgroup"),
+    getRelatedLinks(id),
+    getRelatedSites(id),
+    getYouTubeLinks(id),
+    getInCompilations(id),
+    getBookTypeIns(id),
+    getMagazineReviews(id),
+    getAdditionals(id),
+    getMagazineRefs(id),
+    getAdverts(id),
+    getTOSEC(id),
+    getModOf(id),
+    getModifiedBy(id),
+    getTitlesForSuggestions(id),
+    getAuthorsForSuggestions(id),
+  ]).then(function (results) {
+    var i = 0;
+    var doc_array = {};
+    for (; i < results.length; i++) {
+      for (var attributename in results[i]) {
+        doc_array[attributename] = results[i][attributename];
+      }
+    }
 
-var zxdb_doc = function(id) {
-    var done = false;
-    Q.all([getBasicInfo(id),
-        getPublisher(id),
-        getReleases(id),
-        getAuthors(id),
-        getRoles(id),
-        getAuthored(id),
-        getAuthoring(id),
-        getControls(id),
-        getInspiredByTieInLicense(id),
-        getOtherSystems(id),
-        getCompilationContent(id),
-        getScreens(id),
-        getSeries(id), // "S", "series"
-        getFeatures(id, "F", "features"),
-        getFeatures(id, "C", "competition"),
-        getFeatures(id, "M", "majorclone"),
-        getFeatures(id, "T", "themedgroup"),
-        getFeatures(id, "U", "unsortedgroup"),
-        getRelatedLinks(id),
-        getRelatedSites(id),
-        getYouTubeLinks(id),
-        getInCompilations(id),
-        getBookTypeIns(id),
-        getMagazineReviews(id),
-        getAdditionals(id),
-        getMagazineRefs(id),
-        getAdverts(id),
-        getTOSEC(id),
-        getModOf(id),
-        getModifiedBy(id),
-        getTitlesForSuggestions(id),
-        getAuthorsForSuggestions(id)
-    ]).then(function(results) {
-        var i = 0;
-        var doc_array = {};
-        for (; i < results.length; i++) {
-            for (var attributename in results[i]) {
-                doc_array[attributename] = results[i][attributename];
-            }
-        }
+    var zerofilled = ("0000000" + id).slice(-7);
+    var filename = json_output_dir + zerofilled + ".json";
+    jsonfile.writeFile(filename, doc_array, { spaces: 2 }, function (err) {
+      if (err) {
+        throw err;
+      }
+      var zerofilled = ("0000000" + id).slice(-7);
+      console.log("saved file: ", filename);
+      done = true;
+    });
+  });
 
-        var zerofilled = ('0000000' + id).slice(-7);
-        var filename = json_output_dir + zerofilled + ".json";
-        jsonfile.writeFile(filename, doc_array, { spaces: 2 }, function(err) {
-            if (err) {
-                throw err;
-            }
-            var zerofilled = ('0000000' + id).slice(-7);
-            console.log('saved file: ', filename);
-            done = true;
-        })
-    });
+  var deasync = require("deasync");
+  deasync.loopWhile(function () {
+    return !done;
+  });
+};
 
-    var deasync = require('deasync');
-    deasync.loopWhile(function() {
-        return !done;
-    });
-}
+var getAllIDs = function (min_id) {
+  var connection = db.getConnection();
+  var done = false;
+  connection.query("select id from entries where id >= ? order by id asc", [min_id], function (error, results, fields) {
+    if (error) {
+      throw error;
+    }
+    var i = 0;
+    for (; i < results.length; i++) {
+      zxdb_doc(results[i].id);
+    }
+    done = true;
+  });
+  require("deasync").loopWhile(function () {
+    return !done;
+  });
+  console.log("Finished!");
+  db.closeConnection(connection);
+};
 
-var getAllIDs = function(min_id) {
-    var connection = db.getConnection();
-    var done = false;
-    connection.query('select id from entries where id >= ? order by id asc', [min_id], function(error, results, fields) {
-        if (error) {
-            throw error;
-        }
-        var i = 0;
-        for (; i < results.length; i++) {
-            zxdb_doc(results[i].id);
-        }
-        done = true;
-    });
-    require('deasync').loopWhile(function() {
-        return !done;
-    });
-    console.log("Finished!");
-    db.closeConnection(connection);
-}
-
-var getID = function(zxdb_id) {
-    var connection = db.getConnection();
-    var done = false;
-    connection.query('select id from entries where id = ? order by id asc', [zxdb_id], function(error, results, fields) {
-        if (error) {
-            throw error;
-        }
-        var i = 0;
-        for (; i < results.length; i++) {
-            zxdb_doc(results[i].id);
-        }
-        done = true;
-    });
-    require('deasync').loopWhile(function() {
-        return !done;
-    });
-    console.log("Finished!");
-    db.closeConnection(connection);
-}
+var getID = function (zxdb_id) {
+  var connection = db.getConnection();
+  var done = false;
+  connection.query("select id from entries where id = ? order by id asc", [zxdb_id], function (error, results, fields) {
+    if (error) {
+      throw error;
+    }
+    var i = 0;
+    for (; i < results.length; i++) {
+      zxdb_doc(results[i].id);
+    }
+    done = true;
+  });
+  require("deasync").loopWhile(function () {
+    return !done;
+  });
+  console.log("Finished!");
+  db.closeConnection(connection);
+};
 
 if (process.argv.length <= 2) {
-    console.log("Usage: " + __filename + " [-all] | [-from] [zxdb_id]");
-    process.exit(-1);
+  console.log("Usage: " + __filename + " [-all] | [-from] [zxdb_id]");
+  process.exit(-1);
 }
 
 var zxdb_id = null;
@@ -1910,25 +2208,25 @@ var process_all = false;
 var process_from = false;
 
 process.argv.forEach((val, index) => {
-    if (val === '-all' && index > 1) {
-        process_all = true;
-    } else if (val === '-from' && index > 1) {
-        process_from = true;
-    } else if (Number.isInteger(parseInt(val)) && index > 1) {
-        zxdb_id = val;
-    }
+  if (val === "-all" && index > 1) {
+    process_all = true;
+  } else if (val === "-from" && index > 1) {
+    process_from = true;
+  } else if (Number.isInteger(parseInt(val)) && index > 1) {
+    zxdb_id = val;
+  }
 });
 
 if (process_all) {
-    console.log("Processing ALL games");
-    getAllIDs(0);
+  console.log("Processing ALL games");
+  getAllIDs(0);
 } else if (zxdb_id !== null && !process_from) {
-    console.log("Processing game: " + zxdb_id);
-    getID(zxdb_id);
+  console.log("Processing game: " + zxdb_id);
+  getID(zxdb_id);
 } else if (zxdb_id !== null && process_from) {
-    console.log("Processing from game: " + zxdb_id);
-    getAllIDs(zxdb_id);
+  console.log("Processing from game: " + zxdb_id);
+  getAllIDs(zxdb_id);
 } else {
-    console.log("Usage: " + __filename + " [-all] | [-from] [game_id]");
-    process.exit(-1);
+  console.log("Usage: " + __filename + " [-all] | [-from] [game_id]");
+  process.exit(-1);
 }

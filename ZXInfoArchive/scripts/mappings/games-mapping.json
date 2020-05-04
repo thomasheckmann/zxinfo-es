@@ -1,27 +1,7 @@
 {
-  "settings": {
-    "index.mapping.total_fields.limit": 1000
-  },
-    "mappings": {
+  "mappings": {
     "zxinfo_games": {
       "properties": {
-        "contenttype": {
-          "type": "keyword"
-        },
-        "titlesuggest": {
-          "type": "completion",
-          "analyzer": "simple",
-          "preserve_separators": true,
-          "preserve_position_increments": true,
-          "max_input_length": 50
-        },
-        "authorsuggest": {
-          "type": "completion",
-          "analyzer": "simple",
-          "preserve_separators": true,
-          "preserve_position_increments": true,
-          "max_input_length": 50
-        },
         "additionals": {
           "type": "nested",
           "properties": {
@@ -32,26 +12,6 @@
               "type": "keyword"
             },
             "missingurl": {
-              "type": "keyword"
-            },
-            "size": {
-              "type": "long"
-            },
-            "type": {
-              "type": "keyword"
-            },
-            "url": {
-              "type": "keyword"
-            }
-          }
-        },
-        "screens": {
-          "type": "nested",
-          "properties": {
-            "filename": {
-              "type": "keyword"
-            },
-            "format": {
               "type": "keyword"
             },
             "size": {
@@ -77,10 +37,10 @@
             "issueyear": {
               "type": "long"
             },
-            "link_mask": {
+            "link": {
               "type": "keyword"
             },
-            "link": {
+            "link_mask": {
               "type": "keyword"
             },
             "magazine": {
@@ -110,6 +70,18 @@
         },
         "authored": {
           "properties": {
+            "id": {
+              "type": "long"
+            },
+            "machinetype": {
+              "type": "text",
+              "fields": {
+                "keyword": {
+                  "type": "keyword",
+                  "ignore_above": 256
+                }
+              }
+            },
             "publisher": {
               "type": "text"
             },
@@ -121,6 +93,18 @@
         "authoring": {
           "type": "nested",
           "properties": {
+            "id": {
+              "type": "long"
+            },
+            "machinetype": {
+              "type": "text",
+              "fields": {
+                "keyword": {
+                  "type": "keyword",
+                  "ignore_above": 256
+                }
+              }
+            },
             "publisher": {
               "type": "text"
             },
@@ -141,9 +125,9 @@
               }
             },
             "authors": {
-              "type": "nested", 
+              "type": "nested",
               "properties": {
-                "name": {
+                "alias": {
                   "type": "text",
                   "fields": {
                     "raw": {
@@ -159,7 +143,7 @@
                     }
                   }
                 },
-                "alias": {
+                "name": {
                   "type": "text",
                   "fields": {
                     "raw": {
@@ -178,6 +162,13 @@
               }
             }
           }
+        },
+        "authorsuggest": {
+          "type": "completion",
+          "analyzer": "simple",
+          "preserve_separators": true,
+          "preserve_position_increments": true,
+          "max_input_length": 50
         },
         "availability": {
           "type": "keyword"
@@ -206,62 +197,6 @@
         "comments": {
           "type": "text"
         },
-        "contents": {
-          "type": "nested",
-          "properties": {
-            "publisher": {
-              "type": "keyword"
-            },
-            "sequence": {
-              "type": "long"
-            },
-            "side": {
-              "type": "keyword"
-            },
-            "title": {
-              "type": "keyword"
-            }
-          }
-        },
-        "controls": {
-          "type": "nested",
-          "properties": {
-            "control": {
-              "type": "keyword"
-            },
-            "port": {
-              "type": "keyword"
-            }
-          }
-        },
-        "groups": {
-          "type": "nested",
-          "properties": {
-            "id": {
-              "type": "keyword"
-            },
-            "name": {
-              "type": "keyword"
-            },
-            "text": {
-              "type": "keyword"
-            }
-          }
-        },
-        "features": {
-          "type": "nested",
-          "properties": {
-            "id": {
-              "type": "keyword"
-            },
-            "name": {
-              "type": "keyword"
-            },
-            "text": {
-              "type": "keyword"
-            }
-          }
-        },
         "competition": {
           "type": "nested",
           "properties": {
@@ -276,35 +211,62 @@
             }
           }
         },
-        "majorclone": {
+        "contents": {
           "type": "nested",
           "properties": {
             "id": {
+              "type": "long"
+            },
+            "machinetype": {
+              "type": "text",
+              "fields": {
+                "keyword": {
+                  "type": "keyword",
+                  "ignore_above": 256
+                }
+              }
+            },
+            "publisher": {
               "type": "keyword"
             },
-            "name": {
+            "sequence": {
+              "type": "long"
+            },
+            "side": {
               "type": "keyword"
             },
-            "text": {
+            "title": {
+              "type": "keyword"
+            },
+            "variation": {
+              "type": "text",
+              "fields": {
+                "keyword": {
+                  "type": "keyword",
+                  "ignore_above": 256
+                }
+              }
+            }
+          }
+        },
+        "contenttype": {
+          "type": "keyword"
+        },
+        "controls": {
+          "type": "nested",
+          "properties": {
+            "control": {
+              "type": "keyword"
+            },
+            "port": {
               "type": "keyword"
             }
           }
         },
-        "themedgroup": {
-          "type": "nested",
-          "properties": {
-            "id": {
-              "type": "keyword"
-            },
-            "name": {
-              "type": "keyword"
-            },
-            "text": {
-              "type": "keyword"
-            }
-          }
+        "dayofrelease": {
+          "type": "long"
         },
-        "unnamedgroup": {
+        "features": {
           "type": "nested",
           "properties": {
             "id": {
@@ -326,8 +288,34 @@
             }
           }
         },
+        "groups": {
+          "type": "nested",
+          "properties": {
+            "id": {
+              "type": "keyword"
+            },
+            "name": {
+              "type": "keyword"
+            },
+            "text": {
+              "type": "keyword"
+            }
+          }
+        },
         "incompilations": {
           "properties": {
+            "id": {
+              "type": "long"
+            },
+            "machinetype": {
+              "type": "text",
+              "fields": {
+                "keyword": {
+                  "type": "keyword",
+                  "ignore_above": 256
+                }
+              }
+            },
             "publisher": {
               "type": "text"
             },
@@ -341,6 +329,15 @@
         },
         "isbn": {
           "type": "text"
+        },
+        "knownerrors": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          }
         },
         "language": {
           "type": "text"
@@ -364,6 +361,52 @@
         "machinetype": {
           "type": "keyword"
         },
+        "magazinereview": {
+          "type": "nested",
+          "properties": {
+            "issue": {
+              "type": "text"
+            },
+            "issueday": {
+              "type": "long"
+            },
+            "issuemonth": {
+              "type": "long"
+            },
+            "issueno": {
+              "type": "long"
+            },
+            "issuevolume": {
+              "type": "long"
+            },
+            "issueyear": {
+              "type": "long"
+            },
+            "link": {
+              "type": "keyword"
+            },
+            "link_mask": {
+              "type": "keyword"
+            },
+            "magazine": {
+              "type": "text",
+              "fields": {
+                "raw": {
+                  "type": "keyword"
+                }
+              }
+            },
+            "magazine_type": {
+              "type": "keyword"
+            },
+            "page": {
+              "type": "keyword"
+            },
+            "pageno": {
+              "type": "long"
+            }
+          }
+        },
         "magrefs": {
           "type": "nested",
           "properties": {
@@ -376,10 +419,10 @@
             "issueyear": {
               "type": "long"
             },
-            "link_mask": {
+            "link": {
               "type": "keyword"
             },
-            "link": {
+            "link_mask": {
               "type": "keyword"
             },
             "magazine": {
@@ -401,45 +444,151 @@
             }
           }
         },
-        "magazinereview": {
+        "majorclone": {
           "type": "nested",
           "properties": {
-            "issue": {
-              "type": "text"
-            },
-            "issueno": {
-              "type": "long"
-            },
-            "issueyear": {
-              "type": "long"
-            },
-            "link_mask": {
+            "id": {
               "type": "keyword"
             },
-            "link": {
+            "name": {
               "type": "keyword"
             },
-            "magazine": {
-              "type": "text",
-              "fields": {
-                "raw": {
-                  "type": "keyword"
-                }
-              }
-            },
-            "magazine_type": {
+            "text": {
               "type": "keyword"
-            },
-            "page": {
-              "type": "keyword"
-            },
-            "pageno": {
-              "type": "long"
             }
           }
         },
         "messagelanguage": {
           "type": "keyword"
+        },
+        "metadata_author": {
+          "properties": {
+            "alias": {
+              "type": "text",
+              "fields": {
+                "keyword": {
+                  "type": "keyword",
+                  "ignore_above": 256
+                }
+              }
+            },
+            "name": {
+              "type": "text",
+              "fields": {
+                "keyword": {
+                  "type": "keyword",
+                  "ignore_above": 256
+                }
+              }
+            }
+          }
+        },
+        "mod_of": {
+          "properties": {
+            "id": {
+              "type": "text",
+              "fields": {
+                "keyword": {
+                  "type": "keyword",
+                  "ignore_above": 256
+                }
+              }
+            },
+            "is_mod": {
+              "type": "long"
+            },
+            "machinetype": {
+              "type": "text",
+              "fields": {
+                "keyword": {
+                  "type": "keyword",
+                  "ignore_above": 256
+                }
+              }
+            },
+            "publisher": {
+              "type": "text",
+              "fields": {
+                "keyword": {
+                  "type": "keyword",
+                  "ignore_above": 256
+                }
+              }
+            },
+            "title": {
+              "type": "text",
+              "fields": {
+                "keyword": {
+                  "type": "keyword",
+                  "ignore_above": 256
+                }
+              }
+            },
+            "type": {
+              "type": "text",
+              "fields": {
+                "keyword": {
+                  "type": "keyword",
+                  "ignore_above": 256
+                }
+              }
+            }
+          }
+        },
+        "modified_by": {
+          "properties": {
+            "id": {
+              "type": "text",
+              "fields": {
+                "keyword": {
+                  "type": "keyword",
+                  "ignore_above": 256
+                }
+              }
+            },
+            "is_mod": {
+              "type": "long"
+            },
+            "machinetype": {
+              "type": "text",
+              "fields": {
+                "keyword": {
+                  "type": "keyword",
+                  "ignore_above": 256
+                }
+              }
+            },
+            "publisher": {
+              "type": "text",
+              "fields": {
+                "keyword": {
+                  "type": "keyword",
+                  "ignore_above": 256
+                }
+              }
+            },
+            "title": {
+              "type": "text",
+              "fields": {
+                "keyword": {
+                  "type": "keyword",
+                  "ignore_above": 256
+                }
+              }
+            },
+            "type": {
+              "type": "text",
+              "fields": {
+                "keyword": {
+                  "type": "keyword",
+                  "ignore_above": 256
+                }
+              }
+            }
+          }
+        },
+        "monthofrelease": {
+          "type": "long"
         },
         "multiplayermode": {
           "type": "keyword"
@@ -497,8 +646,49 @@
             }
           }
         },
-        "remarks": {
-          "type": "text"
+        "relatedlinks": {
+          "properties": {
+            "link": {
+              "type": "text",
+              "fields": {
+                "keyword": {
+                  "type": "keyword",
+                  "ignore_above": 256
+                }
+              }
+            },
+            "sitename": {
+              "type": "text",
+              "fields": {
+                "keyword": {
+                  "type": "keyword",
+                  "ignore_above": 256
+                }
+              }
+            }
+          }
+        },
+        "relatedsites": {
+          "properties": {
+            "link": {
+              "type": "text",
+              "fields": {
+                "keyword": {
+                  "type": "keyword",
+                  "ignore_above": 256
+                }
+              }
+            },
+            "sitename": {
+              "type": "text",
+              "fields": {
+                "keyword": {
+                  "type": "keyword",
+                  "ignore_above": 256
+                }
+              }
+            }
+          }
         },
         "releases": {
           "type": "nested",
@@ -509,8 +699,89 @@
             "as_title": {
               "type": "text"
             },
+            "barcode": {
+              "type": "text",
+              "fields": {
+                "keyword": {
+                  "type": "keyword",
+                  "ignore_above": 256
+                }
+              }
+            },
+            "budgetprice": {
+              "type": "text",
+              "fields": {
+                "keyword": {
+                  "type": "keyword",
+                  "ignore_above": 256
+                }
+              }
+            },
+            "cartridgeprice": {
+              "type": "text",
+              "fields": {
+                "keyword": {
+                  "type": "keyword",
+                  "ignore_above": 256
+                }
+              }
+            },
+            "code": {
+              "type": "text",
+              "fields": {
+                "keyword": {
+                  "type": "keyword",
+                  "ignore_above": 256
+                }
+              }
+            },
             "country": {
               "type": "keyword"
+            },
+            "diskprice": {
+              "type": "text",
+              "fields": {
+                "keyword": {
+                  "type": "keyword",
+                  "ignore_above": 256
+                }
+              }
+            },
+            "dl": {
+              "type": "text",
+              "fields": {
+                "keyword": {
+                  "type": "keyword",
+                  "ignore_above": 256
+                }
+              }
+            },
+            "encodingscheme": {
+              "type": "text",
+              "fields": {
+                "keyword": {
+                  "type": "keyword",
+                  "ignore_above": 256
+                }
+              }
+            },
+            "format": {
+              "type": "text",
+              "fields": {
+                "keyword": {
+                  "type": "keyword",
+                  "ignore_above": 256
+                }
+              }
+            },
+            "microdriveprice": {
+              "type": "text",
+              "fields": {
+                "keyword": {
+                  "type": "keyword",
+                  "ignore_above": 256
+                }
+              }
             },
             "name": {
               "type": "text",
@@ -519,8 +790,65 @@
                   "type": "keyword"
                 }
               }
+            },
+            "origin": {
+              "type": "text",
+              "fields": {
+                "keyword": {
+                  "type": "keyword",
+                  "ignore_above": 256
+                }
+              }
+            },
+            "publisher": {
+              "type": "text",
+              "fields": {
+                "keyword": {
+                  "type": "keyword",
+                  "ignore_above": 256
+                }
+              }
+            },
+            "release": {
+              "type": "long"
+            },
+            "releaseprice": {
+              "type": "text",
+              "fields": {
+                "keyword": {
+                  "type": "keyword",
+                  "ignore_above": 256
+                }
+              }
+            },
+            "size": {
+              "type": "long"
+            },
+            "type": {
+              "type": "text",
+              "fields": {
+                "keyword": {
+                  "type": "keyword",
+                  "ignore_above": 256
+                }
+              }
+            },
+            "url": {
+              "type": "text",
+              "fields": {
+                "keyword": {
+                  "type": "keyword",
+                  "ignore_above": 256
+                }
+              }
+            },
+            "yearofrelease": {
+              "type": "long"
             }
           }
+        },
+        "remarks": {
+          "type": "text"
         },
         "roles": {
           "type": "nested",
@@ -543,14 +871,58 @@
             }
           }
         },
+        "screens": {
+          "type": "nested",
+          "properties": {
+            "filename": {
+              "type": "keyword"
+            },
+            "format": {
+              "type": "keyword"
+            },
+            "size": {
+              "type": "long"
+            },
+            "title": {
+              "type": "text",
+              "fields": {
+                "keyword": {
+                  "type": "keyword",
+                  "ignore_above": 256
+                }
+              }
+            },
+            "type": {
+              "type": "keyword"
+            },
+            "url": {
+              "type": "keyword"
+            }
+          }
+        },
         "series": {
           "type": "nested",
           "properties": {
+            "entry_id": {
+              "type": "long"
+            },
             "groupname": {
               "type": "text"
             },
             "grouptype": {
               "type": "text"
+            },
+            "id": {
+              "type": "long"
+            },
+            "machinetype": {
+              "type": "text",
+              "fields": {
+                "keyword": {
+                  "type": "keyword",
+                  "ignore_above": 256
+                }
+              }
             },
             "publisher": {
               "type": "text"
@@ -576,8 +948,29 @@
         "subtype": {
           "type": "keyword"
         },
+        "themedgroup": {
+          "type": "nested",
+          "properties": {
+            "id": {
+              "type": "keyword"
+            },
+            "name": {
+              "type": "keyword"
+            },
+            "text": {
+              "type": "keyword"
+            }
+          }
+        },
         "tieinlicence": {
           "type": "text"
+        },
+        "titlesuggest": {
+          "type": "completion",
+          "analyzer": "simple",
+          "preserve_separators": true,
+          "preserve_position_increments": true,
+          "max_input_length": 50
         },
         "tosec": {
           "type": "nested",
@@ -596,13 +989,74 @@
         "type": {
           "type": "keyword"
         },
+        "unsortedgroup": {
+          "type": "nested",
+          "properties": {
+            "id": {
+              "type": "keyword"
+            },
+            "name": {
+              "type": "keyword"
+            },
+            "text": {
+              "type": "keyword"
+            }
+          }
+        },
+        "webrefs": {
+          "properties": {
+            "link": {
+              "type": "text",
+              "fields": {
+                "keyword": {
+                  "type": "keyword",
+                  "ignore_above": 256
+                }
+              }
+            },
+            "sitename": {
+              "type": "text",
+              "fields": {
+                "keyword": {
+                  "type": "keyword",
+                  "ignore_above": 256
+                }
+              }
+            }
+          }
+        },
         "year": {
           "type": "text"
         },
         "yearofrelease": {
           "type": "long"
+        },
+        "youtubelinks": {
+          "properties": {
+            "link": {
+              "type": "text",
+              "fields": {
+                "keyword": {
+                  "type": "keyword",
+                  "ignore_above": 256
+                }
+              }
+            },
+            "sitename": {
+              "type": "text",
+              "fields": {
+                "keyword": {
+                  "type": "keyword",
+                  "ignore_above": 256
+                }
+              }
+            }
+          }
         }
       }
     }
+  },
+  "settings": {
+    "index.mapping.total_fields.limit": 1000
   }
 }
