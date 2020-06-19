@@ -3,6 +3,16 @@
 dd.mm.yyyy
 
 Changelog:
+19.06.2020 - getAuthors() - Role of types (A, T) now moved to contributors section
+			 getRoles() - removed, as info is availale on authors/contributors (DONE: Merge getAuthor and getRoles)
+06.06.2020 - Column "magrefs.feature_id" is now obsolete and it will be removed in the next ZXDB update. There's already a separate table called "magreffeats" to store this information.
+			 https://spectrumcomputing.co.uk/forums/viewtopic.php?f=32&t=636&start=240
+		   - Added roletype_id to authors, in order to split by author and contributor
+		   	 TODO: Merge getAuthor and getRoles
+
+			 12.05.2020 - Added labeltype(labeltypes in ZXDB) to publisher
+		   - Added labeltypes to Author (and group)
+		   - Added labeltypes to Releases
 
 01.05.2020 - Compilation Contents can reference titles not in ZXDB yet
 26.04.2020 - Aligned output items for:
@@ -334,19 +344,22 @@ var getBasicInfo = function (id) {
  -- Main publisher
 SELECT
     pub.name AS name,
-    pc1.text AS country
+    pc1.text AS country,
+    lt.text as labeltype
 FROM
     publishers p
 INNER JOIN labels pub ON
     p.label_id = pub.id
 LEFT JOIN countries pc1 ON
     pub.country_id = pc1.id
+LEFT JOIN labeltypes lt ON
+	lt.id = pub.labeltype_id
 WHERE
     p.entry_id = 12747 AND p.release_seq = 0
 ORDER BY pub.name, pc1.text
 
 +--------------------+---------+
-| name               | country |
+| name               | country | labeltype
 +--------------------+---------+
 | Ocean Software Ltd | UK      |
 +--------------------+---------+
@@ -356,7 +369,7 @@ var getPublisher = function (id) {
   var deferred = Q.defer();
   var connection = db.getConnection();
   connection.query(
-    "SELECT pub.name AS name, pc1.text AS country FROM publishers p INNER JOIN labels pub ON p.label_id = pub.id LEFT JOIN countries pc1 ON pub.country_id = pc1.id WHERE p.entry_id = ? AND p.release_seq = 0 ORDER BY pub.name, pc1.text",
+    "SELECT pub.name AS name, pc1.text AS country, lt.text as labeltype FROM publishers p INNER JOIN labels pub ON p.label_id = pub.id LEFT JOIN countries pc1 ON pub.country_id = pc1.id LEFT JOIN labeltypes lt ON lt.id = pub.labeltype_id WHERE p.entry_id = ? AND p.release_seq = 0 ORDER BY pub.name, pc1.text",
     [id],
     function (error, results, fields) {
       if (error) {
@@ -368,6 +381,7 @@ var getPublisher = function (id) {
         var item = {
           name: results[i].name,
           country: results[i].country,
+          labeltype: results[i].labeltype,
         };
         arr.push(removeEmpty(item));
       }
@@ -385,7 +399,8 @@ select distinct r.release_seq  as seq,
                 e.title        as title,
                 aka.title      as as_title,
                 pub.name       as name,
-                pc1.text       as country,
+				pc1.text       as country,
+				lt.text		   as labeltype,
                 r.release_year as yearofrelease,
                 r.release_price as releaseprice,
                 r.budget_price as budgetprice,
@@ -411,7 +426,9 @@ from   releases r
                on p.entry_id = r.entry_id
                   and p.release_seq = r.release_seq
        left join labels pub
-               on p.label_id = pub.id
+			   on p.label_id = pub.id
+	   left join labeltypes lt
+	   		   on lt.id = pub.labeltype_id
        left join countries pc1
               on pub.country_id = pc1.id
        left join downloads d
@@ -446,7 +463,7 @@ var getReleases = function (id) {
   var deferred = Q.defer();
   var connection = db.getConnection();
   connection.query(
-    "select distinct r.release_seq as seq, e.title as title, aka.title as as_title, pub.name as name, pc1.text as country, r.release_year as yearofrelease, r.release_price as releaseprice, r.budget_price as budgetprice, r.microdrive_price as microdriveprice, r.disk_price as diskprice, r.cartridge_price as cartridgeprice, d.file_size as size, d.file_link as url, filet.text as type, ex.text as format, origint.text as origin, d.file_code as code, d.file_barcode as barcode, d.file_dl as dl, schemet.text as encodingscheme from releases r left join aliases aka on aka.entry_id = r.entry_id and aka.release_seq = r.release_seq inner join entries e on e.id = r.entry_id left join publishers p on p.entry_id = r.entry_id and p.release_seq = r.release_seq left join labels pub on p.label_id = pub.id left join countries pc1 on pub.country_id = pc1.id left join downloads d on d.entry_id = r.entry_id and d.release_seq = r.release_seq and (d.filetype_id IN (46, 47) OR d.filetype_id BETWEEN 8 AND 22) left join filetypes filet on d.filetype_id = filet.id left join extensions ex on right(d.file_link, length(ex.ext)) = ex.ext left join sourcetypes origint on d.sourcetype_id = origint.id left join schemetypes schemet on d.schemetype_id = schemet.id where r.entry_id = ? order by r.release_seq, pub.name, pc1.text",
+    "select distinct r.release_seq as seq, e.title as title, aka.title as as_title, pub.name as name, pc1.text as country, lt.text as labeltype, r.release_year as yearofrelease, r.release_price as releaseprice, r.budget_price as budgetprice, r.microdrive_price as microdriveprice, r.disk_price as diskprice, r.cartridge_price as cartridgeprice, d.file_size as size, d.file_link as url, filet.text as type, ex.text as format, origint.text as origin, d.file_code as code, d.file_barcode as barcode, d.file_dl as dl, schemet.text as encodingscheme from releases r left join aliases aka on aka.entry_id = r.entry_id and aka.release_seq = r.release_seq inner join entries e on e.id = r.entry_id left join publishers p on p.entry_id = r.entry_id and p.release_seq = r.release_seq left join labels pub on p.label_id = pub.id left join labeltypes lt on lt.id = pub.labeltype_id left join countries pc1 on pub.country_id = pc1.id left join downloads d on d.entry_id = r.entry_id and d.release_seq = r.release_seq and (d.filetype_id IN (46, 47) OR d.filetype_id BETWEEN 8 AND 22) left join filetypes filet on d.filetype_id = filet.id left join extensions ex on right(d.file_link, length(ex.ext)) = ex.ext left join sourcetypes origint on d.sourcetype_id = origint.id left join schemetypes schemet on d.schemetype_id = schemet.id where r.entry_id = ? order by r.release_seq, pub.name, pc1.text",
     [id],
     function (error, results, fields) {
       if (error) {
@@ -459,6 +476,7 @@ var getReleases = function (id) {
           release: results[i].seq,
           publisher: results[i].name,
           country: results[i].country,
+          labeltype: results[i].labeltype,
           as_title: results[i].as_title,
           yearofrelease: results[i].yearofrelease,
           releaseprice: results[i].releaseprice,
@@ -492,75 +510,131 @@ SELECT
     dev.name AS dev_name,
     ac1.text AS dev_country,
     team.name AS group_name,
-    tc1.text AS group_country
-FROM
-    authors aut
+    tc1.text AS group_country,
+    dlt.text AS labeltype,
+    tlt.text AS grouptype,
+    r.roletype_id,
+    rt.text AS role
+FROM authors
+    aut
 INNER JOIN labels dev ON
     aut.label_id = dev.id
+LEFT JOIN labeltypes dlt ON
+    dlt.id = dev.labeltype_id
 LEFT JOIN countries ac1 ON
     dev.country_id = ac1.id
 LEFT JOIN labels team ON
     aut.team_id = team.id
+LEFT JOIN labeltypes tlt ON
+    tlt.id = team.labeltype_id
 LEFT JOIN countries tc1 ON
     team.country_id = tc1.id
+LEFT JOIN roles r ON
+    r.entry_id = aut.entry_id AND aut.label_id = r.label_id
+LEFT JOIN roletypes rt ON
+    rt.id = r.roletype_id
 WHERE
-    aut.entry_id = 996
+    aut.entry_id = 0028171
 ORDER BY
     group_name,
     dev_name
 
 996 - Cobra (Alias)
-483 - Beach Head II (Group)
++-------------------+-------------+------------+---------------+-----------+-----------+-------------+------------------+
+|     dev_name      | dev_country | group_name | group_country | labeltype | grouptype | roletype_id |       role       |
++-------------------+-------------+------------+---------------+-----------+-----------+-------------+------------------+
+| John Alvin        | NULL        | NULL       | NULL          | Person    | NULL      | A           | Inlay/Poster Art |
+| Jonathan M. Smith | UK          | NULL       | NULL          | Person    | NULL      | NULL        | NULL             |
+| Martin Galway     | UK          | NULL       | NULL          | Person    | NULL      | NULL        | NULL             |
+| Steve Cain        | UK          | NULL       | NULL          | Person    | NULL      | NULL        | NULL             |
++-------------------+-------------+------------+---------------+-----------+-----------+-------------+------------------+
 
-+-------------------+-------------+------------+---------------+--------------+
-| dev_name          | dev_country | group_name | group_country | dev_alias    |
-+-------------------+-------------+------------+---------------+--------------+
-| Jonathan M. Smith | UK          | NULL       | NULL          | Frobush      |
-| Jonathan M. Smith | UK          | NULL       | NULL          | Joffa Smifff |
-| Martin Galway     | UK          | NULL       | NULL          | NULL         |
-| Steve Cain        | UK          | NULL       | NULL          | NULL         |
-+-------------------+-------------+----------------------+---------------+-----------+
-+-------------------+-------------+----------------------+---------------+-----------+
-| dev_name          | dev_country | group_name           | group_country | dev_alias |
-+-------------------+-------------+----------------------+---------------+-----------+
-| F. David Thorpe   | UK          | NULL                 | NULL          | NULL      |
-| Oliver Frey       | Switzerland | NULL                 | NULL          | NULL      |
-| Alan Laird        | UK          | Platinum Productions | UK            | NULL      |
-| David J. Anderson | UK          | Platinum Productions | UK            | NULL      |
-| Ian Morrison      | UK          | Platinum Productions | UK            | NULL      |
-+-------------------+-------------+----------------------+---------------+-----------+
+483 - Beach Head II (Group + Contributors)
++-------------------+-------------+----------------------+---------------+-----------+-----------+-------------+------------------+
+|     dev_name      | dev_country |      group_name      | group_country | labeltype | grouptype | roletype_id |       role       |
++-------------------+-------------+----------------------+---------------+-----------+-----------+-------------+------------------+
+| F. David Thorpe   | UK          | NULL                 | NULL          | Nickname  | NULL      | S           | Load Screen      |
+| Oliver Frey       | Switzerland | NULL                 | NULL          | Person    | NULL      | A           | Inlay/Poster Art |
+| Alan Laird        | UK          | Platinum Productions | UK            | Person    | Company   | NULL        | NULL             |
+| David J. Anderson | UK          | Platinum Productions | UK            | Person    | Company   | NULL        | NULL             |
+| Ian Morrison      | UK          | Platinum Productions | UK            | Person    | Company   | NULL        | NULL             |
++-------------------+-------------+----------------------+---------------+-----------+-----------+-------------+------------------+
+
+0028171 - FZX (Authors with multiple roles)
++----------------+-------------+------------+---------------+-----------+-----------+-------------+---------------------+
+|    dev_name    | dev_country | group_name | group_country | labeltype | grouptype | roletype_id |        role         |
++----------------+-------------+------------+---------------+-----------+-----------+-------------+---------------------+
+| Andrew S. Owen | NULL        | NULL       | NULL          | Person    | NULL      | G           | In-game Graphics    |
+| Andrew S. Owen | NULL        | NULL       | NULL          | Person    | NULL      | D           | Game Design/Concept |
+| Einar Saukas   | Brazil      | NULL       | NULL          | Person    | NULL      | S           | Load Screen         |
+| Einar Saukas   | Brazil      | NULL       | NULL          | Person    | NULL      | W           | Story Writing       |
+| Einar Saukas   | Brazil      | NULL       | NULL          | Person    | NULL      | C           | Code                |
++----------------+-------------+------------+---------------+-----------+-----------+-------------+---------------------+
+
+
 
 */
 var getAuthors = function (id) {
   var deferred = Q.defer();
   var connection = db.getConnection();
   connection.query(
-    "SELECT dev.name AS dev_name, ac1.text AS dev_country, team.name AS group_name, tc1.text AS group_country FROM authors aut INNER JOIN labels dev ON aut.label_id = dev.id LEFT JOIN countries ac1 ON dev.country_id = ac1.id LEFT JOIN labels team ON aut.team_id = team.id LEFT JOIN countries tc1 ON team.country_id = tc1.id WHERE aut.entry_id = ? ORDER BY group_name, dev_name",
+    "SELECT dev.name AS dev_name, ac1.text AS dev_country, team.name AS group_name, tc1.text AS group_country, dlt.text AS labeltype, tlt.text AS grouptype, r.roletype_id, rt.text AS role FROM authors aut INNER JOIN labels dev ON aut.label_id = dev.id LEFT JOIN labeltypes dlt ON dlt.id = dev.labeltype_id LEFT JOIN countries ac1 ON dev.country_id = ac1.id LEFT JOIN labels team ON aut.team_id = team.id LEFT JOIN labeltypes tlt ON tlt.id = team.labeltype_id LEFT JOIN countries tc1 ON team.country_id = tc1.id LEFT JOIN roles r ON r.entry_id = aut.entry_id AND aut.label_id = r.label_id LEFT JOIN roletypes rt on rt.id = r.roletype_id WHERE aut.entry_id = ? ORDER BY group_name, dev_name",
     [id],
     function (error, results, fields) {
       if (error) {
         throw error;
       }
-      var arr = [];
+      var authors = [];
+      var contributors = [];
       var i = 0;
       var groupArray;
+      var groupType;
       var authorArray = [];
+      var contributorArray = [];
       for (; i < results.length; i++) {
         if (groupArray != results[i].group_name) {
           if (authorArray.length > 0) {
-            arr.push({ authors: authorArray, group: groupArray });
+            authors.push({ authors: authorArray, grouplabel: groupType, group: groupArray });
+          }
+          if (contributorArray.length > 0) {
+            contributors.push({ names: contributorArray, grouplabel: groupType, group: groupArray });
           }
           groupArray = results[i].group_name;
+          groupType = results[i].grouptype;
           authorArray = [];
+          contributorArray = [];
         }
         if (!authorArray.includes(results[i].dev_name.trim())) {
-          authorArray.push(removeEmpty({ name: results[i].dev_name.trim(), country: results[i].dev_country }));
+          if (["A", "T"].includes(results[i].roletype_id)) {
+            contributorArray.push(
+              removeEmpty({
+                name: results[i].dev_name.trim(),
+                country: results[i].dev_country,
+                labeltype: results[i].labeltype,
+                roletype: results[i].roletype_id,
+                role: results[i].role,
+              })
+            );
+          } else {
+            authorArray.push(
+              removeEmpty({
+                name: results[i].dev_name.trim(),
+                country: results[i].dev_country,
+                labeltype: results[i].labeltype,
+                roletype: results[i].roletype_id,
+                role: results[i].role,
+              })
+            );
+          }
         }
       }
       if (authorArray.length > 0) {
-        arr.push({ authors: authorArray, group: groupArray });
+        authors.push({ authors: authorArray, grouplabel: groupType, group: groupArray });
       }
-      deferred.resolve({ authors: arr });
+      if (contributorArray.length > 0) {
+        contributors.push({ names: contributorArray, grouplabel: groupType, group: groupArray });
+      }
+      deferred.resolve({ authors: authors, contributors: contributors });
     }
   );
   return deferred.promise;
@@ -1698,7 +1772,7 @@ var getAdverts = function (id) {
   var deferred = Q.defer();
   var connection = db.getConnection();
   connection.query(
-    "select m.name as magazine, i.date_year as issueyear, i.date_month as issueno, ref.page as pageno, reft.text as magazine_type, f.name as magazine_text, m.link_mask from entries e inner join magrefs ref on ref.entry_id = e.id inner join features f on ref.feature_id = f.id inner join referencetypes reft on ref.referencetype_id = reft.id inner join issues i on ref.issue_id = i.id inner join magazines m on i.magazine_id = m.id where e.id = ? and ref.referencetype_id in (1, 2, 3, 15) order by date_year, date_month, pageno",
+    "SELECT m.name AS magazine, i.date_year AS issueyear, i.date_month AS issueno, ref.page AS pageno, reft.text AS magazine_type, f.name AS magazine_text, m.link_mask FROM entries e INNER JOIN magrefs ref ON ref.entry_id = e.id INNER JOIN magreffeats mf ON mf.magref_id = ref.entry_id INNER JOIN features f ON mf.feature_id = f.id INNER JOIN referencetypes reft ON ref.referencetype_id = reft.id INNER JOIN issues i ON ref.issue_id = i.id INNER JOIN magazines m ON i.magazine_id = m.id WHERE e.id = ? AND ref.referencetype_id IN(1, 2, 3, 15) ORDER BY date_year, date_month, pageno",
     [id],
     function (error, results, fields) {
       if (error) {
@@ -1772,7 +1846,7 @@ var getMagazineReviews = function (id) {
   var deferred = Q.defer();
   var connection = db.getConnection();
   connection.query(
-    "SELECT m.name AS magazine,i.date_year AS issueyear,i.date_month AS issuemonth,i.date_day AS issueday, i.volume as issuevolume, i.number AS issueno, ref.page AS pageno,reft.text AS magazine_type,f.name AS magazine_text, m.link_mask FROM entries e INNER JOIN magrefs ref ON ref.entry_id = e.id INNER JOIN features f ON ref.feature_id = f.id INNER JOIN referencetypes reft ON ref.referencetype_id = reft.id INNER JOIN issues i ON ref.issue_id = i.id INNER JOIN magazines m ON i.magazine_id = m.id WHERE e.id = ? AND ref.referencetype_id IN ( 10 ) ORDER BY date_year,date_month,pageno",
+    "SELECT m.name AS magazine, i.date_year AS issueyear, i.date_month AS issuemonth, i.date_day AS issueday, i.volume AS issuevolume, i.number AS issueno, ref.page AS pageno, reft.text AS magazine_type, f.name AS magazine_text, m.link_mask FROM entries e INNER JOIN magrefs ref ON ref.entry_id = e.id INNER JOIN magreffeats mf ON mf.magref_id = ref.entry_id INNER JOIN features f ON mf.feature_id = f.id INNER JOIN referencetypes reft ON ref.referencetype_id = reft.id INNER JOIN issues i ON ref.issue_id = i.id INNER JOIN magazines m ON i.magazine_id = m.id WHERE e.id = ? AND ref.referencetype_id IN(10) ORDER BY date_year, date_month, pageno",
     [id],
     function (error, results, fields) {
       if (error) {
@@ -1810,7 +1884,7 @@ var getMagazineRefs = function (id) {
   var deferred = Q.defer();
   var connection = db.getConnection();
   connection.query(
-    "select m.name as magazine, i.date_year as issueyear, i.date_month as issueno, ref.page as pageno, reft.text as magazine_type, f.name as magazine_text, m.link_mask from entries e inner join magrefs ref on ref.entry_id = e.id inner join features f on ref.feature_id = f.id inner join referencetypes reft on ref.referencetype_id = reft.id inner join issues i on ref.issue_id = i.id inner join magazines m on i.magazine_id = m.id where e.id = ? and ref.referencetype_id not in (1, 2, 3, 10, 15) order by magazine_type, date_year, date_month",
+    "SELECT m.name AS magazine, i.date_year AS issueyear, i.date_month AS issueno, ref.page AS pageno, reft.text AS magazine_type, f.name AS magazine_text, m.link_mask FROM entries e INNER JOIN magrefs ref ON ref.entry_id = e.id INNER JOIN magreffeats mf ON mf.magref_id = ref.entry_id INNER JOIN features f ON mf.feature_id = f.id INNER JOIN referencetypes reft ON ref.referencetype_id = reft.id INNER JOIN issues i ON ref.issue_id = i.id INNER JOIN magazines m ON i.magazine_id = m.id WHERE e.id = ? AND ref.referencetype_id NOT IN(1, 2, 3, 10, 15) ORDER BY magazine_type, date_year, date_month",
     [id],
     function (error, results, fields) {
       if (error) {
@@ -2023,11 +2097,81 @@ var getTitlesForSuggestions = function (id) {
   return deferred.promise;
 };
 
+/*
+
+
+*/
+var getAuthorAlias = function (id) {
+  var done = false;
+  var deferred = Q.defer();
+  var connection = db.getConnection();
+  var arr = [];
+  connection.query(
+    "SELECT l.id, l.name, lt.text as labeltype FROM labels l LEFT JOIN labeltypes lt ON lt.id = l.labeltype_id WHERE l.id = ? or l.owner_id = ? UNION SELECT l.id, l.name, lt.text as labeltype FROM labels l LEFT JOIN labeltypes lt ON lt.id = l.labeltype_id WHERE l.id IN (select owner_id from labels where id=? )",
+    [id, id, id],
+    function (error, results, fields) {
+      if (error) {
+        throw error;
+      }
+
+      for (var i = 0; i < results.length; i++) {
+        // console.log(results[i].id + ": " + results[i].name + "(" + results[i].labeltype + ")");
+        arr.push({ id: results[i].id, name: results[i].name, labeltype: results[i].labeltype });
+      }
+      done = true;
+    }
+  );
+  var deasync = require("deasync");
+  deasync.loopWhile(function () {
+    return !done;
+  });
+  return arr;
+};
+var getAuthorSearchByName = function (ids) {
+  var done = false;
+  var deferred = Q.defer();
+  var connection = db.getConnection();
+  var arr = [];
+  connection.query(
+    "SELECT label_id AS id, label_name AS name, '*' as labeltype FROM search_by_names WHERE label_id in (?)",
+    [ids],
+    function (error, results, fields) {
+      if (error) {
+        throw error;
+      }
+
+      for (var i = 0; i < results.length; i++) {
+        // console.log(results[i].id + ": " + results[i].name + "(" + results[i].labeltype + ")");
+        arr.push({ id: results[i].id, name: results[i].name, labeltype: results[i].labeltype });
+      }
+      done = true;
+    }
+  );
+  var deasync = require("deasync");
+  deasync.loopWhile(function () {
+    return !done;
+  });
+  return arr;
+};
+/*
+SELECT DISTINCT
+    dev.id AS id,
+    dev.name AS name,
+    lt.text as labeltype
+FROM authors aut
+INNER JOIN labels dev ON
+    aut.label_id = dev.id
+LEFT JOIN labeltypes lt ON
+    lt.id = dev.labeltype_id
+where aut.entry_id = 996
+
+*/
+
 var getAuthorsForSuggestions = function (id) {
   var deferred = Q.defer();
   var connection = db.getConnection();
   connection.query(
-    "SELECT DISTINCT dev.id AS id, dev.name AS name FROM authors aut INNER JOIN labels dev ON aut.label_id = dev.id WHERE aut.entry_id = ? ORDER BY dev.name ASC",
+    "SELECT DISTINCT dev.id AS id, dev.name AS name, lt.text as labeltype FROM authors aut INNER JOIN labels dev ON aut.label_id = dev.id LEFT JOIN labeltypes lt ON lt.id = dev.labeltype_id where aut.entry_id = ?",
     [id],
     function (error, results, fields) {
       if (error) {
@@ -2037,12 +2181,63 @@ var getAuthorsForSuggestions = function (id) {
       var metadata = [];
       var i = 0;
       for (; i < results.length; i++) {
+        // console.log(results[i].id + ": " + results[i].name);
         var autsug = createSuggestions(results[i].name);
-        var item = { name: results[i].name, alias: autsug };
+        // find all labels for name id
+        let aliasnames = getAuthorAlias(results[i].id);
+        let aliases = aliasnames.map((a) => a.name);
+        autsug = aliases.concat(autsug);
+        let alias_ids = aliasnames.map((a) => a.id);
+        let searchbyname = getAuthorSearchByName(alias_ids).map((a) => a.name);
+        autsug = searchbyname.concat(autsug);
+        var labeltype = results[i].labeltype == null ? "" : results[i].labeltype;
+        var item = { name: results[i].name, labeltype: labeltype, alias: autsug };
         metadata.push(item);
         arr.push.apply(arr, autsug);
       }
       deferred.resolve({ authorsuggest: arr, metadata_author: metadata });
+    }
+  );
+  return deferred.promise;
+};
+
+/*
+
+SELECT
+    pub.name AS name,
+    lt.text as labeltype
+FROM
+    publishers p
+INNER JOIN labels pub ON
+    p.label_id = pub.id
+LEFT JOIN labeltypes lt ON
+	lt.id = pub.labeltype_id
+WHERE
+    p.entry_id = 2259 AND p.release_seq = 0
+ORDER BY pub.name
+
+*/
+
+var getPublishersForSuggestions = function (id) {
+  var deferred = Q.defer();
+  var connection = db.getConnection();
+  connection.query(
+    "SELECT pub.name AS name, lt.text AS labeltype FROM releases r LEFT JOIN publishers p ON p.entry_id = r.entry_id AND p.release_seq = r.release_seq INNER JOIN labels pub ON p.label_id = pub.id LEFT JOIN labeltypes lt ON lt.id = pub.labeltype_id WHERE p.entry_id = ? ORDER BY r.release_seq",
+    [id],
+    function (error, results, fields) {
+      if (error) {
+        throw error;
+      }
+      var arr = [];
+      var metadata = [];
+      var i = 0;
+      for (; i < results.length; i++) {
+        arr = arr.concat(createSuggestions(results[i].name));
+        var variations = createSuggestions(results[i].name);
+        var item = { name: results[i].name, labeltype: results[i].labeltype, suggest: variations };
+        metadata.push(item);
+      }
+      deferred.resolve({ publishersuggest: arr, metadata_publisher: metadata });
     }
   );
   return deferred.promise;
@@ -2103,7 +2298,7 @@ var zxdb_doc = function (id) {
     getPublisher(id),
     getReleases(id),
     getAuthors(id),
-    getRoles(id),
+    // getRoles(id),
     getAuthored(id),
     getAuthoring(id),
     getControls(id),
@@ -2131,6 +2326,7 @@ var zxdb_doc = function (id) {
     getModifiedBy(id),
     getTitlesForSuggestions(id),
     getAuthorsForSuggestions(id),
+    getPublishersForSuggestions(id),
   ]).then(function (results) {
     var i = 0;
     var doc_array = {};
@@ -2158,10 +2354,14 @@ var zxdb_doc = function (id) {
   });
 };
 
-var getAllIDs = function (min_id) {
+var getAllIDs = function (min_id, max_id) {
   var connection = db.getConnection();
   var done = false;
-  connection.query("select id from entries where id >= ? order by id asc", [min_id], function (error, results, fields) {
+  connection.query("select id from entries where id >= ? and id <= ? order by id asc", [min_id, max_id], function (
+    error,
+    results,
+    fields
+  ) {
     if (error) {
       throw error;
     }
@@ -2181,7 +2381,7 @@ var getAllIDs = function (min_id) {
 var getID = function (zxdb_id) {
   var connection = db.getConnection();
   var done = false;
-  connection.query("select id from entries where id = ? order by id asc", [zxdb_id], function (error, results, fields) {
+  connection.query("select id from entries where id in (?) order by id asc", [zxdb_id], function (error, results, fields) {
     if (error) {
       throw error;
     }
@@ -2198,35 +2398,24 @@ var getID = function (zxdb_id) {
   db.closeConnection(connection);
 };
 
-if (process.argv.length <= 2) {
-  console.log("Usage: " + __filename + " [-all] | [-from] [zxdb_id]");
-  process.exit(-1);
-}
-
 var zxdb_id = null;
-var process_all = false;
-var process_from = false;
 
-process.argv.forEach((val, index) => {
-  if (val === "-all" && index > 1) {
-    process_all = true;
-  } else if (val === "-from" && index > 1) {
-    process_from = true;
-  } else if (Number.isInteger(parseInt(val)) && index > 1) {
-    zxdb_id = val;
-  }
-});
+var argv = require("minimist")(process.argv.slice(2));
+console.log(argv);
 
-if (process_all) {
-  console.log("Processing ALL games");
-  getAllIDs(0);
-} else if (zxdb_id !== null && !process_from) {
-  console.log("Processing game: " + zxdb_id);
-  getID(zxdb_id);
-} else if (zxdb_id !== null && process_from) {
-  console.log("Processing from game: " + zxdb_id);
-  getAllIDs(zxdb_id);
+if (argv.all) {
+  getAllIDs(0, 99999999);
+} else if (argv.from && argv.to) {
+  getAllIDs(argv.from, argv.to);
+} else if (argv.from && !argv.to) {
+  getAllIDs(argv.from, 99999999);
+} else if (argv.id) {
+  getID(argv.id);
+} else if (argv.list) {
+  var listOfIDs = argv.list.split(",");
+  getID(listOfIDs);
 } else {
-  console.log("Usage: " + __filename + " [-all] | [-from] [game_id]");
+  console.log("Usage: " + __filename + " [--all] [--id id] | [--list id1,id2,..] | [--from id] [--to id]");
   process.exit(-1);
 }
+process.exit(0);

@@ -1,0 +1,5 @@
+docker exec -i zxdb mysql -uroot -pzxdb1234 zxdb -e "SELECT dev.name AS dev_name, ac1.text AS dev_country, team.name AS group_name, tc1.text AS group_country, dlt.text AS labeltype, tlt.text AS grouptype, r.roletype_id, rt.text AS role FROM authors aut INNER JOIN labels dev ON aut.label_id = dev.id LEFT JOIN labeltypes dlt ON dlt.id = dev.labeltype_id LEFT JOIN countries ac1 ON dev.country_id = ac1.id LEFT JOIN labels team ON aut.team_id = team.id LEFT JOIN labeltypes tlt ON tlt.id = team.labeltype_id LEFT JOIN countries tc1 ON team.country_id = tc1.id LEFT JOIN roles r ON r.entry_id = aut.entry_id AND aut.label_id = r.label_id LEFT JOIN roletypes rt ON rt.id = r.roletype_id WHERE aut.entry_id = 996 ORDER BY group_name, dev_name"
+
+
+
+COPY / PASTE into https://ozh.github.io/ascii-tables/
