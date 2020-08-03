@@ -54,7 +54,7 @@ Before creating documents cleanup is recommended:
 find data/processed/ -type f -name "*.json" -exec rm -rf {} \;
 
 # create JSON documents for entries
-node --max-old-space-size=8192 create-zxinfo-documents.js -all 2> zxscreens.txt
+node --max-old-space-size=8192 create-zxinfo-documents.js --all 2> zxscreens.txt
 ```
 
 ```
