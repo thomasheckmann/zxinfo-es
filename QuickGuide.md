@@ -62,7 +62,10 @@ NOTE:
 All created JSON documents can now be found in `data/processed/json/`
 
 ## mappings and import
-A running instance of Elasticsearch must be running, for example the setup supplied with ZXInfo-App: `docker-compose run --service-ports -d zxinfo-es` and if upgrading a cleanup is recommended: `curl -XDELETE 'http://localhost:9200/_all'`
+A running instance of Elasticsearch must be running, for example the setup supplied with ZXInfo-App:
+`docker-compose run --service-ports -d zxinfo-es` and if upgrading a cleanup is recommended:
+
+`curl -XDELETE 'http://localhost:9200/_all'`
 
 To create ES mappings and import JSON files:
 
