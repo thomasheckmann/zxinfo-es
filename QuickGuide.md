@@ -24,10 +24,7 @@ Only files added as part of ZXDB updates are required, which can be downloaded f
 Latest ZXDB are available on it's [github page](https://github.com/zxdb/ZXDB) together with detailed documentation.
 
 # Populate mariaDB
-We will use the `ZXDB_generic.sql` - but first we need to prepeare it by adding this line to beginning of file:
-```
-SET character_set_client = 'utf8';
-```
+Copy the files `ZXDB_mysql.sql` and `ZXDB_help_search.sql` from ZXDB.
 
 If upgrading from an existing mariaDB instance, cleanup is required:
 
