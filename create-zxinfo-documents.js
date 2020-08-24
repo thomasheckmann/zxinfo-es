@@ -3,6 +3,8 @@
 dd.mm.yyyy
 
 Changelog:
+21.08.2020 - new table in ZXDB called "notes". It combines all kinds of text information about each entry
+			 https://spectrumcomputing.co.uk/forums/viewtopic.php?p=44437#p44437
 19.06.2020 - getAuthors() - Role of types (A, T) now moved to contributors section
 			 getRoles() - removed, as info is availale on authors/contributors (DONE: Merge getAuthor and getRoles)
 06.06.2020 - Column "magrefs.feature_id" is now obsolete and it will be removed in the next ZXDB update. There's already a separate table called "magreffeats" to store this information.
@@ -323,7 +325,7 @@ var getBasicInfo = function (id) {
         originalprice: originalprice,
         availability: results[0].availability,
         knownerrors: results[0].known_errors,
-        remarks: results[0].remarks,
+        // remarks: results[0].remarks,
         spotcomments: results[0].spotcomments,
         score: {
           score: results[0].score,
@@ -338,6 +340,34 @@ var getBasicInfo = function (id) {
   // return deferred.promise;
 };
 
+/*
+	https://spectrumcomputing.co.uk/forums/viewtopic.php?p=44437#p44437
+*/
+var getNotes = function (id) {
+  var deferred = Q.defer();
+  var connection = db.getConnection();
+  connection.query(
+    "SELECT e.id, e.title, GROUP_CONCAT( c.text ORDER BY c.text SEPARATOR '\n\n' ) AS comments, h.text AS hardware_blurb, r.text AS known_errors FROM entries e LEFT JOIN notes c ON e.id = c.entry_id AND c.notetype_id = 'C' LEFT JOIN notes h ON e.id = h.entry_id AND h.notetype_id = 'H' LEFT JOIN notes r ON e.id = r.entry_id AND r.notetype_id = 'R' WHERE e.id = ?",
+    [id],
+    function (error, results, fields) {
+      if (error) {
+        throw error;
+      }
+      var arr = [];
+      var i = 0;
+      var remarks = null;
+      var blurb = null;
+      var errors = null;
+      for (; i < results.length; i++) {
+        remarks = results[i].comments;
+        blurb = results[i].hardware_blurb;
+        errors = results[i].known_errors;
+      }
+      deferred.resolve({ remarks: remarks, hardware_blurb: blurb, known_errors: errors });
+    }
+  );
+  return deferred.promise;
+};
 /**
  * Get publisher
 
@@ -1467,25 +1497,26 @@ function replaceMask(input, pattern, value) {
 var getRelatedSites = function (id) {
   var deferred = Q.defer();
   var connection = db.getConnection();
-  connection.query(
-    'SELECT name as sitename, link_mask FROM websites WHERE name NOT IN ("ZXInfo") AND link_mask is NOT NULL ORDER BY sitename',
-    function (error, results, fields) {
-      if (error) {
-        throw error;
-      }
-      var arr = [];
-      var i = 0;
-      for (; i < results.length; i++) {
-        var link = replaceMask(results[i].link_mask, /{e(\d)+}/i, parseInt(id));
-        var item = {
-          sitename: results[i].sitename,
-          link: link,
-        };
-        arr.push(item);
-      }
-      deferred.resolve({ relatedsites: arr });
+  connection.query("SELECT name as sitename, link_mask FROM websites WHERE link_mask is NOT NULL ORDER BY sitename", function (
+    error,
+    results,
+    fields
+  ) {
+    if (error) {
+      throw error;
     }
-  );
+    var arr = [];
+    var i = 0;
+    for (; i < results.length; i++) {
+      var link = replaceMask(results[i].link_mask, /{e(\d)+}/i, parseInt(id));
+      var item = {
+        sitename: results[i].sitename,
+        link: link,
+      };
+      arr.push(item);
+    }
+    deferred.resolve({ relatedsites: arr });
+  });
   return deferred.promise;
 };
 
@@ -1493,12 +1524,16 @@ var getRelatedSites = function (id) {
 
   YouTube Links
 
+	"ZX81 videos (Youtube)" - 12369
+	"The Spectrum Show - Youtube" - 15
+	"TV Advert (YouTube)" - 2383
+
 */
 var getYouTubeLinks = function (id) {
   var deferred = Q.defer();
   var connection = db.getConnection();
   connection.query(
-    'SELECT relw.name AS sitename,rel.link FROM webrefs rel INNER JOIN websites relw ON rel.website_id = relw.id WHERE relw.name IN ("RZX Archive Channel (YouTube)", "ZX81 videos (Youtube)", "The Spectrum Show (Youtube)", "TV Advert (YouTube)") AND rel.entry_id = ? ORDER BY sitename',
+    'SELECT relw.name AS sitename, rel.link FROM webrefs rel INNER JOIN websites relw ON rel.website_id = relw.id WHERE relw.name IN( "RZX Archive - YouTube", "ZX81 videos (Youtube)", "The Spectrum Show - Youtube", "TV Advert (YouTube)" ) AND rel.entry_id = ? ORDER BY sitename',
     [id],
     function (error, results, fields) {
       if (error) {
@@ -1638,11 +1673,11 @@ FROM
 INNER JOIN filetypes filet ON
     d.filetype_id = filet.id
 INNER JOIN extensions ex ON
-    RIGHT(d.file_link, LENGTH(ex.ext)) = ex.ext
+    INSTR(file_link, ex.ext) > 1
 WHERE NOT
     (
         filetype_id IN(46, 47) OR filetype_id BETWEEN 8 AND 22
-	) AND d.entry_id = 2259
+	) AND d.entry_id = 12596
 ORDER BY filet.text, ex.text
 
 +-----------------------------------------------------------------------------+---------+-----------------------------------------------+-------------------+
@@ -1673,7 +1708,7 @@ var getAdditionals = function (id) {
   var deferred = Q.defer();
   var connection = db.getConnection();
   connection.query(
-    "SELECT d.file_link AS url, file_size AS size, filet.text AS type, ex.text AS format FROM downloads d INNER JOIN filetypes filet ON d.filetype_id = filet.id INNER JOIN extensions ex on right(d.file_link, length(ex.ext)) = ex.ext WHERE NOT(filetype_id IN (46, 47) OR filetype_id BETWEEN 8 AND 22) AND d.entry_id = ? ORDER BY filet.text, ex.text",
+    "SELECT d.file_link AS url, file_size AS size, filet.text AS type, ex.text AS format FROM downloads d INNER JOIN filetypes filet ON d.filetype_id = filet.id INNER JOIN extensions ex on instr(file_link, ex.ext) > 1 WHERE NOT(filetype_id IN (46, 47) OR filetype_id BETWEEN 8 AND 22) AND d.entry_id = ? ORDER BY filet.text, ex.text",
     [id],
     function (error, results, fields) {
       if (error) {
@@ -2295,10 +2330,10 @@ var zxdb_doc = function (id) {
   var done = false;
   Q.all([
     getBasicInfo(id),
+    getNotes(id),
     getPublisher(id),
     getReleases(id),
     getAuthors(id),
-    // getRoles(id),
     getAuthored(id),
     getAuthoring(id),
     getControls(id),
