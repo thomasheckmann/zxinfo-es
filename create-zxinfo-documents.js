@@ -3,6 +3,13 @@
 dd.mm.yyyy
 
 Changelog:
+10.09.2020 - All columns "idiom_id" will be replaced with "language_id", referencing table "languages" instead of "idioms".
+			 This is actually a bugfix that was reported here (thanks @Rorthron!)
+			 https://spectrumcomputing.co.uk/forums/viewtopic.php?f=32&t=636&start=280
+
+			 Fixed error in getting notes for Comments, Errors and Hardware Blurb
+			 https://spectrumcomputing.co.uk/forums/viewtopic.php?p=45674#p45674
+			 
 21.08.2020 - new table in ZXDB called "notes". It combines all kinds of text information about each entry
 			 https://spectrumcomputing.co.uk/forums/viewtopic.php?p=44437#p44437
 19.06.2020 - getAuthors() - Role of types (A, T) now moved to contributors section
@@ -231,9 +238,6 @@ SELECT
     pubt.text AS originalpublication,
     r.release_price AS originalprice,
     availt.text AS availability,
-    e.known_errors AS known_errors,
-    e.comments AS remarks,
-    e.spot_comments AS spotcomments,
     sc.score AS score,
     sc.votes AS votes
 FROM
@@ -250,8 +254,8 @@ LEFT JOIN genretypes entryt ON
     e.genretype_id = entryt.id
 LEFT JOIN publicationtypes pubt ON
     e.publicationtype_id = pubt.id
-LEFT JOIN idioms idm ON
-    e.idiom_id = idm.id
+LEFT JOIN languages idm ON
+    e.language_id = idm.id
 LEFT JOIN scores sc ON
     sc.entry_id = e.id
 WHERE
@@ -275,7 +279,7 @@ var getBasicInfo = function (id) {
   var deferred = Q.defer();
   var connection = db.getConnection();
   connection.query(
-    'SELECT e.title AS fulltitle, aka.title AS alsoknownas, r.release_year AS yearofrelease, r.release_month AS monthofrelease, r.release_day AS dayofrelease, machinet.text AS machinetype, e.max_players AS numberofplayers, (SELECT GROUP_CONCAT(g.name) FROM members turn INNER JOIN groups g ON turn.group_id = g.id and g.grouptype_id = "N" WHERE turn.entry_id = e.id) AS multiplayermode, (SELECT GROUP_CONCAT(g.name) FROM members turn INNER JOIN groups g ON turn.group_id = g.id and g.grouptype_id = "Y" WHERE turn.entry_id = e.id) AS multiplayertype, e.genretype_id AS genretype, entryt.text AS type, e.book_isbn AS isbn, idm.text AS messagelanguage, pubt.text AS originalpublication, r.release_price AS originalprice, availt.text AS availability, e.known_errors AS known_errors, e.comments AS remarks, e.spot_comments AS spotcomments, sc.score AS score, sc.votes AS votes FROM entries e LEFT JOIN releases r ON r.entry_id = e.id LEFT JOIN aliases aka ON aka.entry_id = r.entry_id AND aka.release_seq = r.release_seq LEFT JOIN availabletypes availt ON e.availabletype_id = availt.id LEFT JOIN machinetypes machinet ON e.machinetype_id = machinet.id LEFT JOIN genretypes entryt ON e.genretype_id = entryt.id LEFT JOIN publicationtypes pubt ON e.publicationtype_id = pubt.id LEFT JOIN idioms idm ON e.idiom_id = idm.id LEFT JOIN scores sc ON sc.entry_id = e.id WHERE e.id = ? AND(r.release_seq = 0 OR r.release_seq IS NULL );',
+    'SELECT e.title AS fulltitle, aka.title AS alsoknownas, r.release_year AS yearofrelease, r.release_month AS monthofrelease, r.release_day AS dayofrelease, machinet.text AS machinetype, e.max_players AS numberofplayers, (SELECT GROUP_CONCAT(g.name) FROM members turn INNER JOIN groups g ON turn.group_id = g.id and g.grouptype_id = "N" WHERE turn.entry_id = e.id) AS multiplayermode, (SELECT GROUP_CONCAT(g.name) FROM members turn INNER JOIN groups g ON turn.group_id = g.id and g.grouptype_id = "Y" WHERE turn.entry_id = e.id) AS multiplayertype, e.genretype_id AS genretype, entryt.text AS type, e.book_isbn AS isbn, idm.text AS messagelanguage, pubt.text AS originalpublication, r.release_price AS originalprice, availt.text AS availability, sc.score AS score, sc.votes AS votes FROM entries e LEFT JOIN releases r ON r.entry_id = e.id LEFT JOIN aliases aka ON aka.entry_id = r.entry_id AND aka.release_seq = r.release_seq LEFT JOIN availabletypes availt ON e.availabletype_id = availt.id LEFT JOIN machinetypes machinet ON e.machinetype_id = machinet.id LEFT JOIN genretypes entryt ON e.genretype_id = entryt.id LEFT JOIN publicationtypes pubt ON e.publicationtype_id = pubt.id LEFT JOIN languages idm ON e.language_id = idm.id LEFT JOIN scores sc ON sc.entry_id = e.id WHERE e.id = ? AND(r.release_seq = 0 OR r.release_seq IS NULL );',
     [id],
     function (error, results, fields) {
       if (error) {
@@ -324,9 +328,6 @@ var getBasicInfo = function (id) {
         originalpublication: originalpublication,
         originalprice: originalprice,
         availability: results[0].availability,
-        knownerrors: results[0].known_errors,
-        // remarks: results[0].remarks,
-        spotcomments: results[0].spotcomments,
         score: {
           score: results[0].score,
           votes: results[0].votes,
@@ -342,12 +343,17 @@ var getBasicInfo = function (id) {
 
 /*
 	https://spectrumcomputing.co.uk/forums/viewtopic.php?p=44437#p44437
+
+
+	1000014 - AMX Mouse (2 x Comments (spot_comments) + Hardware_Blurp)
+	903 - Chase H. Q. (2 x Comments + Bug fixes)
+
 */
 var getNotes = function (id) {
   var deferred = Q.defer();
   var connection = db.getConnection();
   connection.query(
-    "SELECT e.id, e.title, GROUP_CONCAT( c.text ORDER BY c.text SEPARATOR '\n\n' ) AS comments, h.text AS hardware_blurb, r.text AS known_errors FROM entries e LEFT JOIN notes c ON e.id = c.entry_id AND c.notetype_id = 'C' LEFT JOIN notes h ON e.id = h.entry_id AND h.notetype_id = 'H' LEFT JOIN notes r ON e.id = r.entry_id AND r.notetype_id = 'R' WHERE e.id = ?",
+    "SELECT e.id, e.title, GROUP_CONCAT( c.text ORDER BY c.text SEPARATOR '\n\n' ) AS comments, h.text AS hardware_blurb, r.text AS known_errors FROM entries e LEFT JOIN notes c ON e.id = c.entry_id AND c.notetype_id = 'R' LEFT JOIN notes h ON e.id = h.entry_id AND h.notetype_id = 'S' AND h.section = 'Hardware Blurb' LEFT JOIN notes r ON e.id = r.entry_id AND r.notetype_id = 'E' WHERE e.id = ?",
     [id],
     function (error, results, fields) {
       if (error) {
