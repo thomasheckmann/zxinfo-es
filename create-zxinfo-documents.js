@@ -3,6 +3,7 @@
 dd.mm.yyyy
 
 Changelog:
+22.09.2020 - Consistent sorting for magrefs, magazinereview, additional & adverts, getReleases
 10.09.2020 - All columns "idiom_id" will be replaced with "language_id", referencing table "languages" instead of "idioms".
 			 This is actually a bugfix that was reported here (thanks @Rorthron!)
 			 https://spectrumcomputing.co.uk/forums/viewtopic.php?f=32&t=636&start=280
@@ -477,7 +478,7 @@ from   releases r
        left join schemetypes schemet
               on d.schemetype_id = schemet.id
 where  r.entry_id = 2259
-order  by r.release_seq, pub.name, pc1.text
+order  by r.release_seq, pub.name, pc1.text,url, as_title, format
 
 ID: 2000011 as title
 ID: 0003012 releases with year
@@ -499,7 +500,7 @@ var getReleases = function (id) {
   var deferred = Q.defer();
   var connection = db.getConnection();
   connection.query(
-    "select distinct r.release_seq as seq, e.title as title, aka.title as as_title, pub.name as name, pc1.text as country, lt.text as labeltype, r.release_year as yearofrelease, r.release_price as releaseprice, r.budget_price as budgetprice, r.microdrive_price as microdriveprice, r.disk_price as diskprice, r.cartridge_price as cartridgeprice, d.file_size as size, d.file_link as url, filet.text as type, ex.text as format, origint.text as origin, d.file_code as code, d.file_barcode as barcode, d.file_dl as dl, schemet.text as encodingscheme from releases r left join aliases aka on aka.entry_id = r.entry_id and aka.release_seq = r.release_seq inner join entries e on e.id = r.entry_id left join publishers p on p.entry_id = r.entry_id and p.release_seq = r.release_seq left join labels pub on p.label_id = pub.id left join labeltypes lt on lt.id = pub.labeltype_id left join countries pc1 on pub.country_id = pc1.id left join downloads d on d.entry_id = r.entry_id and d.release_seq = r.release_seq and (d.filetype_id IN (46, 47) OR d.filetype_id BETWEEN 8 AND 22) left join filetypes filet on d.filetype_id = filet.id left join extensions ex on right(d.file_link, length(ex.ext)) = ex.ext left join sourcetypes origint on d.sourcetype_id = origint.id left join schemetypes schemet on d.schemetype_id = schemet.id where r.entry_id = ? order by r.release_seq, pub.name, pc1.text",
+    "select distinct r.release_seq as seq, e.title as title, aka.title as as_title, pub.name as name, pc1.text as country, lt.text as labeltype, r.release_year as yearofrelease, r.release_price as releaseprice, r.budget_price as budgetprice, r.microdrive_price as microdriveprice, r.disk_price as diskprice, r.cartridge_price as cartridgeprice, d.file_size as size, d.file_link as url, filet.text as type, ex.text as format, origint.text as origin, d.file_code as code, d.file_barcode as barcode, d.file_dl as dl, schemet.text as encodingscheme from releases r left join aliases aka on aka.entry_id = r.entry_id and aka.release_seq = r.release_seq inner join entries e on e.id = r.entry_id left join publishers p on p.entry_id = r.entry_id and p.release_seq = r.release_seq left join labels pub on p.label_id = pub.id left join labeltypes lt on lt.id = pub.labeltype_id left join countries pc1 on pub.country_id = pc1.id left join downloads d on d.entry_id = r.entry_id and d.release_seq = r.release_seq and (d.filetype_id IN (46, 47) OR d.filetype_id BETWEEN 8 AND 22) left join filetypes filet on d.filetype_id = filet.id left join extensions ex on right(d.file_link, length(ex.ext)) = ex.ext left join sourcetypes origint on d.sourcetype_id = origint.id left join schemetypes schemet on d.schemetype_id = schemet.id where r.entry_id = ? order by r.release_seq, pub.name, pc1.text, url, as_title, format",
     [id],
     function (error, results, fields) {
       if (error) {
@@ -572,6 +573,8 @@ LEFT JOIN roletypes rt ON
 WHERE
     aut.entry_id = 0028171
 ORDER BY
+	aut.author_seq,
+	roletype_id,
     group_name,
     dev_name
 
@@ -614,7 +617,7 @@ var getAuthors = function (id) {
   var deferred = Q.defer();
   var connection = db.getConnection();
   connection.query(
-    "SELECT dev.name AS dev_name, ac1.text AS dev_country, team.name AS group_name, tc1.text AS group_country, dlt.text AS labeltype, tlt.text AS grouptype, r.roletype_id, rt.text AS role FROM authors aut INNER JOIN labels dev ON aut.label_id = dev.id LEFT JOIN labeltypes dlt ON dlt.id = dev.labeltype_id LEFT JOIN countries ac1 ON dev.country_id = ac1.id LEFT JOIN labels team ON aut.team_id = team.id LEFT JOIN labeltypes tlt ON tlt.id = team.labeltype_id LEFT JOIN countries tc1 ON team.country_id = tc1.id LEFT JOIN roles r ON r.entry_id = aut.entry_id AND aut.label_id = r.label_id LEFT JOIN roletypes rt on rt.id = r.roletype_id WHERE aut.entry_id = ? ORDER BY group_name, dev_name",
+    "SELECT dev.name AS dev_name, ac1.text AS dev_country, team.name AS group_name, tc1.text AS group_country, dlt.text AS labeltype, tlt.text AS grouptype, r.roletype_id, rt.text AS role FROM authors aut INNER JOIN labels dev ON aut.label_id = dev.id LEFT JOIN labeltypes dlt ON dlt.id = dev.labeltype_id LEFT JOIN countries ac1 ON dev.country_id = ac1.id LEFT JOIN labels team ON aut.team_id = team.id LEFT JOIN labeltypes tlt ON tlt.id = team.labeltype_id LEFT JOIN countries tc1 ON team.country_id = tc1.id LEFT JOIN roles r ON r.entry_id = aut.entry_id AND aut.label_id = r.label_id LEFT JOIN roletypes rt on rt.id = r.roletype_id WHERE aut.entry_id = ? ORDER BY aut.author_seq, roletype_id, group_name, dev_name",
     [id],
     function (error, results, fields) {
       if (error) {
@@ -1444,7 +1447,7 @@ INNER JOIN websites relw ON
 WHERE
     relw.name NOT IN('Freebase', 'The Tipshop', 'RZX Archive Channel (YouTube)', 'ZX81 videos (Youtube)') AND rel.entry_id = 4010
 ORDER BY
-    sitename;
+    sitename, link;
 
 +-----------+-----------------------------------------------------------------+
 | sitename  | link                                                            |
@@ -1458,7 +1461,7 @@ var getRelatedLinks = function (id) {
   var deferred = Q.defer();
   var connection = db.getConnection();
   connection.query(
-    'SELECT relw.name AS sitename,rel.link FROM webrefs rel INNER JOIN websites relw ON rel.website_id = relw.id WHERE relw.name NOT IN ("Freebase","The Tipshop","RZX Archive Channel (YouTube)", "ZX81 videos (Youtube)") AND rel.entry_id = ? ORDER BY sitename',
+    'SELECT relw.name AS sitename,rel.link FROM webrefs rel INNER JOIN websites relw ON rel.website_id = relw.id WHERE relw.name NOT IN ("Freebase","The Tipshop","RZX Archive Channel (YouTube)", "ZX81 videos (Youtube)") AND rel.entry_id = ? ORDER BY sitename, link',
     [id],
     function (error, results, fields) {
       if (error) {
@@ -1684,7 +1687,7 @@ WHERE NOT
     (
         filetype_id IN(46, 47) OR filetype_id BETWEEN 8 AND 22
 	) AND d.entry_id = 12596
-ORDER BY filet.text, ex.text
+ORDER BY filet.text, ex.text, url
 
 +-----------------------------------------------------------------------------+---------+-----------------------------------------------+-------------------+
 | url                                                                         | size    | type                                          | format            |
@@ -1714,7 +1717,7 @@ var getAdditionals = function (id) {
   var deferred = Q.defer();
   var connection = db.getConnection();
   connection.query(
-    "SELECT d.file_link AS url, file_size AS size, filet.text AS type, ex.text AS format FROM downloads d INNER JOIN filetypes filet ON d.filetype_id = filet.id INNER JOIN extensions ex on instr(file_link, ex.ext) > 1 WHERE NOT(filetype_id IN (46, 47) OR filetype_id BETWEEN 8 AND 22) AND d.entry_id = ? ORDER BY filet.text, ex.text",
+    "SELECT d.file_link AS url, file_size AS size, filet.text AS type, ex.text AS format FROM downloads d INNER JOIN filetypes filet ON d.filetype_id = filet.id INNER JOIN extensions ex on instr(file_link, ex.ext) > 1 WHERE NOT(filetype_id IN (46, 47) OR filetype_id BETWEEN 8 AND 22) AND d.entry_id = ? ORDER BY filet.text, ex.text, url",
     [id],
     function (error, results, fields) {
       if (error) {
@@ -1764,7 +1767,7 @@ FROM   entries e
                ON i.magazine_id = m.id
 WHERE  e.id = 4010
    AND ref.referencetype_id IN ( 1, 2, 3, 15 )
-ORDER  BY date_year,date_month,pageno
+ORDER  BY date_year,date_month,issueno,pageno,magazine
 
 +--------------------------+-----------+---------+--------+---------------+----------------------+-------------------------------------------------------------------------------------------------------------------+
 | magazine                 | issueyear | issueno | pageno | magazine_type | magazine_text        | link_mask                                                                                                         |
@@ -1813,7 +1816,7 @@ var getAdverts = function (id) {
   var deferred = Q.defer();
   var connection = db.getConnection();
   connection.query(
-    "SELECT m.name AS magazine, i.date_year AS issueyear, i.date_month AS issueno, ref.page AS pageno, reft.text AS magazine_type, f.name AS magazine_text, m.link_mask FROM entries e INNER JOIN magrefs ref ON ref.entry_id = e.id INNER JOIN magreffeats mf ON mf.magref_id = ref.entry_id INNER JOIN features f ON mf.feature_id = f.id INNER JOIN referencetypes reft ON ref.referencetype_id = reft.id INNER JOIN issues i ON ref.issue_id = i.id INNER JOIN magazines m ON i.magazine_id = m.id WHERE e.id = ? AND ref.referencetype_id IN(1, 2, 3, 15) ORDER BY date_year, date_month, pageno",
+    "SELECT m.name AS magazine, i.date_year AS issueyear, i.date_month AS issueno, ref.page AS pageno, reft.text AS magazine_type, f.name AS magazine_text, m.link_mask FROM entries e INNER JOIN magrefs ref ON ref.entry_id = e.id INNER JOIN magreffeats mf ON mf.magref_id = ref.entry_id INNER JOIN features f ON mf.feature_id = f.id INNER JOIN referencetypes reft ON ref.referencetype_id = reft.id INNER JOIN issues i ON ref.issue_id = i.id INNER JOIN magazines m ON i.magazine_id = m.id WHERE e.id = ? AND ref.referencetype_id IN(1, 2, 3, 15) ORDER BY date_year, date_month, issueno,pageno,magazine",
     [id],
     function (error, results, fields) {
       if (error) {
@@ -1864,7 +1867,7 @@ FROM   entries e
                ON i.magazine_id = m.id
 WHERE  e.id = 9362
    AND ref.referencetype_id IN ( 10 )
-ORDER  BY date_year,date_month,date_day,pageno
+ORDER  BY date_year,date_month,date_day,issueno,pageno,magazine
 
 +--------------------------+-----------+------------+----------+-------------+---------+--------+---------------+----------------------------------------------+-----------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------+
 |         magazine         | issueyear | issuemonth | issueday | issuevolume | issueno | pageno | magazine_type |                magazine_text                 |                                                 link_mask                                                 |                               link                                |
@@ -1887,7 +1890,7 @@ var getMagazineReviews = function (id) {
   var deferred = Q.defer();
   var connection = db.getConnection();
   connection.query(
-    "SELECT m.name AS magazine, i.date_year AS issueyear, i.date_month AS issuemonth, i.date_day AS issueday, i.volume AS issuevolume, i.number AS issueno, ref.page AS pageno, reft.text AS magazine_type, f.name AS magazine_text, m.link_mask FROM entries e INNER JOIN magrefs ref ON ref.entry_id = e.id INNER JOIN magreffeats mf ON mf.magref_id = ref.entry_id INNER JOIN features f ON mf.feature_id = f.id INNER JOIN referencetypes reft ON ref.referencetype_id = reft.id INNER JOIN issues i ON ref.issue_id = i.id INNER JOIN magazines m ON i.magazine_id = m.id WHERE e.id = ? AND ref.referencetype_id IN(10) ORDER BY date_year, date_month, pageno",
+    "SELECT m.name AS magazine, i.date_year AS issueyear, i.date_month AS issuemonth, i.date_day AS issueday, i.volume AS issuevolume, i.number AS issueno, ref.page AS pageno, reft.text AS magazine_type, f.name AS magazine_text, m.link_mask FROM entries e INNER JOIN magrefs ref ON ref.entry_id = e.id INNER JOIN magreffeats mf ON mf.magref_id = ref.entry_id INNER JOIN features f ON mf.feature_id = f.id INNER JOIN referencetypes reft ON ref.referencetype_id = reft.id INNER JOIN issues i ON ref.issue_id = i.id INNER JOIN magazines m ON i.magazine_id = m.id WHERE e.id = ? AND ref.referencetype_id IN(10) ORDER BY date_year, date_month, issueno, pageno,magazine",
     [id],
     function (error, results, fields) {
       if (error) {
@@ -1925,7 +1928,7 @@ var getMagazineRefs = function (id) {
   var deferred = Q.defer();
   var connection = db.getConnection();
   connection.query(
-    "SELECT m.name AS magazine, i.date_year AS issueyear, i.date_month AS issueno, ref.page AS pageno, reft.text AS magazine_type, f.name AS magazine_text, m.link_mask FROM entries e INNER JOIN magrefs ref ON ref.entry_id = e.id INNER JOIN magreffeats mf ON mf.magref_id = ref.entry_id INNER JOIN features f ON mf.feature_id = f.id INNER JOIN referencetypes reft ON ref.referencetype_id = reft.id INNER JOIN issues i ON ref.issue_id = i.id INNER JOIN magazines m ON i.magazine_id = m.id WHERE e.id = ? AND ref.referencetype_id NOT IN(1, 2, 3, 10, 15) ORDER BY magazine_type, date_year, date_month",
+    "SELECT m.name AS magazine, i.date_year AS issueyear, i.date_month AS issueno, ref.page AS pageno, reft.text AS magazine_type, f.name AS magazine_text, m.link_mask FROM entries e INNER JOIN magrefs ref ON ref.entry_id = e.id INNER JOIN magreffeats mf ON mf.magref_id = ref.entry_id INNER JOIN features f ON mf.feature_id = f.id INNER JOIN referencetypes reft ON ref.referencetype_id = reft.id INNER JOIN issues i ON ref.issue_id = i.id INNER JOIN magazines m ON i.magazine_id = m.id WHERE e.id = ? AND ref.referencetype_id NOT IN(1, 2, 3, 10, 15) ORDER BY magazine_type, date_year, date_month,issueno, pageno,magazine",
     [id],
     function (error, results, fields) {
       if (error) {
