@@ -5,6 +5,11 @@ Compares JSON files with a remote index
 node change-log.js --json_dir data/processed/json/ --esurl http://search.zxinfo.dk --esindex zxinfo_games
 node change-log.js --json_dir testdata/ --esurl http://search.zxinfo.dk --esindex zxinfo_games
 
+OUTPUT FILES:
+change.log - changes (to be published on api.zxinfo.dk)
+detailed.log - detailed info about changes (use this to improve change log info)
+unhandled.log - info about unhandled changes
+
 */
 
 var fs = require("fs");
@@ -37,9 +42,13 @@ var client = new elasticsearch.Client({
 });
 
 console.log("########## CHANGE LOG CREATOR ");
-console.log("reading NEW json from directory: " + path);
-console.log("comparing aginst OLD jason - Elasticsearch at: " + esURL);
-console.log("comparing aginst OLD jason - index: " + esindex);
+console.log("reading PREVIOUS json from directory: " + path);
+console.log("comparing aginst CURRENT json - Elasticsearch at: " + esURL);
+console.log("comparing aginst CURRENT json - index: " + esindex);
+
+var CHANGELOG = fs.createWriteStream("change.log");
+var DETAILED = fs.createWriteStream("detailed.log");
+var UNHANDLED = fs.createWriteStream("unhandled.log");
 
 fs.readdir(path, function (err, items) {
   var changed = new Map();
@@ -48,14 +57,13 @@ fs.readdir(path, function (err, items) {
       console.log("processing: " + items[i]);
       var id = items[i].substr(0, 7);
       var new_json = jsonfile.readFileSync(path + items[i]);
+      new_json.version = null;
       new_json.authorsuggest = null;
       new_json.metadata_author = null;
       new_json.metadata_publisher = null;
       new_json.publishersuggest = null;
       new_json.screens = null;
       new_json.titlesuggest = null;
-      // console.log("NEW: \n" + JSON.stringify(new_json));
-      //
       var done = false;
 
       client.get(
@@ -66,11 +74,13 @@ fs.readdir(path, function (err, items) {
         },
         function (error, response) {
           if (error) {
-            console.error(id + ": NEW ENTRY(" + new_json.fulltitle + ")");
+            DETAILED.write(id + ": NEW ENTRY(" + new_json.fulltitle + ")\n");
+            CHANGELOG.write(id + ": NEW ENTRY(" + new_json.fulltitle + ")\n");
             done = true;
           } else {
             body = response._source;
             var old_json = body;
+            old_json.version = null;
             old_json.authorsuggest = null;
             old_json.metadata_author = null;
             old_json.metadata_publisher = null;
@@ -80,82 +90,176 @@ fs.readdir(path, function (err, items) {
 
             var diff = jsonDiff.diff(old_json, new_json);
             if (diff) {
+              DETAILED.write(id + ":\n" + JSON.stringify(diff, null, 2) + "\n");
               var found = false;
               if (diff.additionals) {
-                console.error(id + " (" + new_json.fulltitle + ") - ADDITIONALS");
+                CHANGELOG.write(id + " (" + old_json.fulltitle + ") - ADDITIONALS\n");
                 found = true;
               }
               if (diff.adverts) {
-                console.error(id + " (" + new_json.fulltitle + ") - ADVERTS");
+                CHANGELOG.write(id + " (" + old_json.fulltitle + ") - ADVERTS\n");
                 found = true;
               }
               if (diff.authoring) {
-                console.error(id + " (" + new_json.fulltitle + ") - AUTHORING");
+                CHANGELOG.write(id + " (" + old_json.fulltitle + ") - AUTHORING\n");
+                found = true;
+              }
+              if (diff.authored) {
+                CHANGELOG.write(id + " (" + old_json.fulltitle + ") - AUTHORED\n");
                 found = true;
               }
               if (diff.authors) {
-                console.error(id + " (" + new_json.fulltitle + ") - AUTHORS");
+                CHANGELOG.write(id + " (" + old_json.fulltitle + ") - AUTHORS\n");
+                found = true;
+              }
+              if (diff.contributors) {
+                CHANGELOG.write(id + " (" + old_json.fulltitle + ") - CONTRIBUTORS\n");
                 found = true;
               }
               if (diff.contents) {
-                console.error(id + " (" + new_json.fulltitle + ") - COMPILATION CONTENT");
+                CHANGELOG.write(id + " (" + old_json.fulltitle + ") - COMPILATION CONTENT\n");
+                found = true;
+              }
+              if (diff.incompilations) {
+                CHANGELOG.write(id + " (" + old_json.fulltitle + ") - COMPILATION REFERENCE\n");
                 found = true;
               }
               if (diff.features) {
-                console.error(id + " (" + new_json.fulltitle + ") - FEATURES");
+                CHANGELOG.write(id + " (" + old_json.fulltitle + ") - FEATURES\n");
                 found = true;
               }
               if (diff.fulltitle) {
-                console.error(id + " (" + new_json.fulltitle + ") - FULLTITLE");
+                CHANGELOG.write(
+                  id +
+                    " (" +
+                    old_json.fulltitle +
+                    ") - FULLTITLE [" +
+                    diff.fulltitle.__old +
+                    " -> " +
+                    diff.fulltitle.__new +
+                    "]\n"
+                );
                 found = true;
               }
               if (diff.licensed__added || diff.licensed) {
-                console.error(id + " (" + new_json.fulltitle + ") - LICENSED");
+                CHANGELOG.write(id + " (" + old_json.fulltitle + ") - LICENSED\n");
                 found = true;
               }
               if (diff.magazinereview) {
-                console.error(id + " (" + new_json.fulltitle + ") - MAGAZINEREVIEW");
+                CHANGELOG.write(id + " (" + old_json.fulltitle + ") - MAGAZINEREVIEW\n");
                 found = true;
               }
               if (diff.magrefs) {
-                console.error(id + " (" + new_json.fulltitle + ") - MAGREFS");
+                CHANGELOG.write(id + " (" + old_json.fulltitle + ") - MAGREFS\n");
                 found = true;
               }
               if (diff.publisher) {
-                console.error(id + " (" + new_json.fulltitle + ") - PUBLISHER");
+                CHANGELOG.write(id + " (" + old_json.fulltitle + ") - PUBLISHER\n");
                 found = true;
               }
               if (diff.relatedlinks) {
-                console.error(id + " (" + new_json.fulltitle + ") - RELATED LINKS");
+                CHANGELOG.write(id + " (" + old_json.fulltitle + ") - RELATED LINKS\n");
                 found = true;
               }
               if (diff.releases) {
-                console.error(id + " (" + new_json.fulltitle + ") - RELEASES");
+                CHANGELOG.write(id + " (" + old_json.fulltitle + ") - RELEASES\n");
                 found = true;
               }
               if (diff.remarks) {
-                console.error(id + " (" + new_json.fulltitle + ") - REMARKS");
+                CHANGELOG.write(id + " (" + old_json.fulltitle + ") - REMARKS\n");
                 found = true;
               }
               if (diff.series) {
-                console.error(id + " (" + new_json.fulltitle + ") - SERIES");
+                CHANGELOG.write(id + " (" + old_json.fulltitle + ") - SERIES\n");
                 found = true;
               }
               if (diff.type__deleted || diff.subtype__deleted) {
-                console.error(id + " (" + new_json.fulltitle + ") - TYPE/GENRE");
+                CHANGELOG.write(id + " (" + old_json.fulltitle + ") - TYPE/GENRE\n");
                 found = true;
               }
               if (diff.youtubelinks) {
-                console.error(id + " (" + new_json.fulltitle + ") - YOUTUBE LINKS");
+                CHANGELOG.write(id + " (" + old_json.fulltitle + ") - YOUTUBE LINKS\n");
                 found = true;
               }
               if (diff.webrefs) {
-                console.error(id + " (" + new_json.fulltitle + ") - WEB LINKS");
+                CHANGELOG.write(id + " (" + old_json.fulltitle + ") - WEB LINKS\n");
+                found = true;
+              }
+              if (diff.themedgroup) {
+                CHANGELOG.write(id + " (" + old_json.fulltitle + ") - THEMED GROUP INFO\n");
+                found = true;
+              }
+              if (diff.machinetype) {
+                CHANGELOG.write(
+                  id +
+                    " (" +
+                    old_json.fulltitle +
+                    ") - MACHINETYPE [" +
+                    diff.machinetype.__old +
+                    " -> " +
+                    diff.machinetype.__new +
+                    "]\n"
+                );
+                found = true;
+              }
+              if (diff.mod_of) {
+                CHANGELOG.write(id + " (" + old_json.fulltitle + ") - MOD OF\n");
+                found = true;
+              }
+              if (diff.modified_by) {
+                CHANGELOG.write(id + " (" + old_json.fulltitle + ") - MODIFIED BY\n");
+                found = true;
+              }
+              if (diff.known_errors) {
+                CHANGELOG.write(id + " (" + old_json.fulltitle + ") - KNOWN ERRORS\n");
+                found = true;
+              }
+              if (diff.hardware_blurb) {
+                CHANGELOG.write(id + " (" + old_json.fulltitle + ") - HARDWARE BLURB\n");
                 found = true;
               }
 
-              if (found) changed.set(id, new_json.fulltitle);
-              if (!found) console.log(id + ":\n" + JSON.stringify(diff, null, 2));
+              if (diff.originalpublication) {
+                CHANGELOG.write(
+                  id +
+                    " (" +
+                    old_json.fulltitle +
+                    ") - ORIGINALPUBLICATION [" +
+                    diff.originalpublication.__old +
+                    " -> " +
+                    diff.originalpublication.__new +
+                    "]\n"
+                );
+                found = true;
+              }
+              if (diff.originalpublication__deleted) {
+                CHANGELOG.write(id + " (" + old_json.fulltitle + ") - ORIGINALPUBLICATION (Deleted)\n");
+                found = true;
+              }
+              if (diff.monthofrelease__added) {
+                CHANGELOG.write(id + " (" + old_json.fulltitle + ") - MONTH OF RELEASE\n");
+                found = true;
+              }
+              if (diff.availability) {
+                CHANGELOG.write(
+                  id +
+                    " (" +
+                    old_json.fulltitle +
+                    ") - AVAILABILITY [" +
+                    diff.availability.__old +
+                    " -> " +
+                    diff.availability.__new +
+                    "]\n"
+                );
+                found = true;
+              }
+              if (diff.availability__added) {
+                CHANGELOG.write(id + " (" + old_json.fulltitle + ") - AVAILABILITY (Added)\n");
+                found = true;
+              }
+
+              if (found) changed.set(id, old_json.fulltitle);
+              if (!found) UNHANDLED.write(id + ":\n" + JSON.stringify(diff, null, 2) + "\n");
             }
             done = true;
           }
@@ -166,15 +270,15 @@ fs.readdir(path, function (err, items) {
       });
     }
   }
-  console.error("");
-  console.error("---------------------------------------------------------------");
-  console.error("CHANGE SUMMARY - total entries updated: " + changed.size);
-  console.error("---------------------------------------------------------------");
-  console.error("");
-  console.error("Updated entries:");
-  console.error("");
+  CHANGELOG.write("\n");
+  CHANGELOG.write("---------------------------------------------------------------\n");
+  CHANGELOG.write("CHANGE SUMMARY - total entries updated: " + changed.size + "\n");
+  CHANGELOG.write("---------------------------------------------------------------\n");
+  CHANGELOG.write("\n");
+  CHANGELOG.write("Updated entries:\n");
+  CHANGELOG.write("\n");
   for (const entry of changed.entries()) {
-    console.error(entry);
+    CHANGELOG.write(entry + "\n");
   }
-  console.error("===============================================================");
+  CHANGELOG.write("===============================================================\n");
 });
