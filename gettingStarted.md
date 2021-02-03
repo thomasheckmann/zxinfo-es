@@ -83,7 +83,7 @@ All created JSON documents can now be found in `data/entries/`
 
 A running instance of Elasticsearch must be running, for example the setup supplied with ZXInfo-App:
 
-`docker-compose run --service-ports -d zxinfo-es`
+`docker-compose up -d`
 
 and if upgrading a cleanup is recommended:
 
