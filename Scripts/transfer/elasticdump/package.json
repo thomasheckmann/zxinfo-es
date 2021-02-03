@@ -1,0 +1,111 @@
+{
+  "_from": "elasticdump",
+  "_id": "elasticdump@6.62.1",
+  "_inBundle": false,
+  "_integrity": "sha512-LM6NwMLF0W/ZCcSEqXUufGiDzGpXpF7uPQjLo5zx0PS/tLQkrkA2sNeNcE6p7dVcX1u9hYRuJisl9PP7hQvsAg==",
+  "_location": "/elasticdump",
+  "_phantomChildren": {},
+  "_requested": {
+    "type": "tag",
+    "registry": true,
+    "raw": "elasticdump",
+    "name": "elasticdump",
+    "escapedName": "elasticdump",
+    "rawSpec": "",
+    "saveSpec": null,
+    "fetchSpec": "latest"
+  },
+  "_requiredBy": [
+    "#USER",
+    "/"
+  ],
+  "_resolved": "https://registry.npmjs.org/elasticdump/-/elasticdump-6.62.1.tgz",
+  "_shasum": "1dd14ad29919e263927cbdb9c5dba0fd4e4a6dcf",
+  "_spec": "elasticdump",
+  "_where": "/Users/dkthahko/Public/git_zxinfo/zxinfo-es-new/scripts/transfer",
+  "author": {
+    "name": "Evan Tahler",
+    "email": "evantahler@gmail.com"
+  },
+  "bin": {
+    "elasticdump": "bin/elasticdump",
+    "multielasticdump": "bin/multielasticdump"
+  },
+  "bugs": {
+    "url": "https://github.com/elasticsearch-dump/elasticsearch-dump/issues"
+  },
+  "bundleDependencies": false,
+  "dependencies": {
+    "JSONStream": "^1.3.5",
+    "async": "^2.0.1",
+    "aws-sdk": "2.784.0",
+    "aws4": "^1.11.0",
+    "big.js": "^5.2.2",
+    "bytes": "^3.1.0",
+    "delay": "^4.4.0",
+    "extends-classes": "1.0.5",
+    "fast-csv": "4.3.6",
+    "http-status": "^1.5.0",
+    "ini": "^2.0.0",
+    "lodash": "^4.17.20",
+    "lossless-json": "^1.0.4",
+    "minimist": "^1.2.5",
+    "p-queue": "^6.6.2",
+    "request": "2.88.2",
+    "requestretry": "^4.1.2",
+    "s3-stream-upload": "2.0.2",
+    "s3urls": "^1.5.2",
+    "semver": "5.7.1",
+    "socks5-http-client": "^1.0.4",
+    "socks5-https-client": "^1.2.1"
+  },
+  "deprecated": false,
+  "description": "import and export tools for elasticsearch",
+  "devDependencies": {
+    "jsonpath": "^1.0.2",
+    "mocha": "^6.2.2",
+    "should": "^13.2.3",
+    "standard": "^16.0.3"
+  },
+  "engines": {
+    "node": ">=10.0.0"
+  },
+  "homepage": "https://github.com/elasticsearch-dump/elasticsearch-dump#readme",
+  "keywords": [
+    "elasticsearch",
+    "dump",
+    "elasticdump",
+    "import",
+    "export",
+    "transfer",
+    "migrate",
+    "migration",
+    "elasitic",
+    "cluster",
+    "elastic-dump",
+    "elastic dump"
+  ],
+  "license": "Apache-2.0",
+  "main": "elasticdump.js",
+  "name": "elasticdump",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/elasticsearch-dump/elasticsearch-dump.git"
+  },
+  "scripts": {
+    "pretest": "standard",
+    "test": "mocha"
+  },
+  "standard": {
+    "globals": [
+      "describe",
+      "it",
+      "describe",
+      "before",
+      "beforeEach",
+      "after",
+      "afterEach"
+    ]
+  },
+  "version": "6.62.1"
+}

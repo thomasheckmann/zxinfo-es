@@ -1,6 +1,10 @@
 <?php
-include_once('src/ZxImage/Converter.php');
-include_once('src/GifCreator/GifCreator.php');
+if (is_file('src/zx-image-master-dmitri/vendor/autoload.php')) {
+    include_once('src/zx-image-master-dmitri/vendor/autoload.php');
+}
+error_reporting(0);
+
+$asset_path = '/Users/dkthahko/Public/git_zxinfo/assets/mirror/spectrumcomputing.co.uk';
 
 $scr_array = array();
 
@@ -12,55 +16,17 @@ function convertScreen($id, $scr_file, $out_dir, $out_file, $title) {
 		$info = pathinfo($scr_file);
 		$src_filename =  basename($scr_file,'.'.$info['extension']);
 
+		$ext = $info['extension'];
+
 		// echo "processing file: $src_filename\n";
 		$scrType = 'standard';
-		switch ($size) {
-		case 6912:
-				$scrType = 'standard';
-		        break;
-		case 6976:
-				$scrType = 'ulaplus';
-		        break;
-		case 24617:
-				$scrType = 'sam4';
-		        break;
-		case 11136:
-				$scrType = 'bsc';
-		        break;
-		case 11904:
-				$scrType = 'bmc4';
-		        break;
-	 	case 13824:
-				$scrType = 'gigascreen';
-		        break;
-	 	case 6144:
-				$scrType = 'monochrome';
-		        break;
-	 	case 18432:
-				$scrType = 'tricolor';
-		        break;
-	 	case 9216:
-				$scrType = 'multicolor';
-		        break;
-	 	case 7680:
-				$scrType = 'multicolor4';
-		        break;
-	 	case 768:
-				$scrType = 'attributes';
-		        break;
-	 	case 1628:
-				$scrType = 'lowresgs';
-		        break;
-	 	case 12288:
-				$scrType = 'mlt';
-		        break;
-	 	case 12289:
-				$scrType = 'timexhr';
-		        break;
-	 	default:
-				$scrType = 'unknown';
-		        break;
-	    }
+	    if ($ext == "scr") { $scrType = 'standard'; };
+		if ($ext == "ss4") { $scrType = 'sam4'; };
+		if ($ext == "ssx") { $scrType = 'ssx'; };
+		if ($ext == "ifl") { $scrType = 'multicolor';};
+		if ($ext == "mlt") { $scrType = 'mlt'; }; //not correct mode but at least we get an image
+		if (($ext == "scr") && (filesize($scr_file) >=12000) ) { $scrType = 'timexhr';};
+
 		if (strpos($out_file, '-load') !== false) {
 			$type = 'Loading screen';
 			$format = 'Picture';
@@ -132,8 +98,14 @@ while ( !feof($fp) )
 
     if($screen_type == 'load' || $screen_type == 'run') {
     	$object;
-    	$fullpath = './mirror/spectrumcomputing.co.uk'.$from_url;
-    	if(file_exists("." . $to_path . $to_filename . ".gif") || file_exists("." . $to_path . $to_filename . ".png")) {
+		$fullpath = $asset_path.$from_url;
+
+		if(!is_file($fullpath)) {
+	    	echo "[NOT FOUND]" . $to_path . $to_filename . $ext . "\n";
+		} else if (filesize($fullpath) < 6912) {
+	    	echo "[TO SMALL?]" . $to_path . $to_filename . $ext . "\n";
+		} else if(file_exists("." . $to_path . $to_filename . ".gif") || file_exists("." . $to_path . $to_filename . ".png")) {
+
 	    	// gif or png?
 	    	$ext = "";
 	    	if(file_exists("." . $to_path . $to_filename . ".gif")) {
@@ -181,7 +153,7 @@ foreach ($scr_array as $key => $items) {
 
 	// echo "$json_file => $json_str\n";
 
-	file_put_contents("json/" . $json_file, $json_str);
+	file_put_contents("../data/screens/" . $json_file, $json_str);
 
 }
 

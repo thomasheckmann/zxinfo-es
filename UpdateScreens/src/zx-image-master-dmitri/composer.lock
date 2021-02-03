@@ -1,0 +1,113 @@
+{
+    "_readme": [
+        "This file locks the dependencies of your project to a known state",
+        "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
+        "This file is @generated automatically"
+    ],
+    "content-hash": "5c528e3451a7f733530315394b67e8cd",
+    "packages": [
+        {
+            "name": "moroz1999/gif-creator",
+            "version": "1.1.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/moroz1999/GifCreator.git",
+                "reference": "c8128b0382cf0357f5746ae5aaef8e4aa40363e8"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/moroz1999/GifCreator/zipball/c8128b0382cf0357f5746ae5aaef8e4aa40363e8",
+                "reference": "c8128b0382cf0357f5746ae5aaef8e4aa40363e8",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=5.3.0"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-0": {
+                    "GifCreator": "src"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Clément Guillemain",
+                    "homepage": "http://clementguillemain.fr",
+                    "role": "Developer / Freelancer"
+                }
+            ],
+            "description": "PHP class that creates animated GIF from multiple images",
+            "homepage": "https://github.com/Sybio/GifCreator",
+            "keywords": [
+                "animated",
+                "creation",
+                "encode",
+                "gif",
+                "php"
+            ],
+            "support": {
+                "source": "https://github.com/moroz1999/GifCreator/tree/master"
+            },
+            "time": "2017-06-21T19:23:03+00:00"
+        },
+        {
+            "name": "moroz1999/zx-image",
+            "version": "5.2.0.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/moroz1999/zx-image.git",
+                "reference": "45010345b18e2dd1f7600d24106e29e20f93d007"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/moroz1999/zx-image/zipball/45010345b18e2dd1f7600d24106e29e20f93d007",
+                "reference": "45010345b18e2dd1f7600d24106e29e20f93d007",
+                "shasum": ""
+            },
+            "require": {
+                "moroz1999/gif-creator": "*",
+                "php": ">=7.0"
+            },
+            "require-dev": {
+                "rector/rector": "^0.8.56",
+                "vimeo/psalm": "^4"
+            },
+            "type": "package",
+            "autoload": {
+                "psr-4": {
+                    "ZxImage\\": "ZxImage/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "CC0-1.0"
+            ],
+            "description": "Zx Spectrum images converter in PHP",
+            "homepage": "https://github.com/moroz1999/zx-image",
+            "keywords": [
+                "php",
+                "sam coupe",
+                "zx evolution",
+                "zx spectrum"
+            ],
+            "support": {
+                "issues": "https://github.com/moroz1999/zx-image/issues",
+                "source": "https://github.com/moroz1999/zx-image/tree/5.2.0.1"
+            },
+            "time": "2020-12-05T21:25:50+00:00"
+        }
+    ],
+    "packages-dev": [],
+    "aliases": [],
+    "minimum-stability": "stable",
+    "stability-flags": [],
+    "prefer-stable": false,
+    "prefer-lowest": false,
+    "platform": [],
+    "platform-dev": [],
+    "plugin-api-version": "2.0.0"
+}

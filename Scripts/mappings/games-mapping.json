@@ -1,0 +1,1182 @@
+{
+  "mappings": {
+    "properties": {
+      "contentType": {
+        "type": "keyword"
+      },
+      "title": {
+        "type": "text",
+        "fields": {
+          "keyword": {
+            "type": "keyword"
+          }
+        }
+      },
+      "zxinfoVersion": {
+        "type": "text"
+      },
+      "originalYearOfRelease": {
+        "type": "long"
+      },
+      "originalMonthOfRelease": {
+        "type": "long"
+      },
+      "originalDayOfRelease": {
+        "type": "long"
+      },
+      "machineType": {
+        "type": "keyword"
+      },
+      "numberOfPlayers": {
+        "type": "long"
+      },
+      "multiplayerMode": {
+        "type": "keyword"
+      },
+      "multiplayerType": {
+        "type": "keyword"
+      },
+      "genre": {
+        "type": "keyword"
+      },
+      "genreType": {
+        "type": "keyword"
+      },
+      "genreSubType": {
+        "type": "keyword"
+      },
+      "isbn": {
+        "type": "text"
+      },
+      "language": {
+        "type": "keyword"
+      },
+      "originalPublication": {
+        "type": "keyword"
+      },
+      "originalPrice": {
+        "properties": {
+          "amount": {
+            "type": "text"
+          },
+          "currency": {
+            "type": "keyword"
+          },
+          "license": {
+            "type": "text"
+          }
+        }
+      },
+      "availability": {
+        "type": "keyword"
+      },
+      "score": {
+        "properties": {
+          "score": {
+            "type": "double"
+          },
+          "votes": {
+            "type": "long"
+          }
+        }
+      },
+      "awards": {
+        "properties": {
+          "section": { "type": "keyword" },
+          "text": { "type": "text" }
+        }
+      },
+      "remarks": {
+        "type": "text"
+      },
+      "hardwareBlurb": {
+        "type": "text"
+      },
+      "knownErrors": {
+        "type": "text"
+      },
+      "publishers": {
+        "type": "nested",
+        "properties": {
+          "publisherSeq": {
+            "type": "long"
+          },
+          "country": {
+            "type": "keyword"
+          },
+          "name": {
+            "type": "text",
+            "fields": {
+              "keyword": {
+                "type": "keyword"
+              }
+            }
+          },
+          "labelType": {
+            "type": "keyword"
+          },
+          "notes": {
+            "properties": {
+              "noteType": {
+                "type": "keyword"
+              },
+              "section": {
+                "type": "keyword"
+              },
+              "text": {
+                "type": "text"
+              }
+            }
+          }
+        }
+      },
+      "authors": {
+        "type": "nested",
+        "properties": {
+          "type": { "type": "keyword" },
+          "authorSeq": { "type": "long" },
+          "name": {
+            "type": "text",
+            "fields": {
+              "keyword": {
+                "type": "keyword"
+              }
+            }
+          },
+          "country": {
+            "type": "keyword"
+          },
+          "labelType": {
+            "type": "keyword"
+          },
+          "roles": {
+            "type": "nested",
+            "properties": {
+              "roleType": {
+                "type": "keyword"
+              },
+              "roleName": {
+                "type": "keyword"
+              }
+            }
+          },
+          "groupName": {
+            "type": "text",
+            "fields": {
+              "keyword": {
+                "type": "keyword"
+              }
+            }
+          },
+          "groupCountry": {
+            "type": "keyword"
+          },
+          "groupType": {
+            "type": "keyword"
+          },
+          "notes": {
+            "properties": {
+              "noteType": {
+                "type": "keyword"
+              },
+              "section": {
+                "type": "keyword"
+              },
+              "text": {
+                "type": "text"
+              }
+            }
+          }
+        }
+      },
+      "releases": {
+        "type": "nested",
+        "properties": {
+          "releaseSeq": { "type": "long" },
+          "publishers": {
+            "type": "nested",
+            "properties": {
+              "publisherSeq": {
+                "type": "long"
+              },
+              "name": { "type": "text" },
+              "country": { "type": "keyword" },
+              "labelType": {
+                "type": "keyword"
+              }
+            }
+          },
+          "releaseTitles": {
+            "type": "text"
+          },
+          "yearOfRelease": {
+            "type": "long"
+          },
+          "releasePrice": {
+            "type": "keyword"
+          },
+          "budgetPrice": {
+            "type": "keyword"
+          },
+          "cartridgePrice": {
+            "type": "keyword"
+          },
+          "diskPrice": {
+            "type": "keyword"
+          },
+          "microdrivePrice": {
+            "type": "keyword"
+          },
+          "files": {
+            "type": "nested",
+            "properties": {
+              "path": {
+                "type": "keyword"
+              },
+              "size": {
+                "type": "long"
+              },
+              "type": {
+                "type": "keyword"
+              },
+              "format": {
+                "type": "keyword"
+              },
+              "origin": {
+                "type": "keyword"
+              },
+              "encodingScheme": {
+                "type": "keyword"
+              }
+            }
+          },
+          "code": {
+            "type": "keyword"
+          },
+          "barcode": {
+            "type": "keyword"
+          },
+          "dl": {
+            "type": "keyword"
+          }
+        }
+      },
+      "controls": {
+        "properties": {
+          "control": {
+            "type": "keyword"
+          }
+        }
+      },
+      "series": {
+        "properties": {
+          "entry_id": { "type": "long" },
+          "title": {
+            "type": "text"
+          },
+          "publishers": {
+            "type": "nested",
+            "properties": {
+              "name": {
+                "type": "text"
+              },
+              "country": {
+                "type": "keyword"
+              },
+              "labelType": {
+                "type": "keyword"
+              }
+            }
+          },
+          "machineType": {
+            "type": "keyword"
+          },
+          "groupName": {
+            "type": "keyword"
+          }
+        }
+      },
+      "features": {
+        "properties": {
+          "name": { "type": "keyword" }
+        }
+      },
+      "competition": {
+        "properties": {
+          "name": {
+            "type": "keyword"
+          }
+        }
+      },
+      "themedGroup": {
+        "properties": {
+          "name": {
+            "type": "keyword"
+          }
+        }
+      },
+      "unsortedGroup": {
+        "properties": {
+          "name": {
+            "type": "keyword"
+          }
+        }
+      },
+      "otherSystems": {
+        "properties": {
+          "name": {
+            "type": "keyword"
+          },
+          "url": {
+            "type": "keyword"
+          }
+        }
+      },
+      "licensed": {
+        "properties": {
+          "country": {
+            "type": "keyword"
+          },
+          "name": {
+            "type": "text"
+          },
+          "originalName": {
+            "type": "text"
+          },
+          "type": {
+            "type": "keyword"
+          }
+        }
+      },
+      "inCompilations": {
+        "properties": {
+          "entry_id": {
+            "type": "long"
+          },
+          "machineType": {
+            "type": "keyword"
+          },
+          "publishers": {
+            "type": "nested",
+            "properties": {
+              "name": { "type": "text" },
+              "country": {
+                "type": "keyword"
+              },
+              "labelType": {
+                "type": "keyword"
+              }
+            }
+          },
+          "title": {
+            "type": "text"
+          },
+          "type": {
+            "type": "keyword"
+          }
+        }
+      },
+      "compilationContents": {
+        "properties": {
+          "entry_id": {
+            "type": "long"
+          },
+          "title": {
+            "type": "text"
+          },
+          "publishers": {
+            "type": "nested",
+            "properties": {
+              "name": {
+                "type": "text"
+              },
+              "country": {
+                "type": "keyword"
+              },
+              "labelType": {
+                "type": "keyword"
+              }
+            }
+          },
+          "machineType": {
+            "type": "keyword"
+          },
+          "sequence": {
+            "type": "long"
+          },
+          "side": {
+            "type": "keyword"
+          },
+          "variation": {
+            "type": "keyword"
+          }
+        }
+      },
+      "inBook": {
+        "properties": {
+          "entry_id": {
+            "type": "long"
+          },
+          "title": {
+            "type": "text"
+          },
+          "publishers": {
+            "type": "nested",
+            "properties": {
+              "name": {
+                "type": "text"
+              },
+              "country": {
+                "type": "keyword"
+              },
+              "labelType": {
+                "type": "keyword"
+              }
+            }
+          }
+        }
+      },
+      "bookContents": {
+        "properties": {
+          "entry_id": {
+            "type": "long"
+          },
+          "title": {
+            "type": "text"
+          },
+          "publishers": {
+            "type": "nested",
+            "properties": {
+              "name": {
+                "type": "text"
+              },
+              "country": {
+                "type": "keyword"
+              },
+              "labelType": {
+                "type": "keyword"
+              }
+            }
+          },
+          "machineType": {
+            "type": "keyword"
+          },
+          "page": {
+            "type": "long"
+          }
+        }
+      },
+      "authoredWith": {
+        "properties": {
+          "entry_id": {
+            "type": "long"
+          },
+          "title": {
+            "type": "text"
+          },
+          "publishers": {
+            "properties": {
+              "name": {
+                "type": "text"
+              },
+              "country": {
+                "type": "keyword"
+              },
+              "labelType": {
+                "type": "keyword"
+              }
+            }
+          },
+          "machineType": {
+            "type": "keyword"
+          }
+        }
+      },
+      "authoring": {
+        "properties": {
+          "entry_id": {
+            "type": "long"
+          },
+          "title": {
+            "type": "text"
+          },
+          "publishers": {
+            "properties": {
+              "name": {
+                "type": "text"
+              },
+              "country": {
+                "type": "keyword"
+              },
+              "labelType": {
+                "type": "keyword"
+              }
+            }
+          },
+          "machineType": {
+            "type": "keyword"
+          }
+        }
+      },
+      "editorOf": {
+        "properties": {
+          "entry_id": {
+            "type": "long"
+          },
+          "title": {
+            "type": "text"
+          },
+          "publishers": {
+            "properties": {
+              "name": {
+                "type": "text"
+              },
+              "country": {
+                "type": "keyword"
+              },
+              "labelType": {
+                "type": "keyword"
+              }
+            }
+          },
+          "machineType": {
+            "type": "keyword"
+          }
+        }
+      },
+      "editBy": {
+        "properties": {
+          "entry_id": {
+            "type": "long"
+          },
+          "title": {
+            "type": "text"
+          },
+          "publishers": {
+            "properties": {
+              "name": {
+                "type": "text"
+              },
+              "country": {
+                "type": "keyword"
+              },
+              "labelType": {
+                "type": "keyword"
+              }
+            }
+          },
+          "machineType": {
+            "type": "keyword"
+          }
+        }
+      },
+      "requiresHardware": {
+        "properties": {
+          "entry_id": {
+            "type": "long"
+          },
+          "title": {
+            "type": "text"
+          },
+          "publishers": {
+            "properties": {
+              "name": {
+                "type": "text"
+              },
+              "country": {
+                "type": "keyword"
+              },
+              "labelType": {
+                "type": "keyword"
+              }
+            }
+          },
+          "machineType": {
+            "type": "keyword"
+          }
+        }
+      },
+      "requiredByHardware": {
+        "properties": {
+          "entry_id": {
+            "type": "long"
+          },
+          "title": {
+            "type": "text"
+          },
+          "publishers": {
+            "properties": {
+              "name": {
+                "type": "text"
+              },
+              "country": {
+                "type": "keyword"
+              },
+              "labelType": {
+                "type": "keyword"
+              }
+            }
+          },
+          "machineType": {
+            "type": "keyword"
+          }
+        }
+      },
+      "inspiredBy": {
+        "properties": {
+          "entry_id": {
+            "type": "long"
+          },
+          "title": {
+            "type": "text"
+          },
+          "publishers": {
+            "properties": {
+              "name": {
+                "type": "text"
+              },
+              "country": {
+                "type": "keyword"
+              },
+              "labelType": {
+                "type": "keyword"
+              }
+            }
+          },
+          "machineType": {
+            "type": "keyword"
+          }
+        }
+      },
+      "inspirationFor": {
+        "properties": {
+          "entry_id": {
+            "type": "long"
+          },
+          "title": {
+            "type": "text"
+          },
+          "publishers": {
+            "properties": {
+              "name": {
+                "type": "text"
+              },
+              "country": {
+                "type": "keyword"
+              },
+              "labelType": {
+                "type": "keyword"
+              }
+            }
+          },
+          "machineType": {
+            "type": "keyword"
+          }
+        }
+      },
+      "addOnDependsOn": {
+        "properties": {
+          "entry_id": {
+            "type": "long"
+          },
+          "title": {
+            "type": "text"
+          },
+          "publishers": {
+            "properties": {
+              "name": {
+                "type": "text"
+              },
+              "country": {
+                "type": "keyword"
+              },
+              "labelType": {
+                "type": "keyword"
+              }
+            }
+          },
+          "machineType": {
+            "type": "keyword"
+          }
+        }
+      },
+      "addOnAvailable": {
+        "properties": {
+          "entry_id": {
+            "type": "long"
+          },
+          "title": {
+            "type": "text"
+          },
+          "publishers": {
+            "properties": {
+              "name": {
+                "type": "text"
+              },
+              "country": {
+                "type": "keyword"
+              },
+              "labelType": {
+                "type": "keyword"
+              }
+            }
+          },
+          "machineType": {
+            "type": "keyword"
+          }
+        }
+      },
+      "modificationOf": {
+        "properties": {
+          "entry_id": {
+            "type": "long"
+          },
+          "title": {
+            "type": "text"
+          },
+          "publishers": {
+            "properties": {
+              "name": {
+                "type": "text"
+              },
+              "country": {
+                "type": "keyword"
+              },
+              "labelType": {
+                "type": "keyword"
+              }
+            }
+          },
+          "machineType": {
+            "type": "keyword"
+          }
+        }
+      },
+      "modifiedBy": {
+        "properties": {
+          "entry_id": {
+            "type": "long"
+          },
+          "title": {
+            "type": "text"
+          },
+          "publishers": {
+            "properties": {
+              "name": {
+                "type": "text"
+              },
+              "country": {
+                "type": "keyword"
+              },
+              "labelType": {
+                "type": "keyword"
+              }
+            }
+          },
+          "machineType": {
+            "type": "keyword"
+          }
+        }
+      },
+      "otherPlatform": {
+        "properties": {
+          "entry_id": {
+            "type": "long"
+          },
+          "title": {
+            "type": "text"
+          },
+          "publishers": {
+            "properties": {
+              "name": {
+                "type": "text"
+              },
+              "country": {
+                "type": "keyword"
+              },
+              "labelType": {
+                "type": "keyword"
+              }
+            }
+          },
+          "machineType": {
+            "type": "keyword"
+          }
+        }
+      },
+      "runsWith": {
+        "properties": {
+          "entry_id": {
+            "type": "long"
+          },
+          "title": {
+            "type": "text"
+          },
+          "publishers": {
+            "properties": {
+              "name": {
+                "type": "text"
+              },
+              "country": {
+                "type": "keyword"
+              },
+              "labelType": {
+                "type": "keyword"
+              }
+            }
+          },
+          "machineType": {
+            "type": "keyword"
+          }
+        }
+      },
+      "requiredToRun": {
+        "properties": {
+          "entry_id": {
+            "type": "long"
+          },
+          "title": {
+            "type": "text"
+          },
+          "publishers": {
+            "properties": {
+              "name": {
+                "type": "text"
+              },
+              "country": {
+                "type": "keyword"
+              },
+              "labelType": {
+                "type": "keyword"
+              }
+            }
+          },
+          "machineType": {
+            "type": "keyword"
+          }
+        }
+      },
+      "derivedFrom": {
+        "properties": {
+          "entry_id": {
+            "type": "long"
+          },
+          "title": {
+            "type": "text"
+          },
+          "publishers": {
+            "properties": {
+              "name": {
+                "type": "text"
+              },
+              "country": {
+                "type": "keyword"
+              },
+              "labelType": {
+                "type": "keyword"
+              }
+            }
+          },
+          "machineType": {
+            "type": "keyword"
+          }
+        }
+      },
+      "originOf": {
+        "properties": {
+          "entry_id": {
+            "type": "long"
+          },
+          "title": {
+            "type": "text"
+          },
+          "publishers": {
+            "properties": {
+              "name": {
+                "type": "text"
+              },
+              "country": {
+                "type": "keyword"
+              },
+              "labelType": {
+                "type": "keyword"
+              }
+            }
+          },
+          "machineType": {
+            "type": "keyword"
+          }
+        }
+      },
+      "bundledWith": {
+        "properties": {
+          "entry_id": {
+            "type": "long"
+          },
+          "title": {
+            "type": "text"
+          },
+          "publishers": {
+            "properties": {
+              "name": {
+                "type": "text"
+              },
+              "country": {
+                "type": "keyword"
+              },
+              "labelType": {
+                "type": "keyword"
+              }
+            }
+          },
+          "machineType": {
+            "type": "keyword"
+          }
+        }
+      },
+      "bundleContent": {
+        "properties": {
+          "entry_id": {
+            "type": "long"
+          },
+          "title": {
+            "type": "text"
+          },
+          "publishers": {
+            "properties": {
+              "name": {
+                "type": "text"
+              },
+              "country": {
+                "type": "keyword"
+              },
+              "labelType": {
+                "type": "keyword"
+              }
+            }
+          },
+          "machineType": {
+            "type": "keyword"
+          }
+        }
+      },
+      "duplicateOf": {
+        "properties": {
+          "entry_id": {
+            "type": "long"
+          },
+          "title": {
+            "type": "text"
+          },
+          "publishers": {
+            "properties": {
+              "name": {
+                "type": "text"
+              },
+              "country": {
+                "type": "keyword"
+              },
+              "labelType": {
+                "type": "keyword"
+              }
+            }
+          },
+          "machineType": {
+            "type": "keyword"
+          }
+        }
+      },
+      "duplicatedBy": {
+        "properties": {
+          "entry_id": {
+            "type": "long"
+          },
+          "title": {
+            "type": "text"
+          },
+          "publishers": {
+            "properties": {
+              "name": {
+                "type": "text"
+              },
+              "country": {
+                "type": "keyword"
+              },
+              "labelType": {
+                "type": "keyword"
+              }
+            }
+          },
+          "machineType": {
+            "type": "keyword"
+          }
+        }
+      },
+      "tosec": {
+        "properties": {
+          "path": {
+            "type": "keyword"
+          }
+        }
+      },
+      "relatedLinks": {
+        "properties": {
+          "url": {
+            "type": "keyword"
+          },
+          "siteName": {
+            "type": "keyword"
+          }
+        }
+      },
+      "relatedSites": {
+        "properties": {
+          "url": {
+            "type": "keyword"
+          },
+          "siteName": {
+            "type": "keyword"
+          }
+        }
+      },
+      "youTubeLinks": {
+        "properties": {
+          "url": {
+            "type": "keyword"
+          },
+          "siteName": {
+            "type": "keyword"
+          }
+        }
+      },
+      "additionalDownloads": {
+        "properties": {
+          "path": {
+            "type": "keyword"
+          },
+          "size": {
+            "type": "long"
+          },
+          "type": {
+            "type": "keyword"
+          },
+          "format": {
+            "type": "keyword"
+          },
+          "language": {
+            "type": "keyword"
+          }
+        }
+      },
+      "screens": {
+        "type": "nested",
+        "properties": {
+          "filename": {
+            "type": "keyword"
+          },
+          "format": {
+            "type": "keyword"
+          },
+          "size": {
+            "type": "long"
+          },
+          "title": {
+            "type": "text"
+          },
+          "type": {
+            "type": "keyword"
+          },
+          "url": {
+            "type": "keyword"
+          }
+        }
+      },
+      "titlesuggest": {
+        "type": "completion",
+        "analyzer": "simple",
+        "preserve_separators": true,
+        "preserve_position_increments": true,
+        "max_input_length": 50
+      },
+      "authorsuggest": {
+        "type": "completion",
+        "analyzer": "simple",
+        "preserve_separators": true,
+        "preserve_position_increments": true,
+        "max_input_length": 50
+      },
+      "publishersuggest": {
+        "type": "completion",
+        "analyzer": "simple",
+        "preserve_separators": true,
+        "preserve_position_increments": true,
+        "max_input_length": 50
+      },
+      "metadata_author": {
+        "properties": {
+          "alias": {
+            "type": "text",
+            "fields": {
+              "keyword": {
+                "type": "keyword",
+                "ignore_above": 256
+              }
+            }
+          },
+          "labeltype": {
+            "type": "text",
+            "fields": {
+              "keyword": {
+                "type": "keyword",
+                "ignore_above": 256
+              }
+            }
+          },
+          "name": {
+            "type": "text",
+            "fields": {
+              "keyword": {
+                "type": "keyword",
+                "ignore_above": 256
+              }
+            }
+          }
+        }
+      },
+      "metadata_publisher": {
+        "properties": {
+          "labeltype": {
+            "type": "text",
+            "fields": {
+              "keyword": {
+                "type": "keyword",
+                "ignore_above": 256
+              }
+            }
+          },
+          "name": {
+            "type": "text",
+            "fields": {
+              "keyword": {
+                "type": "keyword",
+                "ignore_above": 256
+              }
+            }
+          },
+          "suggest": {
+            "type": "text",
+            "fields": {
+              "keyword": {
+                "type": "keyword",
+                "ignore_above": 256
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "settings": {
+    "index.mapping.total_fields.limit": 1000
+  }
+}
