@@ -35,7 +35,7 @@ curl -H'Content-Type: application/json' -XPOST "http://${ES_HOST}:${ES_PORT}/_al
 echo ""
 echo 'Now importing data into ['${WRITE_ALIAS}']'
 
-(cd ../ && (node import-magazines.js data/magazines/json/ 2> import-magazines.log)) &
+(cd ../ && (node import-magazines.js data/magazines/ 2> import-magazines.log)) &
 PID=$!
 wait $PID
 
