@@ -5,8 +5,9 @@
 "use strict";
 
 var db = require("./includes/dbConfig");
+var settings = require("./includes/settings");
 
-var json_output_dir = "data/magazines/json/";
+var json_output_dir = settings.prefixMagazines;
 
 var Q = require("Q");
 var jsonfile = require("jsonfile");

@@ -18,7 +18,7 @@ The following steps are required for creating a new ZXINFO backend
 
 Requirements for this guide:
 
-- Docker - as everthing is containerized. Used to create container for mariaDB, myphpadmin and Elasticsearch
+- Docker - as everything is containerized. Used to create container for mariaDB, myphpadmin and Elasticsearch
 
 - nodeJS - required to run the scripts for creating and importing data into elasticsearch
 
@@ -61,9 +61,7 @@ Before creating documents cleanup is recommended:
 
 # clean-up
 
-find data/processed/ -type f -name "*.json" -exec rm -rf {} \;
-
-
+find data/entries/ -type f -name "*.json" -exec rm -rf {} \;
 
 # create JSON documents for entries
 
@@ -72,7 +70,6 @@ node --max-old-space-size=8192 create-entries-documents.js --all 2> zxscreens.tx
 NOTE:
 
 - Running the create-zxinfo-documents is known to fail, but all documents are created
-
 - zxscreens.txt contains filenames for screenshots that needs to be converted (later step)
 
 ```
@@ -87,7 +84,7 @@ A running instance of Elasticsearch must be running, for example the setup suppl
 
 and if upgrading a cleanup is recommended:
 
-`curl -XDELETE 'http://localhost:9200/_all'`
+`curl -XDELETE 'http://localhost:9200/zxinfo_games*'`
 
 To create ES mappings and import JSON files:
 
@@ -116,7 +113,7 @@ To convert screenshots and import required addtional info:
 
 Before creating documents cleanup is recommended:
 
-## entries
+## magazines
 
 ```
 
@@ -132,42 +129,47 @@ node --max-old-space-size=8192 create-magazine-documents.js
 
 ```
 
-All created JSON documents can now be found in `data/magazines/json/`
+All created JSON documents can now be found in `data/magazines/`
 
 ## mappings and import
 
-A running instance of Elasticsearch must be running, for example the setup supplied with ZXInfo-App: `docker-compose run --service-ports -d zxinfo-es` and if upgrading a cleanup is recommended: `curl -XDELETE 'http://localhost:9200/_all'`
+If upgrading a cleanup is recommended: `curl -XDELETE 'http://localhost:9200/zxinfo_magazines*_'`
 
 To create ES mappings and import JSON files:
 
 ```
 
-(cd ZXInfoArchive/scripts/ && ./magazines.sh)
+(cd Scripts/ && ./createMagazines.sh)
 
 ```
 
-\***\*You should now have a complete up to date Elasticsearch with ZXDB\*\***
+**\*\*You should now have a complete up to date Elasticsearch with ZXDB\*\***
 
-# Starting local test
+# Starting testing using other ZXInfo projects
 
-```
-
-zxinfo-neo4j (in zxapp-app)
-
-docker-compose run --service-ports -d zxinfo-neo4j
-
-
-
-zxinfo-app
-
-NODE_ENV=development nodemon --ignore public/javascripts/config.js
-
-
-
-zxinfo-service
-
-NODE_ENV=development PORT=8300 nodemon --ignore public/javascripts/config.js
+Start the API in debug mode:
 
 ```
+NODE_ENV=development PORT=8300 DEBUG=zxinfo-api-v3:* nodemon --ignorpublic/javascripts/config.js --exec npm start
 
-LAUNCH ZXInfo - http://localhost:3000/#!/home
+>
+
+curl http://localhost:8300/v3/games/0002258?mode=tiny
+Output:
+
+JSON :-)
+```
+
+Start the Web app:
+
+```
+npm run serve
+.
+.
+  App running at:
+  - Local:   http://localhost:8081/
+.
+.
+```
+
+Point browser to http://localhost:8081 (port specified after startup)
