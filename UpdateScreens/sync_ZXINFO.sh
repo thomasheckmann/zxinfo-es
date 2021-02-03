@@ -18,6 +18,6 @@ rsync -avz zxscreens -e 'ssh -i ~/.ssh/thishost-rsync-key' kolbeck@zxinfo.dk:/ww
 
 # ignore backup folder
 echo "- SC/zxdb assets"
-rsync -avz mirror/spectrumcomputing.co.uk/zxdb -e 'ssh -i ~/.ssh/thishost-rsync-key' kolbeck@zxinfo.dk:/www/sinclair/media
+rsync -avz ../../assets/mirror/spectrumcomputing.co.uk/zxdb -e 'ssh -i ~/.ssh/thishost-rsync-key' kolbeck@zxinfo.dk:/www/sinclair/media
 echo "- SC/pub assets"
-rsync -avz mirror/spectrumcomputing.co.uk/pub -e 'ssh -i ~/.ssh/thishost-rsync-key' kolbeck@zxinfo.dk:/www/sinclair/media
+rsync -avz ../../assets/mirror/spectrumcomputing.co.uk/pub -e 'ssh -i ~/.ssh/thishost-rsync-key' kolbeck@zxinfo.dk:/www/sinclair/media

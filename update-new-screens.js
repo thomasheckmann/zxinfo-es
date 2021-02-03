@@ -26,7 +26,6 @@ fs.readdir(path, function(err, items) {
             var body;
             es.client.get({
                     index: es.zxinfo_index,
-                    type: es.zxinfo_type,
                     id: id
                 },
                 function(error, response) {
@@ -46,7 +45,6 @@ fs.readdir(path, function(err, items) {
 
                         es.client.index({
                                 index: es.zxinfo_index,
-                                type: es.zxinfo_type,
                                 id: id,
                                 body: body
                             },
