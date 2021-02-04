@@ -156,6 +156,8 @@ var zxdb_doc = function (id) {
     LI.getYouTubeLinks(id),
     LI.getAdditionalDownloads(id),
 
+    MI.getMagazineRefs(id),
+
     /* ZXINFO */
     ZX.getScreens(id),
     ZX.getTitlesForSuggestions(id),
