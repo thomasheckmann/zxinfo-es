@@ -47,6 +47,7 @@ var PI = require("./components/publishers");
 var AI = require("./components/authors");
 var RI = require("./components/releases");
 var EI = require("./components/extendedinfo");
+var MI = require("./components/magazineinfo");
 var CI = require("./components/compilation");
 var RE = require("./components/relations");
 var BB = require("./components/bookinfo");
@@ -64,9 +65,10 @@ var zxdb_doc = function (id) {
   Q.all([
     /* BASIC INFO */
     BI.getBasicInfo(id),
+    BI.getControls(id),
     BI.getAwards(id),
     BI.getNotes(id),
-    BI.getControls(id),
+    MI.getAwards(id),
 
     /* PUBLISHERS */
     PI.getPublishers(id),
