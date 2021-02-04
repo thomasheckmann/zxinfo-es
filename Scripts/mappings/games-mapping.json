@@ -114,6 +114,40 @@
           }
         }
       },
+      "magazineReferences": {
+        "properties": {
+          "type": {
+            "type": "keyword"
+          },
+          "featureName": {
+            "type": "keyword"
+          },
+          "magazineName": {
+            "type": "keyword"
+          },
+          "page": {
+            "type": "long"
+          },
+          "issueId": {
+            "type": "long"
+          },
+          "dateYear": {
+            "type": "long"
+          },
+          "dateMonth": {
+            "type": "long"
+          },
+          "volume": {
+            "type": "long"
+          },
+          "number": {
+            "type": "long"
+          },
+          "score": {
+            "type": "keyword"
+          }
+        }
+      },
       "remarks": {
         "type": "text"
       },
