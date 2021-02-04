@@ -86,6 +86,34 @@
           "text": { "type": "text" }
         }
       },
+      "reviewAwards": {
+        "properties": {
+          "awardName": {
+            "type": "keyword"
+          },
+          "magazineName": {
+            "type": "keyword"
+          },
+          "page": {
+            "type": "long"
+          },
+          "issueId": {
+            "type": "long"
+          },
+          "dateYear": {
+            "type": "long"
+          },
+          "dateMonth": {
+            "type": "long"
+          },
+          "volume": {
+            "type": "long"
+          },
+          "number": {
+            "type": "long"
+          }
+        }
+      },
       "remarks": {
         "type": "text"
       },
