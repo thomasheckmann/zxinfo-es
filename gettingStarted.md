@@ -99,7 +99,10 @@ To create ES mappings and import JSON files:
 Screenshot references in the zxscreen.txt file (create when generation JSON documents) needs to be converted from .scr to .png/gif (.gif if flash is used).
 
 First some cleanup:
-`find data/screens/ -type f -name "*.json" -exec rm -rf {} \;`
+
+```
+find data/screens/ -type f -name "*.json" -exec rm -rf {} \;
+```
 
 To convert screenshots and import required addtional info:
 
