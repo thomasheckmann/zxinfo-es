@@ -76,6 +76,17 @@ NOTE:
 
 All created JSON documents can now be found in `data/entries/`
 
+## Create changelog - what's changed
+This requires an instance of Elasticsearch with the previous version running - in our example 1.0.82.
+```
+node change-log.js --json_dir data/entries/ --esurl http://localhost:9200 --esindex zxinfo_games
+
+OUTPUT FILES:
+change.log - changes (to be published on api.zxinfo.dk)
+detailed.log - detailed info about changes (use this to improve change log info)
+unhandled.log - info about unhandled changes
+```
+
 ## mappings and import
 
 A running instance of Elasticsearch must be running, for example the setup supplied with ZXInfo-App:
