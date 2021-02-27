@@ -5,6 +5,8 @@ Compares JSON files with a remote index
 OLD Vn   - localhost:9200 (elasticsearch)
 NEW Vn+1 - local JSON files data/entries/
 node change-log.js --json_dir data/entries/ --esurl http://localhost:9200 --esindex zxinfo_games
+node change-log.js --json_dir data/entries/ --esurl http://localhost:9200 --esindex zxinfo-20210211-083321
+
 
 OUTPUT FILES:
 change.log - changes (to be published on api.zxinfo.dk)
@@ -59,7 +61,7 @@ fs.readdir(path, function (err, items) {
     if (items[i].endsWith(".json")) {
       console.log("processing: " + items[i]);
       var id = items[i].substr(0, 7);
-      var new_json = jsonfile.readFileSync(path + items[i]);
+      var new_json = JSON.parse(JSON.sortify(jsonfile.readFileSync(path + items[i])));
 
       // ignore the following fields
       new_json.version = null;
@@ -84,7 +86,7 @@ fs.readdir(path, function (err, items) {
             done = true;
           } else {
             body = response._source;
-            var old_json = body;
+            var old_json = JSON.parse(JSON.sortify(body));
             // ignore the following fields
             old_json.version = null;
             old_json.authorsuggest = null;
@@ -194,6 +196,23 @@ fs.readdir(path, function (err, items) {
               }
               if (diff.releases) {
                 CHANGELOG.write(id + " (" + old_json.title + ") - RELEASES\n");
+                diff.releases.forEach(function (value) {
+                  if (value[1].files) {
+                    value[1].files.forEach(function (file) {
+                      if (file[0] === "+") {
+                        CHANGELOG.write(` - ADDED: ${file[1].type} - ${file[1].path}\n`);
+                      } else if (file[0] === "-") {
+                        CHANGELOG.write(` - REMOVED: ${file[1].type} - ${file[1].path}\n`);
+                      }
+                    });
+                  } else {
+                    if (value[0] === "+") {
+                      CHANGELOG.write(` - ADDED: ReleaseSeq: ${value[1].releaseSeq} - ${JSON.stringify(value[1].publishers)}\n`);
+                    } else if (value[0] === "-") {
+                      CHANGELOG.write(` - REMOVED: ${JSON.stringify(value[1])}\n`);
+                    }
+                  }
+                });
                 found = true;
               }
               if (diff.series) {
@@ -214,14 +233,35 @@ fs.readdir(path, function (err, items) {
               }
               if (diff.inCompilations) {
                 CHANGELOG.write(id + " (" + old_json.title + ") - COMPILATION REFERENCE\n");
+                diff.inCompilations.forEach(function (value) {
+                  if (value[0] === "+") {
+                    CHANGELOG.write(` - ADDED: ${value[1].entry_id} - ${value[1].title}\n`);
+                  } else if (value[0] === "-") {
+                    CHANGELOG.write(` - REMOVED: ${value[1].entry_id} - ${value[1].title}\n`);
+                  }
+                });
                 found = true;
               }
               if (diff.compilationContents) {
                 CHANGELOG.write(id + " (" + old_json.title + ") - COMPILATION CONTENT\n");
+                diff.compilationContents.forEach(function (value) {
+                  if (value[0] === "+") {
+                    CHANGELOG.write(` - ADDED: ${value[1].entry_id} - ${value[1].title}\n`);
+                  } else if (value[0] === "-") {
+                    CHANGELOG.write(` - REMOVED: ${value[1].entry_id} - ${value[1].title}\n`);
+                  }
+                });
                 found = true;
               }
               if (diff.authoredWith) {
                 CHANGELOG.write(id + " (" + old_json.title + ") - AUTHORED WITH\n");
+                diff.authoredWith.forEach(function (value) {
+                  if (value[0] === "+") {
+                    CHANGELOG.write(` - ADDED: ${value[1].entry_id} - ${value[1].title}\n`);
+                  } else if (value[0] === "-") {
+                    CHANGELOG.write(` - REMOVED: ${value[1].entry_id} - ${value[1].title}\n`);
+                  }
+                });
                 found = true;
               }
               if (diff.authoring) {
@@ -246,6 +286,13 @@ fs.readdir(path, function (err, items) {
               }
               if (diff.additionalDownloads) {
                 CHANGELOG.write(id + " (" + old_json.title + ") - ADDITIONAL DOWNLOADS\n");
+                diff.additionalDownloads.forEach(function (value) {
+                  if (value[0] === "+") {
+                    CHANGELOG.write(` - ADDED: ${value[1].type} - ${value[1].path}\n`);
+                  } else if (value[0] === "-") {
+                    CHANGELOG.write(` - REMOVED: ${value[1].type} - ${value[1].path}\n`);
+                  }
+                });
                 found = true;
               }
               if (diff.magazineReferences) {

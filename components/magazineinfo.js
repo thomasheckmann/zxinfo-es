@@ -39,7 +39,7 @@ var getAwards = function (id) {
   var deferred = Q.defer();
   var connection = db.getConnection();
   connection.query(
-    "SELECT za.text AS awardName, m.name AS magazineName, page, issue_id, i.date_year, i.date_month, i.volume, i.number FROM magrefs mr INNER JOIN zxsr_awards za ON za.id = mr.award_id INNER JOIN magazines m ON m.id = za.magazine_id INNER JOIN issues i ON i.id = issue_id WHERE entry_id = ? AND award_id IS NOT NULL ORDER BY date_year, date_month",
+    "SELECT za.text AS awardName, m.name AS magazineName, page, issue_id, i.date_year, i.date_month, i.volume, i.number FROM magrefs mr INNER JOIN zxsr_awards za ON za.id = mr.award_id INNER JOIN magazines m ON m.id = za.magazine_id INNER JOIN issues i ON i.id = issue_id WHERE entry_id = ? AND award_id IS NOT NULL ORDER BY magazineName, awardName, date_year, date_month, issue_id, page",
     [id],
     function (error, results, fields) {
       if (error) {
