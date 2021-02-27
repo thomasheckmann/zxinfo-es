@@ -4,5 +4,7 @@
 /data/entries/*
 /data/magazines/*
 /data/screens/*
+/data/md5hash/*
 /UpdateScreens/zxscreens/*
+/Scripts/*.txt
 zxscreens.txt
