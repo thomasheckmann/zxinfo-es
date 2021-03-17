@@ -131,6 +131,12 @@ To convert screenshots and import required addtional info:
 
 ```
 
+# Import MD5/SHA512 hash
+```
+node update-md5hash.js data/md5hash/
+```
+
+
 # Create magazines, mappings and import
 
 Before creating documents cleanup is recommended:
