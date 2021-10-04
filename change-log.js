@@ -197,7 +197,7 @@ fs.readdir(path, function (err, items) {
               if (diff.releases) {
                 CHANGELOG.write(id + " (" + old_json.title + ") - RELEASES\n");
                 diff.releases.forEach(function (value) {
-                  if (value[1].files) {
+                  if (value[1] && value[1].files) {
                     value[1].files.forEach(function (file) {
                       if (file[0] === "+") {
                         CHANGELOG.write(` - ADDED: ${file[1].type} - ${file[1].path}\n`);
