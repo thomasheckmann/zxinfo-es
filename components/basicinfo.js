@@ -6,6 +6,17 @@
  * - getNotes(id),
  * - getControls(id),
  *
+ * CHANGELOG:
+ * 01.01.2021
+ *  https://spectrumcomputing.co.uk/forums/viewtopic.php?p=69233#p69233
+ *   - groups, grouptypes -> tags, tagtypes
+ *   - members.group_id -> members.tag_id
+ *
+ *  https://spectrumcomputing.co.uk/forums/viewtopic.php?p=71429#p71429
+ *   - publicationtypes table removed
+ *
+ *  https://spectrumcomputing.co.uk/forums/viewtopic.php?p=67399#p67399
+ *   - entrries.book_isbn -> releases.book_isbn (as per release)
  */
 "use strict";
 
@@ -17,67 +28,13 @@ const perf = require("execution-time")();
 
 /**
  * Get basic info
-
---
-SELECT
-    e.title AS fulltitle,
-    aka.title AS alsoknownas,
-    r.release_year AS yearofrelease,
-    r.release_month AS monthofrelease,
-    r.release_day AS dayofrelease,
-    machinet.text AS machinetype,
-    e.max_players AS numberofplayers,
-    (SELECT GROUP_CONCAT(g.name) FROM members turn INNER JOIN groups g ON turn.group_id = g.id and g.grouptype_id = "N" WHERE turn.entry_id = e.id) AS multiplayermode,
-    (SELECT GROUP_CONCAT(g.name) FROM members turn INNER JOIN groups g ON turn.group_id = g.id and g.grouptype_id = "Y" WHERE turn.entry_id = e.id) AS multiplayertype,
-    e.genretype_id AS genretype,
-    entryt.text AS type,
-    e.book_isbn AS isbn,
-    idm.text AS messagelanguage,
-    pubt.text AS originalpublication,
-    r.release_price AS originalprice,
-    availt.text AS availability,
-    sc.score AS score,
-    sc.votes AS votes
-FROM
-    entries e
-LEFT JOIN releases r ON
-    r.entry_id = e.id
-LEFT JOIN aliases aka ON
-    aka.entry_id = r.entry_id AND aka.release_seq = r.release_seq
-LEFT JOIN availabletypes availt ON
-    e.availabletype_id = availt.id
-LEFT JOIN machinetypes machinet ON
-    e.machinetype_id = machinet.id
-LEFT JOIN genretypes entryt ON
-    e.genretype_id = entryt.id
-LEFT JOIN publicationtypes pubt ON
-    e.publicationtype_id = pubt.id
-LEFT JOIN languages idm ON
-    e.language_id = idm.id
-LEFT JOIN scores sc ON
-    sc.entry_id = e.id
-WHERE
-    e.id = 722 AND(
-        r.release_seq = 0 OR r.release_seq IS NULL
-    )
-
--- full release info
-
-SELECT * FROM `releases` WHERE release_year is not null and release_month is not null and release_day is not null
-30438
-
-+-----------+----------------------------+---------------+-----------------+-----------------+-----------------+-----------------+---------------------+------+-----------------+---------------------+---------------+--------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+----------------+-----------+------------+------------+--------+--------+-----------+-----------+-----------+-----------+-----------+-------------------------------------------------------------------------------------------------+----------------+-----------+------------+------------+----------+--+----------------------------------------------+--------+--+--+-------------------------------+-----------+-----------+-----------+-----------+-----------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+------+------+----+
-| fulltitle | alsoknownas                | yearofrelease | machinetype     | numberofplayers | multiplayermode | multiplayertype | type                | isbn | messagelanguage | originalpublication | originalprice | availability | known_errors                                                                                                                                                                                                                                                                                                                                     | remarks        | score     | votes      |            |        |        |           |           |           |           |           |                                                                                                 |                |           |            |            |          |  |                                              |        |  |  |                               |           |           |           |           |           |                                                                                                                                                                                                                                                                      |      |      |    |
-+-----------+----------------------------+---------------+-----------------+-----------------+-----------------+-----------------+---------------------+------+-----------------+---------------------+---------------+--------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+----------------+-----------+------------+------------+--------+--------+-----------+-----------+-----------+-----------+-----------+-------------------------------------------------------------------------------------------------+----------------+-----------+------------+------------+----------+--+----------------------------------------------+--------+--+--+-------------------------------+-----------+-----------+-----------+-----------+-----------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+------+------+----+
-| Rambo     | Rambo: First Blood Part II | 1985          | ZX-Spectrum 48K | 2               | Alternating     | NULL            | Arcade: Shoot-em-up | NULL | English         | NULL                | �7.95         | Available    | Bugfixes provided by g00db0y:#<UL><LI> The game crashes when you shot down the Russian gunship at the end. This problem was caused by executing instruction LDIR (setting BC to zero), then instruction LDI twice (setting BC to $FFFE), then another instruction LDIR after setting only C register instead of BC, as follows:#<PRE>$A29C LDIR^ |   LD (IY+0),8^ |   POP HL^ |   LD E,LX^ |   LD D,HX^ |   LDI^ |   LDI^ |   INC HL^ |   INC DE^ |   INC HL^ |   INC DE^ |   LD C,6^ |   LDIR</PRE>The following patch fixes the problem in the same number of bytes:#<PRE>$A29C LDIR^ |   LD (IY+0),8^ |   POP HL^ |   LD E,LX^ |   LD D,HX^ |   LD C,2 |  |   ; Fixed using POKE 41639,14: POKE 41640,2^ |   LDIR |  |  | ; Fixed using POKE 41642,176^ |   INC HL^ |   INC DE^ |   INC HL^ |   INC DE^ |   LD C,6^ |   LDIR</PRE><LI> The original release was incompatible with +2A/+3 (the Hit Squad re-release works fine).#Fixed using POKE 26393,59</UL>#Modified "BUGFIX" files provided by g00db0y (edited TAP image) and jp (SpeedLock 1 loader patch for the original TZX image) | NULL | 6.80 | 72 |
-+-----------+----------------------------+---------------+-----------------+-----------------+-----------------+-----------------+---------------------+------+-----------------+---------------------+---------------+--------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+----------------+-----------+------------+------------+--------+--------+-----------+-----------+-----------+-----------+-----------+-------------------------------------------------------------------------------------------------+----------------+-----------+------------+------------+----------+--+----------------------------------------------+--------+--+--+-------------------------------+-----------+-----------+-----------+-----------+-----------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+------+------+----+
-
+ *
  */
 var getBasicInfo = function (id) {
   var deferred = Q.defer();
   var connection = db.getConnection();
   connection.query(
-    'SELECT e.title AS fulltitle, aka.title AS alsoknownas, r.release_year AS yearofrelease, r.release_month AS monthofrelease, r.release_day AS dayofrelease, machinet.text AS machinetype, e.max_players AS numberofplayers, (SELECT GROUP_CONCAT(g.name) FROM members turn INNER JOIN groups g ON turn.group_id = g.id and g.grouptype_id = "N" WHERE turn.entry_id = e.id) AS multiplayermode, (SELECT GROUP_CONCAT(g.name) FROM members turn INNER JOIN groups g ON turn.group_id = g.id and g.grouptype_id = "Y" WHERE turn.entry_id = e.id) AS multiplayertype, e.genretype_id AS genretype, entryt.text AS type, e.book_isbn AS isbn, idm.text AS messagelanguage, pubt.text AS originalpublication, r.release_price AS originalprice, availt.text AS availability, sc.score AS score, sc.votes AS votes, v.version FROM entries e LEFT JOIN zxinfo_version v ON 1=1 LEFT JOIN releases r ON r.entry_id = e.id LEFT JOIN aliases aka ON aka.entry_id = r.entry_id AND aka.release_seq = r.release_seq LEFT JOIN availabletypes availt ON e.availabletype_id = availt.id LEFT JOIN machinetypes machinet ON e.machinetype_id = machinet.id LEFT JOIN genretypes entryt ON e.genretype_id = entryt.id LEFT JOIN publicationtypes pubt ON e.publicationtype_id = pubt.id LEFT JOIN languages idm ON e.language_id = idm.id LEFT JOIN scores sc ON sc.entry_id = e.id WHERE e.id = ? AND(r.release_seq = 0 OR r.release_seq IS NULL );',
+    'SELECT e.title AS fulltitle, aka.title AS alsoknownas, r.release_year AS yearofrelease, r.release_month AS monthofrelease, r.release_day AS dayofrelease, machinet.text AS machinetype, e.max_players AS numberofplayers, (SELECT GROUP_CONCAT(g.name) FROM members turn INNER JOIN tags g ON turn.tag_id = g.id and g.tagtype_id = "N" WHERE turn.entry_id = e.id) AS multiplayermode, (SELECT GROUP_CONCAT(g.name) FROM members turn INNER JOIN tags g ON turn.tag_id = g.id and g.tagtype_id = "Y" WHERE turn.entry_id = e.id) AS multiplayertype, e.genretype_id AS genretype, entryt.text AS type, r.book_isbn AS isbn, idm.text AS messagelanguage, r.release_price AS originalprice, availt.text AS availability, sc.score AS score, sc.votes AS votes, v.version FROM entries e LEFT JOIN zxinfo_version v ON 1=1 LEFT JOIN releases r ON r.entry_id = e.id LEFT JOIN aliases aka ON aka.entry_id = r.entry_id AND aka.release_seq = r.release_seq LEFT JOIN availabletypes availt ON e.availabletype_id = availt.id LEFT JOIN machinetypes machinet ON e.machinetype_id = machinet.id LEFT JOIN genretypes entryt ON e.genretype_id = entryt.id LEFT JOIN languages idm ON e.language_id = idm.id LEFT JOIN scores sc ON sc.entry_id = e.id WHERE e.id = ? AND(r.release_seq = 0 OR r.release_seq IS NULL );',
     [id],
     function (error, results, fields) {
       if (error) {
@@ -100,7 +57,7 @@ var getBasicInfo = function (id) {
 
       // filter original publication: add 'normal' #19
       var entry_content_type = utils.contenttype(results[0].genretype);
-      var originalpublication = results[0].originalpublication;
+      var originalpublication = "N/A"; // removed, just set a default value
 
       // If entry is software and NOT a compilation, default should be "Standard" (will be available in filter)
       if (entry_content_type == "SOFTWARE" && type !== "Compilation") {
@@ -190,7 +147,7 @@ var getNotes = function (id) {
   var deferred = Q.defer();
   var connection = db.getConnection();
   connection.query(
-    "SELECT e.id, e.title, GROUP_CONCAT( c.text ORDER BY c.text SEPARATOR '\n\n' ) AS comments, h.text AS hardware_blurb, r.text AS known_errors FROM entries e LEFT JOIN notes c ON e.id = c.entry_id AND c.notetype_id = 'R' LEFT JOIN notes h ON e.id = h.entry_id AND h.notetype_id = 'S' AND h.section = 'Hardware Blurb' LEFT JOIN notes r ON e.id = r.entry_id AND r.notetype_id = 'E' WHERE e.id = ?",
+    "SELECT e.id, e.title, GROUP_CONCAT( c.text ORDER BY c.text SEPARATOR '\n\n' ) AS comments, h.text AS hardware_blurb, r.text AS known_errors FROM entries e LEFT JOIN notes c ON e.id = c.entry_id AND c.notetype_id = 'R' LEFT JOIN notes h ON e.id = h.entry_id AND h.notetype_id = 'S' LEFT JOIN notes r ON e.id = r.entry_id AND r.notetype_id = 'E' WHERE e.id = ?",
     [id],
     function (error, results, fields) {
       if (error) {
@@ -220,39 +177,13 @@ var getNotes = function (id) {
 
 /**
  * Get controls
-
---
-SELECT
-    g.name,
-    groupt.id,
-    groupt.text
-FROM
-    members feat
-INNER JOIN groups g ON
-    feat.group_id = g.id
-INNER JOIN grouptypes groupt ON
-    g.grouptype_id = groupt.id AND groupt.id = 'J'
-WHERE
-    feat.entry_id = 2259
-ORDER BY
-	g.name
-
-+---------------------+
-| name                |
-+---------------------+
-| Cursor              |
-| Interface 2 (left)  |
-| Interface 2 (right) |
-| Kempston            |
-| Redefineable keys   |
-+---------------------+
-
+ *
  */
 var getControls = function (id) {
   var deferred = Q.defer();
   var connection = db.getConnection();
   connection.query(
-    "SELECT g.name, groupt.id, groupt.text FROM members feat INNER JOIN groups g ON feat.group_id = g.id INNER JOIN grouptypes groupt ON g.grouptype_id = groupt.id AND groupt.id = 'J' WHERE feat.entry_id = ? ORDER BY g.name",
+    "SELECT g.name, groupt.id, groupt.text FROM members feat INNER JOIN tags g ON feat.tag_id = g.id INNER JOIN tagtypes groupt ON g.tagtype_id = groupt.id AND groupt.id = 'J' WHERE feat.entry_id = ? ORDER BY g.name",
     [id],
     function (error, results, fields) {
       if (error) {

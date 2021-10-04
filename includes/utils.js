@@ -36,7 +36,10 @@ var priceHelper = function (price, id) {
   var amount, currency, license;
   if (price == null) {
     return undefined;
-  } else if (
+  }
+
+  price = "" + price;
+  if (
     [
       "Freeware",
       "P&P only",
