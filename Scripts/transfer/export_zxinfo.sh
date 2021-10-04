@@ -56,8 +56,15 @@ then
       --output=zxinfo_games.mappings.txt \
       --type=mapping \
       --headers='{"Content-Type": "application/json"}'
+
+    echo "DUMPING zxinfo_games ANALYZERS"
+    ./elasticdump/bin/elasticdump \
+      --input=http://localhost:9200/zxinfo_games \
+      --output=zxinfo_games.analyzers.txt \
+      --type=analyzer \
+      --headers='{"Content-Type": "application/json"}'
       
-    FILES_TO_EXPORT+=" zxinfo_games.index.txt zxinfo_games.mappings.txt"
+    FILES_TO_EXPORT+=" zxinfo_games.index.txt zxinfo_games.mappings.txt zxinfo_games.analyzers.txt"
 fi
 
 if [ $TO_EXPORT == 'all' ]||[ $TO_EXPORT == 'magazines' ]

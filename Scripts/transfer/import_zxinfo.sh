@@ -19,6 +19,12 @@ echo 'Index_alias       : ' ${WRITE_ALIAS}
 ## ZXINFO
 echo '-- create ' $WRITE_INDEX
 ./elasticdump/bin/elasticdump \
+  --input=zxinfo_games.analyzers.txt \
+  --output=http://localhost:9200/${WRITE_INDEX} \
+  --type=analyzer \
+  --headers='{"Content-Type": "application/json"}'
+
+./elasticdump/bin/elasticdump \
   --input=zxinfo_games.mappings.txt \
   --output=http://localhost:9200/${WRITE_INDEX} \
   --type=mapping \

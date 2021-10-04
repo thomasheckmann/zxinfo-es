@@ -1,4 +1,22 @@
 {
+  "settings": {
+    "index.mapping.total_fields.limit": 1000,
+    "analysis": {
+      "analyzer": {
+        "my_analyzer": {
+          "tokenizer": "my_tokenizer"
+        }
+      },
+      "tokenizer": {
+        "my_tokenizer": {
+          "type": "ngram",
+          "min_gram": 3,
+          "max_gram": 3,
+          "token_chars": ["letter", "digit"]
+        }
+      }
+    }
+  },
   "mappings": {
     "properties": {
       "contentType": {
@@ -9,6 +27,10 @@
         "fields": {
           "keyword": {
             "type": "keyword"
+          },
+          "ngram": {
+            "type": "text",
+            "analyzer": "my_analyzer"
           }
         }
       },
@@ -1155,21 +1177,21 @@
       },
       "titlesuggest": {
         "type": "completion",
-        "analyzer": "simple",
+        "analyzer": "standard",
         "preserve_separators": true,
         "preserve_position_increments": true,
         "max_input_length": 50
       },
       "authorsuggest": {
         "type": "completion",
-        "analyzer": "simple",
+        "analyzer": "standard",
         "preserve_separators": true,
         "preserve_position_increments": true,
         "max_input_length": 50
       },
       "publishersuggest": {
         "type": "completion",
-        "analyzer": "simple",
+        "analyzer": "standard",
         "preserve_separators": true,
         "preserve_position_increments": true,
         "max_input_length": 50
@@ -1237,8 +1259,5 @@
         }
       }
     }
-  },
-  "settings": {
-    "index.mapping.total_fields.limit": 1000
   }
 }
