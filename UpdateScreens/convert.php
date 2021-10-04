@@ -4,11 +4,12 @@ if (is_file('src/zx-image-master-dmitri/vendor/autoload.php')) {
 }
 error_reporting(0);
 
-$asset_path = '/Users/dkthahko/Public/git_zxinfo/assets/mirror/spectrumcomputing.co.uk';
+//$asset_path = '/Users/dkthahko/Public/Sinclair/git_zxinfo/assets/mirror/spectrumcomputing.co.uk';
+$asset_path = '/Users/kolbeck/Public/ZXINFO/zxinfo-hash-check/files/spectrumcomputing.co.uk';
 
 $scr_array = array();
 
-function convertScreen($id, $scr_file, $out_dir, $out_file, $title) {
+function convertScreen($id, $scr_file, $scr_path, $out_dir, $out_file, $title) {
 		$object = [];
 
 		$size = filesize($scr_file);
@@ -65,7 +66,7 @@ function convertScreen($id, $scr_file, $out_dir, $out_file, $title) {
 			file_put_contents($outfile_converted, $binary);
 			$newfilesize = filesize($outfile_converted);
 			echo "$out_file, size: $newfilesize($size, $scrType)\n";
-			$object = (object) ['filename' => $newfilename, 'url' => '/' . $outfile_converted, 'size' => $newfilesize, 'type' => $type, 'format' => $format, 'title' => $title];
+			$object = (object) ['filename' => $newfilename, 'url' => '/' . $outfile_converted, 'scrUrl' => $scr_path, 'size' => $newfilesize, 'type' => $type, 'format' => $format, 'title' => $title];
 		} else {
 			echo "HUH!?!?!";
 		}
@@ -127,10 +128,10 @@ while ( !feof($fp) )
 			}
 			$newfilesize = filesize("." . $to_path . $to_filename . $ext);
 
-			$object = (object) ['filename' => $newfilename, 'url' => $outfile_converted, 'size' => $newfilesize, 'type' => $type, 'format' => $format, 'title' => $title];
+			$object = (object) ['filename' => $newfilename, 'url' => $outfile_converted, 'scrUrl' => $from_url, 'size' => $newfilesize, 'type' => $type, 'format' => $format, 'title' => $title];
     	} else {
 	    	echo "[CONVERT]" . $to_path . $to_filename . "\n";
-	    	$object = convertScreen($id, $fullpath, $to_path, $to_filename, $title);
+	    	$object = convertScreen($id, $fullpath, $from_url, $to_path, $to_filename, $title);
 
     	}
 		if(is_null($scr_array[$id])) {
