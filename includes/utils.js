@@ -32,12 +32,14 @@ var contenttype = function (genretype) {
  * @param {*} price
  * @param {*} id
  */
-var priceHelper = function (price, id) {
+var priceHelper = function (price, name, symbol, prefix) {
   var amount, currency, license;
   if (price == null) {
     return undefined;
   }
 
+  return { amount: price, currency: symbol, prefix: prefix };
+  /**	
   price = "" + price;
   if (
     [
@@ -91,6 +93,7 @@ var priceHelper = function (price, id) {
     // console.error("ERROR: ", id + " UNKNOWN PRICE: ", price);
   }
   return { amount: amount, currency: currency, license: license };
+   */
 };
 
 /**

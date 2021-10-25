@@ -34,14 +34,19 @@ var getBasicInfo = function (id) {
   var deferred = Q.defer();
   var connection = db.getConnection();
   connection.query(
-    'SELECT e.title AS fulltitle, aka.title AS alsoknownas, r.release_year AS yearofrelease, r.release_month AS monthofrelease, r.release_day AS dayofrelease, machinet.text AS machinetype, e.max_players AS numberofplayers, (SELECT GROUP_CONCAT(g.name) FROM members turn INNER JOIN tags g ON turn.tag_id = g.id and g.tagtype_id = "N" WHERE turn.entry_id = e.id) AS multiplayermode, (SELECT GROUP_CONCAT(g.name) FROM members turn INNER JOIN tags g ON turn.tag_id = g.id and g.tagtype_id = "Y" WHERE turn.entry_id = e.id) AS multiplayertype, e.genretype_id AS genretype, entryt.text AS type, r.book_isbn AS isbn, idm.text AS messagelanguage, r.release_price AS originalprice, availt.text AS availability, sc.score AS score, sc.votes AS votes, v.version FROM entries e LEFT JOIN zxinfo_version v ON 1=1 LEFT JOIN releases r ON r.entry_id = e.id LEFT JOIN aliases aka ON aka.entry_id = r.entry_id AND aka.release_seq = r.release_seq LEFT JOIN availabletypes availt ON e.availabletype_id = availt.id LEFT JOIN machinetypes machinet ON e.machinetype_id = machinet.id LEFT JOIN genretypes entryt ON e.genretype_id = entryt.id LEFT JOIN languages idm ON e.language_id = idm.id LEFT JOIN scores sc ON sc.entry_id = e.id WHERE e.id = ? AND(r.release_seq = 0 OR r.release_seq IS NULL );',
+    'SELECT e.title AS fulltitle, aka.title AS alsoknownas, r.release_year AS yearofrelease, r.release_month AS monthofrelease, r.release_day AS dayofrelease, machinet.text AS machinetype, e.max_players AS numberofplayers, (SELECT GROUP_CONCAT(g.name) FROM members turn INNER JOIN tags g ON turn.tag_id = g.id and g.tagtype_id = "N" WHERE turn.entry_id = e.id) AS multiplayermode, (SELECT GROUP_CONCAT(g.name) FROM members turn INNER JOIN tags g ON turn.tag_id = g.id and g.tagtype_id = "Y" WHERE turn.entry_id = e.id) AS multiplayertype, e.genretype_id AS genretype, entryt.text AS type, r.book_isbn AS isbn, idm.text AS messagelanguage, r.release_price AS originalprice, c.name AS cur_name, c.symbol AS cur_symbol, c.prefix AS cur_prefix, availt.text AS availability, sc.score AS score, sc.votes AS votes, v.version FROM entries e LEFT JOIN zxinfo_version v ON 1=1 LEFT JOIN releases r ON r.entry_id = e.id LEFT JOIN currencies c ON r.currency_id = c.id LEFT JOIN aliases aka ON aka.entry_id = r.entry_id AND aka.release_seq = r.release_seq LEFT JOIN availabletypes availt ON e.availabletype_id = availt.id LEFT JOIN machinetypes machinet ON e.machinetype_id = machinet.id LEFT JOIN genretypes entryt ON e.genretype_id = entryt.id LEFT JOIN languages idm ON e.language_id = idm.id LEFT JOIN scores sc ON sc.entry_id = e.id WHERE e.id = ? AND(r.release_seq = 0 OR r.release_seq IS NULL );',
     [id],
     function (error, results, fields) {
       if (error) {
         throw error;
       }
       var originalprice = null;
-      var orgPrice = utils.priceHelper(results[0].originalprice, id);
+      var orgPrice = utils.priceHelper(
+        results[0].originalprice,
+        results[0].cur_name,
+        results[0].cur_symbol,
+        results[0].cur_prefix
+      );
       if (orgPrice != undefined) {
         originalprice = orgPrice;
       }
