@@ -84,7 +84,7 @@
           "currency": {
             "type": "keyword"
           },
-          "license": {
+          "prefix": {
             "type": "text"
           }
         }
@@ -297,19 +297,69 @@
             "type": "long"
           },
           "releasePrice": {
-            "type": "keyword"
+            "properties": {
+              "amount": {
+                "type": "text"
+              },
+              "currency": {
+                "type": "keyword"
+              },
+              "prefix": {
+                "type": "text"
+              }
+            }
           },
           "budgetPrice": {
-            "type": "keyword"
+            "properties": {
+              "amount": {
+                "type": "text"
+              },
+              "currency": {
+                "type": "keyword"
+              },
+              "prefix": {
+                "type": "text"
+              }
+            }
           },
           "cartridgePrice": {
-            "type": "keyword"
+            "properties": {
+              "amount": {
+                "type": "text"
+              },
+              "currency": {
+                "type": "keyword"
+              },
+              "prefix": {
+                "type": "text"
+              }
+            }
           },
           "diskPrice": {
-            "type": "keyword"
+            "properties": {
+              "amount": {
+                "type": "text"
+              },
+              "currency": {
+                "type": "keyword"
+              },
+              "prefix": {
+                "type": "text"
+              }
+            }
           },
           "microdrivePrice": {
-            "type": "keyword"
+            "properties": {
+              "amount": {
+                "type": "text"
+              },
+              "currency": {
+                "type": "keyword"
+              },
+              "prefix": {
+                "type": "text"
+              }
+            }
           },
           "files": {
             "type": "nested",

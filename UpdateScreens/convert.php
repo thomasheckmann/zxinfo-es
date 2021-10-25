@@ -5,7 +5,10 @@ if (is_file('src/zx-image-master-dmitri/vendor/autoload.php')) {
 error_reporting(0);
 
 //$asset_path = '/Users/dkthahko/Public/Sinclair/git_zxinfo/assets/mirror/spectrumcomputing.co.uk';
-$asset_path = '/Users/kolbeck/Public/ZXINFO/zxinfo-hash-check/files/spectrumcomputing.co.uk';
+//$asset_path = '/Users/kolbeck/Public/ZXINFO/zxinfo-hash-check/files/spectrumcomputing.co.uk';
+$asset_path = '/Users/kolbeck/Public/ZXINFO/assets/spectrumcomputing.co.uk';
+
+$output_path = '/Users/kolbeck/Public/ZXINFO/assets';
 
 $scr_array = array();
 
@@ -19,7 +22,7 @@ function convertScreen($id, $scr_file, $scr_path, $out_dir, $out_file, $title) {
 
 		$ext = $info['extension'];
 
-		// echo "processing file: $src_filename\n";
+		echo "processing file: $src_filename\n";
 		$scrType = 'standard';
 	    if ($ext == "scr") { $scrType = 'standard'; };
 		if ($ext == "ss4") { $scrType = 'sam4'; };
@@ -43,7 +46,10 @@ function convertScreen($id, $scr_file, $scr_path, $out_dir, $out_file, $title) {
 		if ($binary = $converter->getBinary()) {
 		    //after conversion we can ask for a mime type of last operation and send it to browser
 		    $imageType = $converter->getResultMime();
-		    $outdir_converted = substr($out_dir, 1);
+		    $outdir_converted = "/" . substr($out_dir, 1);
+		    
+		    // echo "output: $outdir_converted \n";
+		    
 		    switch($imageType) {
 		    	case 'image/png':
 		    		$outfile_converted = $outdir_converted . $out_file . ".png";
@@ -90,22 +96,28 @@ while ( !feof($fp) )
 
     $data = str_getcsv($line, $delimiter);
 
+    echo "[DEBUG] - processing $line\n";
+
     $screen_type = $data[0];
     $id = $data[1];
     $from_url = $data[2];
-    $to_path = $data[3];
+    $to_path = $output_path . $data[3];
     $to_filename = $data[4];
     $title = $data[5];
 
     if($screen_type == 'load' || $screen_type == 'run') {
+	// echo "to_path: $to_path, to_filename: $to_filename \n";
+
     	$object;
 		$fullpath = $asset_path.$from_url;
+
+		// echo "fullpath: $fullpath\n";
 
 		if(!is_file($fullpath)) {
 	    	echo "[NOT FOUND]" . $to_path . $to_filename . $ext . "\n";
 		} else if (filesize($fullpath) < 6912) {
 	    	echo "[TO SMALL?]" . $to_path . $to_filename . $ext . "\n";
-		} else if(file_exists("." . $to_path . $to_filename . ".gif") || file_exists("." . $to_path . $to_filename . ".png")) {
+		} else if(file_exists($to_path . $to_filename . ".gif") || file_exists($to_path . $to_filename . ".png")) {
 
 	    	// gif or png?
 	    	$ext = "";
