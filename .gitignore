@@ -1,10 +1,7 @@
 *.log
 .DS_Store
 /node_modules/
-/data/entries/*
-/data/magazines/*
-/data/screens/*
-/data/md5hash/*
+/data/*
 /UpdateScreens/zxscreens/*
 /Scripts/*.txt
 zxscreens.txt

@@ -3,16 +3,17 @@
     "index.mapping.total_fields.limit": 1000,
     "analysis": {
       "analyzer": {
-        "my_analyzer": {
-          "tokenizer": "my_tokenizer"
-        }
-      },
-      "tokenizer": {
-        "my_tokenizer": {
-          "type": "ngram",
-          "min_gram": 3,
-          "max_gram": 3,
-          "token_chars": ["letter", "digit"]
+        "title_analyzer": {
+          "type": "custom",
+          "tokenizer": "standard",
+          "char_filter": [
+            "html_strip"
+          ],
+          "filter": [
+            "stop",
+            "lowercase",
+            "asciifolding"
+          ]
         }
       }
     }
@@ -24,18 +25,15 @@
       },
       "title": {
         "type": "text",
+        "analyzer": "title_analyzer",
         "fields": {
           "keyword": {
             "type": "keyword"
-          },
-          "ngram": {
-            "type": "text",
-            "analyzer": "my_analyzer"
           }
         }
       },
       "zxinfoVersion": {
-        "type": "text"
+        "type": "keyword"
       },
       "originalYearOfRelease": {
         "type": "long"
@@ -104,8 +102,12 @@
       },
       "awards": {
         "properties": {
-          "section": { "type": "keyword" },
-          "text": { "type": "text" }
+          "section": {
+            "type": "keyword"
+          },
+          "text": {
+            "type": "text"
+          }
         }
       },
       "reviewAwards": {
@@ -217,8 +219,12 @@
       "authors": {
         "type": "nested",
         "properties": {
-          "type": { "type": "keyword" },
-          "authorSeq": { "type": "long" },
+          "type": {
+            "type": "keyword"
+          },
+          "authorSeq": {
+            "type": "long"
+          },
           "name": {
             "type": "text",
             "fields": {
@@ -276,22 +282,29 @@
       "releases": {
         "type": "nested",
         "properties": {
-          "releaseSeq": { "type": "long" },
+          "releaseSeq": {
+            "type": "long"
+          },
           "publishers": {
             "type": "nested",
             "properties": {
               "publisherSeq": {
                 "type": "long"
               },
-              "name": { "type": "text" },
-              "country": { "type": "keyword" },
+              "name": {
+                "type": "text"
+              },
+              "country": {
+                "type": "keyword"
+              },
               "labelType": {
                 "type": "keyword"
               }
             }
           },
           "releaseTitles": {
-            "type": "text"
+            "type": "text",
+            "analyzer": "title_analyzer"
           },
           "yearOfRelease": {
             "type": "long"
@@ -404,9 +417,12 @@
       },
       "series": {
         "properties": {
-          "entry_id": { "type": "long" },
+          "entry_id": {
+            "type": "long"
+          },
           "title": {
-            "type": "text"
+            "type": "text",
+            "analyzer": "title_analyzer"
           },
           "publishers": {
             "type": "nested",
@@ -432,7 +448,9 @@
       },
       "features": {
         "properties": {
-          "name": { "type": "keyword" }
+          "name": {
+            "type": "keyword"
+          }
         }
       },
       "competition": {
@@ -493,7 +511,9 @@
           "publishers": {
             "type": "nested",
             "properties": {
-              "name": { "type": "text" },
+              "name": {
+                "type": "text"
+              },
               "country": {
                 "type": "keyword"
               },
@@ -503,7 +523,8 @@
             }
           },
           "title": {
-            "type": "text"
+            "type": "text",
+            "analyzer": "title_analyzer"
           },
           "type": {
             "type": "keyword"
@@ -516,7 +537,8 @@
             "type": "long"
           },
           "title": {
-            "type": "text"
+            "type": "text",
+            "analyzer": "title_analyzer"
           },
           "publishers": {
             "type": "nested",
@@ -552,7 +574,8 @@
             "type": "long"
           },
           "title": {
-            "type": "text"
+            "type": "text",
+            "analyzer": "title_analyzer"
           },
           "publishers": {
             "type": "nested",
@@ -576,7 +599,8 @@
             "type": "long"
           },
           "title": {
-            "type": "text"
+            "type": "text",
+            "analyzer": "title_analyzer"
           },
           "publishers": {
             "type": "nested",
@@ -606,7 +630,8 @@
             "type": "long"
           },
           "title": {
-            "type": "text"
+            "type": "text",
+            "analyzer": "title_analyzer"
           },
           "publishers": {
             "properties": {
@@ -632,7 +657,8 @@
             "type": "long"
           },
           "title": {
-            "type": "text"
+            "type": "text",
+            "analyzer": "title_analyzer"
           },
           "publishers": {
             "properties": {
@@ -658,7 +684,8 @@
             "type": "long"
           },
           "title": {
-            "type": "text"
+            "type": "text",
+            "analyzer": "title_analyzer"
           },
           "publishers": {
             "properties": {
@@ -684,7 +711,8 @@
             "type": "long"
           },
           "title": {
-            "type": "text"
+            "type": "text",
+            "analyzer": "title_analyzer"
           },
           "publishers": {
             "properties": {
@@ -710,7 +738,8 @@
             "type": "long"
           },
           "title": {
-            "type": "text"
+            "type": "text",
+            "analyzer": "title_analyzer"
           },
           "publishers": {
             "properties": {
@@ -736,7 +765,8 @@
             "type": "long"
           },
           "title": {
-            "type": "text"
+            "type": "text",
+            "analyzer": "title_analyzer"
           },
           "publishers": {
             "properties": {
@@ -762,7 +792,8 @@
             "type": "long"
           },
           "title": {
-            "type": "text"
+            "type": "text",
+            "analyzer": "title_analyzer"
           },
           "publishers": {
             "properties": {
@@ -788,7 +819,8 @@
             "type": "long"
           },
           "title": {
-            "type": "text"
+            "type": "text",
+            "analyzer": "title_analyzer"
           },
           "publishers": {
             "properties": {
@@ -814,7 +846,8 @@
             "type": "long"
           },
           "title": {
-            "type": "text"
+            "type": "text",
+            "analyzer": "title_analyzer"
           },
           "publishers": {
             "properties": {
@@ -840,7 +873,8 @@
             "type": "long"
           },
           "title": {
-            "type": "text"
+            "type": "text",
+            "analyzer": "title_analyzer"
           },
           "publishers": {
             "properties": {
@@ -866,7 +900,8 @@
             "type": "long"
           },
           "title": {
-            "type": "text"
+            "type": "text",
+            "analyzer": "title_analyzer"
           },
           "publishers": {
             "properties": {
@@ -892,7 +927,8 @@
             "type": "long"
           },
           "title": {
-            "type": "text"
+            "type": "text",
+            "analyzer": "title_analyzer"
           },
           "publishers": {
             "properties": {
@@ -918,7 +954,8 @@
             "type": "long"
           },
           "title": {
-            "type": "text"
+            "type": "text",
+            "analyzer": "title_analyzer"
           },
           "publishers": {
             "properties": {
@@ -944,7 +981,8 @@
             "type": "long"
           },
           "title": {
-            "type": "text"
+            "type": "text",
+            "analyzer": "title_analyzer"
           },
           "publishers": {
             "properties": {
@@ -970,7 +1008,8 @@
             "type": "long"
           },
           "title": {
-            "type": "text"
+            "type": "text",
+            "analyzer": "title_analyzer"
           },
           "publishers": {
             "properties": {
@@ -996,7 +1035,8 @@
             "type": "long"
           },
           "title": {
-            "type": "text"
+            "type": "text",
+            "analyzer": "title_analyzer"
           },
           "publishers": {
             "properties": {
@@ -1022,7 +1062,8 @@
             "type": "long"
           },
           "title": {
-            "type": "text"
+            "type": "text",
+            "analyzer": "title_analyzer"
           },
           "publishers": {
             "properties": {
@@ -1048,7 +1089,8 @@
             "type": "long"
           },
           "title": {
-            "type": "text"
+            "type": "text",
+            "analyzer": "title_analyzer"
           },
           "publishers": {
             "properties": {
@@ -1074,7 +1116,8 @@
             "type": "long"
           },
           "title": {
-            "type": "text"
+            "type": "text",
+            "analyzer": "title_analyzer"
           },
           "publishers": {
             "properties": {
@@ -1100,7 +1143,8 @@
             "type": "long"
           },
           "title": {
-            "type": "text"
+            "type": "text",
+            "analyzer": "title_analyzer"
           },
           "publishers": {
             "properties": {
@@ -1126,7 +1170,8 @@
             "type": "long"
           },
           "title": {
-            "type": "text"
+            "type": "text",
+            "analyzer": "title_analyzer"
           },
           "publishers": {
             "properties": {
@@ -1215,7 +1260,8 @@
             "type": "long"
           },
           "title": {
-            "type": "text"
+            "type": "text",
+            "analyzer": "title_analyzer"
           },
           "type": {
             "type": "keyword"

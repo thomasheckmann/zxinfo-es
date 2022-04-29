@@ -30,6 +30,7 @@ if (stats.isDirectory()) {
           },
           function (error, response) {
             if (error) {
+	      console.log(id + " - ERROR importing into elasticsearch");
               throw error;
             }
             done = true;

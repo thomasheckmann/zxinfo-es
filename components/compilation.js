@@ -19,35 +19,33 @@ var Q = require("q");
  * Get inCompilation
 
  -- This program appeared on the following compilations...
-SELECT DISTINCT -- DISTINCT, as it can contained multiple times in a compilation with differet aliaes, eg. Elite 1601
-    comp.id AS id,
-    comp.title AS title,
-    pub.name AS publisher,
-    pc1.text as country,
-    lt.text as labeltype,
-    entryt.text AS type,
-    machinet.text AS machinetype
-FROM
-    compilations icomp
-INNER JOIN entries comp ON
-    icomp.compilation_id = comp.id
-LEFT JOIN genretypes entryt ON
-    comp.genretype_id = entryt.id
-LEFT JOIN publishers p ON
-    p.entry_id = comp.id
-LEFT JOIN labels pub ON
-    p.label_id = pub.id
-LEFT JOIN countries pc1 ON
-    pub.country_id = pc1.id
-LEFT JOIN labeltypes lt ON
-	lt.id = pub.labeltype_id
-LEFT JOIN machinetypes machinet ON
-    comp.machinetype_id = machinet.id
-WHERE
-    icomp.entry_id = 2259 AND p.release_seq = 0
-ORDER BY
-    comp.title,
-	pub.name
+SELECT 
+  DISTINCT comp.id AS id, 
+  comp.title AS title, 
+  pub.name AS publisher, 
+  pc1.text as country, 
+  lt.text as labeltype, 
+  entryt.text AS type, 
+  machinet.text AS machinetype 
+FROM 
+  contents icomp 
+  INNER JOIN entries comp ON icomp.container_id = comp.id 
+  LEFT JOIN genretypes entryt ON comp.genretype_id = entryt.id 
+  LEFT JOIN publishers p ON p.entry_id = comp.id 
+  LEFT JOIN labels pub ON p.label_id = pub.id 
+  LEFT JOIN countries pc1 ON pub.country_id = pc1.id 
+  LEFT JOIN labeltypes lt ON lt.id = pub.labeltype_id 
+  LEFT JOIN machinetypes machinet ON comp.machinetype_id = machinet.id 
+WHERE 
+  icomp.entry_id = ? 
+  AND (
+    p.release_seq = 0 
+    OR p.release_seq IS NULL
+  ) 
+ORDER BY 
+  comp.title, 
+  pub.name
+
 	
 +-------+---------------------------+--------------------+-------------+--------------------+
 |  id   |           title           |     publisher      |    type     |    machinetype     |
@@ -63,7 +61,7 @@ var getInCompilations = function (id) {
   var deferred = Q.defer();
   var connection = db.getConnection();
   connection.query(
-    "SELECT DISTINCT comp.id AS id, comp.title AS title, pub.name AS publisher, pc1.text as country, lt.text as labeltype, entryt.text AS type, machinet.text AS machinetype FROM contents icomp INNER JOIN entries comp ON icomp.container_id = comp.id LEFT JOIN genretypes entryt ON comp.genretype_id = entryt.id LEFT JOIN publishers p ON p.entry_id = comp.id LEFT JOIN labels pub ON p.label_id = pub.id LEFT JOIN countries pc1 ON pub.country_id = pc1.id LEFT JOIN labeltypes lt ON lt.id = pub.labeltype_id LEFT JOIN machinetypes machinet ON comp.machinetype_id = machinet.id WHERE icomp.entry_id = ? AND p.release_seq = 0 ORDER BY comp.title, pub.name",
+    "SELECT DISTINCT comp.id AS id, comp.title AS title, pub.name AS publisher, pc1.text as country, lt.text as labeltype, entryt.text AS type, machinet.text AS machinetype FROM contents icomp INNER JOIN entries comp ON icomp.container_id = comp.id LEFT JOIN genretypes entryt ON comp.genretype_id = entryt.id LEFT JOIN publishers p ON p.entry_id = comp.id LEFT JOIN labels pub ON p.label_id = pub.id LEFT JOIN countries pc1 ON pub.country_id = pc1.id LEFT JOIN labeltypes lt ON lt.id = pub.labeltype_id LEFT JOIN machinetypes machinet ON comp.machinetype_id = machinet.id WHERE icomp.entry_id = ? AND (p.release_seq = 0 OR p.release_seq IS NULL) ORDER BY comp.title, pub.name",
     [id],
     function (error, results, fields) {
       if (error) {
@@ -178,7 +176,7 @@ var getCompilationContent = function (id) {
       var item = null;
 
       for (; i < results.length; i++) {
-        var seq = results[i].prog_seq;
+        var seq = '' +results[i].tape_side + results[i].tape_seq + results[i].prog_seq;
 
         if (preSeq !== seq) {
           if (item) {

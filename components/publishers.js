@@ -62,8 +62,9 @@ var getPublishers = function (id) {
   var deferred = Q.defer();
   var connection = db.getConnection();
   connection.query(
-    "SELECT pub.name AS name, pc1.text AS country, lt.text AS labeltype, p.publisher_seq, n.text, nt.id as notetypes FROM publishers p INNER JOIN labels pub ON p.label_id = pub.id LEFT JOIN countries pc1 ON pub.country_id = pc1.id LEFT JOIN labeltypes lt ON lt.id = pub.labeltype_id LEFT JOIN notes n ON n.label_id = pub.id LEFT JOIN notetypes nt ON nt.id = n.notetype_id WHERE p.entry_id = ? AND p.release_seq = 0 ORDER BY publisher_seq, pub.name, pc1.text",
-    [id],
+    "(SELECT pub.name AS name, pc1.text AS country, lt.text AS labeltype, p.publisher_seq, n.text, nt.id as notetypes FROM publishers p INNER JOIN labels pub ON p.label_id = pub.id LEFT JOIN countries pc1 ON pub.country_id = pc1.id LEFT JOIN labeltypes lt ON lt.id = pub.labeltype_id LEFT JOIN notes n ON n.label_id = pub.id LEFT JOIN notetypes nt ON nt.id = n.notetype_id WHERE p.entry_id = ? AND p.release_seq = 0 ORDER BY publisher_seq, pub.name, pc1.text) UNION (SELECT m.name, c.text as country, e.publication as labeltype, 0 as publisher_seq, NULL as text, NULL as notetypes FROM search_by_origins e INNER JOIN issues i ON i.id = e.issue_id INNER JOIN magazines m ON m.id = i.magazine_id INNER JOIN labels l ON l.id = m.label_id INNER JOIN countries c ON c.id = l.country_id WHERE e.entry_id = ?)",
+    //"SELECT pub.name AS name, pc1.text AS country, lt.text AS labeltype, p.publisher_seq, n.text, nt.id as notetypes FROM publishers p INNER JOIN labels pub ON p.label_id = pub.id LEFT JOIN countries pc1 ON pub.country_id = pc1.id LEFT JOIN labeltypes lt ON lt.id = pub.labeltype_id LEFT JOIN notes n ON n.label_id = pub.id LEFT JOIN notetypes nt ON nt.id = n.notetype_id WHERE p.entry_id = ? AND p.release_seq = 0 ORDER BY publisher_seq, pub.name, pc1.text",
+    [id, id],
     function (error, results, fields) {
       if (error) {
         throw error;

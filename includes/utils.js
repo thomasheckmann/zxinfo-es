@@ -1,6 +1,32 @@
 /**
  * UTILITY FUNCTIONS
  *
+ * CHANGELOG:
+ * 24.10.2021 - price change
+ * 		price = {amount,currency, name, prefix}
+ *
+ * 		"releases" - section
+ * 			releaseprice => object
+ *
+ * 		TEST: 2259, 21539 (Polish), 36710 (danish),8091 (disc price + budget price)
+ * 
+ * 
+ * 
+ *           "releasePrice": {
+            "type": "keyword"
+          },
+          "budgetPrice": {
+            "type": "keyword"
+          },
+          "cartridgePrice": {
+            "type": "keyword"
+          },
+          "diskPrice": {
+            "type": "keyword"
+          },
+          "microdrivePrice": {
+            "type": "keyword"
+          },
  */
 "use strict";
 
@@ -38,7 +64,7 @@ var priceHelper = function (price, name, symbol, prefix) {
     return undefined;
   }
 
-  return { amount: price, currency: symbol, prefix: prefix };
+  return { amount: "" + price, currency: symbol, prefix: prefix };
   /**	
   price = "" + price;
   if (
