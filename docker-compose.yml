@@ -2,7 +2,7 @@ version: "3"
 
 services:
   zxinfo-es:
-    image: "blacktop/elasticsearch:7.9"
+    image: "blacktop/elasticsearch:8.1"
     ports:
       - "127.0.0.1:9200:9200"
       - "127.0.0.1:9300:9300"

@@ -82,7 +82,7 @@ var getReleases = function (id) {
   var deferred = Q.defer();
   var connection = db.getConnection();
   connection.query(
-    "select distinct r.release_seq as seq, e.title as title, aka.title as as_title, p.publisher_seq as pseq, pub.name as name, pc1.text as country, lt.text as labeltype, r.release_year as yearofrelease, r.release_price as releaseprice, c.name as cur_name, c.symbol as cur_symbol, c.prefix as cur_prefix, r.budget_price as budgetprice, r.microdrive_price as microdriveprice, r.disk_price as diskprice, r.cartridge_price as cartridgeprice, d.file_size as size, d.file_link as url, filet.text as type, ex.text as format, origint.text as origin, d.file_code as code, d.file_barcode as barcode, d.file_dl as dl, schemet.text as encodingscheme from releases r left join currencies c ON c.id = r.currency_id left join aliases aka on aka.entry_id = r.entry_id and aka.release_seq = r.release_seq inner join entries e on e.id = r.entry_id left join publishers p on p.entry_id = r.entry_id and p.release_seq = r.release_seq left join labels pub on p.label_id = pub.id left join labeltypes lt on lt.id = pub.labeltype_id left join countries pc1 on pub.country_id = pc1.id left join downloads d on d.entry_id = r.entry_id and d.release_seq = r.release_seq and (d.filetype_id IN (46, 47) OR d.filetype_id BETWEEN 8 AND 22) left join filetypes filet on d.filetype_id = filet.id left join extensions ex on right(d.file_link, length(ex.ext)) = ex.ext left join sourcetypes origint on d.sourcetype_id = origint.id left join schemetypes schemet on d.schemetype_id = schemet.id where r.entry_id = ? order by r.release_seq, p.publisher_seq, as_title, pub.name, pc1.text, url, type, format",
+    "select distinct r.release_seq as seq, e.title as title, aka.title as as_title, IFNULL(pub.name, m.name) as name, IFNULL(pc1.text, co.text) as country,IFNULL(lt.text, so.publication) as labeltype,IFNULL(p.publisher_seq, 0) as pseq, r.release_year as yearofrelease, r.release_price as releaseprice, c.name as cur_name, c.symbol as cur_symbol, c.prefix as cur_prefix, r.budget_price as budgetprice, r.microdrive_price as microdriveprice, r.disk_price as diskprice, r.cartridge_price as cartridgeprice, d.file_size as size, d.file_link as url, filet.text as type, ex.text as format, origint.text as origin, d.file_code as code, d.file_barcode as barcode, d.file_dl as dl, schemet.text as encodingscheme from releases r left join currencies c ON c.id = r.currency_id left join aliases aka on aka.entry_id = r.entry_id and aka.release_seq = r.release_seq inner join entries e on e.id = r.entry_id left join publishers p on p.entry_id = r.entry_id and p.release_seq = r.release_seq left join labels pub on p.label_id = pub.id left join labeltypes lt on lt.id = pub.labeltype_id left join countries pc1 on pub.country_id = pc1.id left join downloads d on d.entry_id = r.entry_id and d.release_seq = r.release_seq and (d.filetype_id IN (46, 47) OR d.filetype_id BETWEEN 8 AND 22) left join filetypes filet on d.filetype_id = filet.id left join extensions ex on right(d.file_link, length(ex.ext)) = ex.ext left join sourcetypes origint on d.sourcetype_id = origint.id left join schemetypes schemet on d.schemetype_id = schemet.id left join search_by_origins so ON so.entry_id = r.entry_id left join issues ii ON ii.id = so.issue_id LEFT JOIN magazines m ON m.id = ii.magazine_id LEFT JOIN labels l ON l.id = m.label_id LEFT JOIN countries co ON co.id = l.country_id where r.entry_id = ? order by r.release_seq, p.publisher_seq, as_title, pub.name, pc1.text, url, type, format",
     [id],
     function (error, results, fields) {
       if (error) {
@@ -108,7 +108,7 @@ var getReleases = function (id) {
             publishers: [],
             releaseTitles: [],
             yearOfRelease: results[i].yearofrelease,
-            //  releasePrice: results[i].releaseprice,
+            // releasePrice: results[i].releaseprice,
             releasePrice: utils.priceHelper(
               results[i].releaseprice,
               results[i].cur_name,
@@ -131,7 +131,8 @@ var getReleases = function (id) {
             ),
             // diskPrice: results[i].diskprice,
             diskPrice: utils.priceHelper(results[i].diskprice, results[i].cur_name, results[i].cur_symbol, results[i].cur_prefix),
-            //cartridgePrice: results[i].cartridgeprice,
+
+            // cartridgePrice: results[i].cartridgeprice,
             cartridgePrice: utils.priceHelper(
               results[i].cartridgeprice,
               results[i].cur_name,

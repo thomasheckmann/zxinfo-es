@@ -9,7 +9,7 @@ var settings = require("./includes/settings");
 
 var json_output_dir = settings.prefixMagazines;
 
-var Q = require("Q");
+var Q = require("q");
 var jsonfile = require("jsonfile");
 var path = require("path");
 var allcombinations = require("allcombinations");
@@ -199,7 +199,7 @@ var getMagRefs = function (issue_id) {
   var arr = [];
   var connection = db.getConnection();
   connection.query(
-    "SELECT mr.id, rt.text AS referencetype, mr.entry_id, e.title AS entrytitle, l.name AS labelname, tl.name AS topicname, tt.text AS topictype, mr.page, f.name AS featurename, fl.name AS featurelabelname, ml.link AS link, h.title AS hosttitle, h.link AS hostlink FROM magrefs mr INNER JOIN referencetypes rt ON rt.id = mr.referencetype_id LEFT JOIN entries e ON e.id = mr.entry_id LEFT JOIN labels l ON l.id = label_id LEFT JOIN topics t ON t.id = mr.topic_id LEFT JOIN labels tl ON tl.id = t.label_id LEFT JOIN topictypes tt ON tt.id = t.topictype_id LEFT JOIN magreffeats feat ON feat.magref_id = mr.id LEFT JOIN features f ON f.id = feat.feature_id LEFT JOIN labels fl ON fl.id = f.label_id LEFT JOIN magreflinks ml ON ml.magref_id = mr.id LEFT JOIN HOSTS h ON h.id = ml.host_id WHERE mr.issue_id = ? ORDER BY mr.page",
+    "SELECT mr.id, rt.text AS referencetype, mr.entry_id, e.title AS entrytitle, l.name AS labelname, tl.name AS topicname, tt.text AS topictype, mr.page, f.name AS featurename, fl.name AS featurelabelname, ml.link AS link, h.title AS hosttitle, h.link AS hostlink FROM magrefs mr INNER JOIN referencetypes rt ON rt.id = mr.referencetype_id LEFT JOIN entries e ON e.id = mr.entry_id LEFT JOIN labels l ON l.id = label_id LEFT JOIN topics t ON t.id = mr.topic_id LEFT JOIN labels tl ON tl.id = t.label_id LEFT JOIN topictypes tt ON tt.id = t.topictype_id LEFT JOIN magreffeats feat ON feat.magref_id = mr.id LEFT JOIN features f ON f.id = feat.feature_id LEFT JOIN labels fl ON fl.id = f.label_id LEFT JOIN magreflinks ml ON ml.magref_id = mr.id LEFT JOIN hosts h ON h.id = ml.host_id WHERE mr.issue_id = ? ORDER BY mr.page",
     [issue_id],
     function (error, results, fields) {
       if (error) {

@@ -137,7 +137,7 @@ var getScreens = function (id) {
   var deferred = Q.defer();
   var connection = db.getConnection();
   connection.query(
-    'SELECT d.file_link AS url, d.file_size AS size, filet.text AS type, ex.text AS format, e.title as title FROM contents c INNER JOIN entries e ON c.entry_id = e.id INNER JOIN downloads d ON e.id = d.entry_id AND d.release_seq = 0 INNER JOIN filetypes filet ON d.filetype_id = filet.id INNER JOIN extensions ex on right(d.file_link, length(ex.ext)) = ex.ext AND (ex.text like "Picture%" OR ex.text like "Screen dump%") WHERE d.filetype_id IN(1, 2) AND c.container_id = ? UNION SELECT d.file_link AS url, file_size AS size, filet.text AS type, ex.text AS format, null AS title FROM downloads d INNER JOIN filetypes filet ON d.filetype_id = filet.id INNER JOIN extensions ex on right(d.file_link, length(ex.ext)) = ex.ext AND (ex.text like "Picture%" OR ex.text like "Screen dump%") WHERE d.machinetype_id IS NULL AND d.filetype_id IN(1, 2) AND d.entry_id = ? UNION SELECT d.file_link AS url, file_size AS size, filet.text AS type, ex.text AS format, null AS title FROM downloads d INNER JOIN filetypes filet ON d.filetype_id = filet.id INNER JOIN extensions ex on right(d.file_link, length(ex.ext)) = ex.ext AND (ex.text like "Picture%") INNER JOIN entries e ON d.entry_id = e.id WHERE (e.genretype_id BETWEEN 91 AND 108) AND d.filetype_id IN(53) AND d.entry_id = ? UNION SELECT d.file_link AS url, file_size AS size, "Loading screen" as type, ex.text AS format, null AS title FROM downloads d INNER JOIN extensions ex on right(d.file_link, length(ex.ext)) = ex.ext AND (ex.text like "Picture%") INNER JOIN entries e ON d.entry_id = e.id WHERE (e.genretype_id BETWEEN 83 AND 90) AND d.filetype_id IN(45) AND d.entry_id = ?',
+    'SELECT d.file_link AS url, d.file_size AS size, filet.text AS type, ex.text AS format, e.title as title, d.entry_id FROM contents c INNER JOIN entries e ON c.entry_id = e.id INNER JOIN downloads d ON e.id = d.entry_id AND d.release_seq = 0 INNER JOIN filetypes filet ON d.filetype_id = filet.id INNER JOIN extensions ex on right(d.file_link, length(ex.ext)) = ex.ext AND (ex.text like "Picture%" OR ex.text like "Screen dump%") WHERE d.filetype_id IN(1, 2) AND c.container_id = ? UNION SELECT d.file_link AS url, file_size AS size, filet.text AS type, ex.text AS format, null AS title, d.entry_id FROM downloads d INNER JOIN filetypes filet ON d.filetype_id = filet.id INNER JOIN extensions ex on right(d.file_link, length(ex.ext)) = ex.ext AND (ex.text like "Picture%" OR ex.text like "Screen dump%") WHERE d.machinetype_id IS NULL AND d.filetype_id IN(1, 2) AND d.entry_id = ? UNION SELECT d.file_link AS url, file_size AS size, filet.text AS type, ex.text AS format, null AS title, d.entry_id FROM downloads d INNER JOIN filetypes filet ON d.filetype_id = filet.id INNER JOIN extensions ex on right(d.file_link, length(ex.ext)) = ex.ext AND (ex.text like "Picture%") INNER JOIN entries e ON d.entry_id = e.id WHERE (e.genretype_id BETWEEN 91 AND 108) AND d.filetype_id IN(53) AND d.entry_id = ? UNION SELECT d.file_link AS url, file_size AS size, "Loading screen" as type, ex.text AS format, null AS title, d.entry_id FROM downloads d INNER JOIN extensions ex on right(d.file_link, length(ex.ext)) = ex.ext AND (ex.text like "Picture%") INNER JOIN entries e ON d.entry_id = e.id WHERE (e.genretype_id BETWEEN 83 AND 90) AND d.filetype_id IN(45) AND d.entry_id = ?',
     [id, id, id, id],
     function (error, results, fields) {
       if (error) {
@@ -151,6 +151,7 @@ var getScreens = function (id) {
           if (results[i].format.startsWith("Picture")) {
             // Picture (GIF), Picture (JPG)
             var downloaditem = {
+              entry_id: results[i].entry_id,
               filename: path.basename(results[i].url),
               url: results[i].url,
               size: results[i].size,
@@ -162,6 +163,7 @@ var getScreens = function (id) {
           } else {
             /** screen dump, write info to file (to be processed later) **/
             var zerofilled = ("0000000" + id).slice(-7);
+            var zerofilledEntry = ("0000000" + results[i].entry_id).slice(-7);
             var screen_type;
 
             /** In-game renamed to Running screen **/
@@ -181,6 +183,8 @@ var getScreens = function (id) {
               screen_type +
                 "\t" +
                 zerofilled +
+                "\t" +
+                zerofilledEntry +
                 "\t" +
                 results[i].url +
                 "\t" +

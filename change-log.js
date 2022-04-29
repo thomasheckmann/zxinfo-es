@@ -4,8 +4,10 @@ Compares JSON files with a remote index
 
 OLD Vn   - localhost:9200 (elasticsearch)
 NEW Vn+1 - local JSON files data/entries/
-node change-log.js --json_dir data/entries/ --esurl http://localhost:9200 --esindex zxinfo_games
-node change-log.js --json_dir data/entries/ --esurl http://localhost:9200 --esindex zxinfo-20210211-083321
+
+                           PREVIOUS(OLD)                   CURRENT(NEW)
+node change-log.js --esurl http://localhost:9200 --esindex zxinfo_games --json_dir data/entries/
+node change-log.js --esurl http://localhost:9200 --esindex zxinfo-20210211-083321 --json_dir data/entries/ 
 
 
 OUTPUT FILES:
@@ -52,16 +54,18 @@ console.log("comparing aginst CURRENT json - Elasticsearch at: " + esURL);
 console.log("comparing aginst CURRENT json - index: " + esindex);
 
 var CHANGELOG = fs.createWriteStream("change.log");
+var NEW_ENTRIES_JSON = fs.createWriteStream("news.json");
 var DETAILED = fs.createWriteStream("detailed.log");
 var UNHANDLED = fs.createWriteStream("unhandled.log");
 
 fs.readdir(path, function (err, items) {
   var changed = new Map();
+  var new_entries = new Map();
   for (var i = 0; i < items.length; i++) {
     if (items[i].endsWith(".json")) {
       console.log("processing: " + items[i]);
       var id = items[i].substr(0, 7);
-      var new_json = JSON.parse(JSON.sortify(jsonfile.readFileSync(path + items[i])));
+      var new_json = JSON.parse(JSON.sortify(jsonfile.readFileSync(path + items[i]), null, 2));
 
       // ignore the following fields
       new_json.version = null;
@@ -83,10 +87,11 @@ fs.readdir(path, function (err, items) {
           if (error) {
             DETAILED.write(id + ": NEW ENTRY(" + new_json.title + ")\n");
             CHANGELOG.write(id + ": NEW ENTRY(" + new_json.title + ")\n");
+            new_entries.set(id, new_json.title);
             done = true;
           } else {
             body = response._source;
-            var old_json = JSON.parse(JSON.sortify(body));
+            var old_json = JSON.parse(JSON.sortify(body, null, 2));
             // ignore the following fields
             old_json.version = null;
             old_json.authorsuggest = null;
@@ -95,9 +100,9 @@ fs.readdir(path, function (err, items) {
             old_json.publishersuggest = null;
             old_json.screens = null;
             old_json.titlesuggest = null;
-            old_json.zxinfoVersion = null;
 
-            var diff = jsonDiff.diff(old_json, new_json);
+            old_json.zxinfoVersion = null;
+            var diff = jsonDiff.diff(old_json, new_json, { sort: true });
             if (diff) {
               DETAILED.write(id + ":\n" + JSON.stringify(diff, null, 2) + "\n");
               var found = false;
@@ -114,13 +119,13 @@ fs.readdir(path, function (err, items) {
               if (diff.machineType) {
                 CHANGELOG.write(
                   id +
-                    " (" +
-                    old_json.title +
-                    ") - MACHINETYPE [" +
-                    diff.machineType.__old +
-                    " -> " +
-                    diff.machineType.__new +
-                    "]\n"
+                  " (" +
+                  old_json.title +
+                  ") - MACHINETYPE [" +
+                  diff.machineType.__old +
+                  " -> " +
+                  diff.machineType.__new +
+                  "]\n"
                 );
                 found = true;
               }
@@ -139,13 +144,13 @@ fs.readdir(path, function (err, items) {
               if (diff.originalpublication) {
                 CHANGELOG.write(
                   id +
-                    " (" +
-                    old_json.title +
-                    ") - ORIGINALPUBLICATION [" +
-                    diff.originalpublication.__old +
-                    " -> " +
-                    diff.originalpublication.__new +
-                    "]\n"
+                  " (" +
+                  old_json.title +
+                  ") - ORIGINALPUBLICATION [" +
+                  diff.originalpublication.__old +
+                  " -> " +
+                  diff.originalpublication.__new +
+                  "]\n"
                 );
                 found = true;
               }
@@ -156,13 +161,13 @@ fs.readdir(path, function (err, items) {
               if (diff.availability) {
                 CHANGELOG.write(
                   id +
-                    " (" +
-                    old_json.title +
-                    ") - AVAILABILITY [" +
-                    diff.availability.__old +
-                    " -> " +
-                    diff.availability.__new +
-                    "]\n"
+                  " (" +
+                  old_json.title +
+                  ") - AVAILABILITY [" +
+                  diff.availability.__old +
+                  " -> " +
+                  diff.availability.__new +
+                  "]\n"
                 );
                 found = true;
               }
@@ -192,6 +197,13 @@ fs.readdir(path, function (err, items) {
               }
               if (diff.authors) {
                 CHANGELOG.write(id + " (" + old_json.title + ") - AUTHORS\n");
+                diff.authors.forEach(function (value) {
+                  if (value[0] === "+") {
+                    CHANGELOG.write(` - ADDED: Name: ${JSON.stringify(value[1].name)}\n`);
+                  } else if (value[0] === "-") {
+                    CHANGELOG.write(` - REMOVED: ${JSON.stringify(value[1])}\n`);
+                  }
+                });
                 found = true;
               }
               if (diff.releases) {
@@ -214,6 +226,11 @@ fs.readdir(path, function (err, items) {
                   }
                 });
                 found = true;
+              }
+              if(diff.licensed__added) {
+                CHANGELOG.write(id + " (" + old_json.title + ") - LICENSE ADDED\n");
+                found = true;
+
               }
               if (diff.series) {
                 CHANGELOG.write(id + " (" + old_json.title + ") - SERIES\n");
@@ -316,6 +333,17 @@ fs.readdir(path, function (err, items) {
   CHANGELOG.write("---------------------------------------------------------------\n");
   CHANGELOG.write("CHANGE SUMMARY - total entries updated: " + changed.size + "\n");
   CHANGELOG.write("---------------------------------------------------------------\n");
+  CHANGELOG.write("\n");
+  CHANGELOG.write("New entries:\n");
+
+
+  var news = [];
+  for (const entry of new_entries.entries()) {
+    CHANGELOG.write(entry + "\n");
+    news.push({id: entry[0], title: entry[1]});
+  }
+  NEW_ENTRIES_JSON.write(JSON.stringify(news));
+
   CHANGELOG.write("\n");
   CHANGELOG.write("Updated entries:\n");
   CHANGELOG.write("\n");
