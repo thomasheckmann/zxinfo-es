@@ -41,7 +41,7 @@ fi
 if [ $TO_EXPORT == 'all' ]||[ $TO_EXPORT == 'games' ]
 then
     # clean-up
-    rm -f zxinfo_games.index.txt zxinfo_games.mappings.txt
+    rm -f zxinfo_games.analyzers.txt zxinfo_games.index.txt zxinfo_games.mappings.txt
 
     echo "DUMPING zxinfo_games DATA"
     ./elasticdump/bin/elasticdump \

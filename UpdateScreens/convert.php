@@ -12,7 +12,7 @@ $zxscreen_path = '/Users/kolbeck/Public/ZXINFO/assets';
 
 $scr_array = array();
 
-function convertScreen($id, $entry_id, $scr_file, $scr_path, $out_dir, $out_file, $title) {
+function convertScreen($id, $entry_id, $scr_file, $scr_path, $out_dir, $out_file, $title, $release_seq) {
 		global $zxscreen_path;
 
 		$object = [];
@@ -77,7 +77,7 @@ function convertScreen($id, $entry_id, $scr_file, $scr_path, $out_dir, $out_file
 
 			$newfilesize = filesize($zxscreen_target_file);
 			echo "$id: $out_file, size: $newfilesize($size, $scrType)\n";
-			$object = (object) ['entry_id' => intval($entry_id), 'filename' => $newfilename, 'url' => '/' . $outfile_converted, 'scrUrl' => $scr_path, 'size' => $newfilesize, 'type' => $type, 'format' => $format, 'title' => $title];
+			$object = (object) ['entry_id' => intval($entry_id), 'release_seq' => $release_seq, 'filename' => $newfilename, 'url' => '/' . $outfile_converted, 'scrUrl' => $scr_path, 'size' => $newfilesize, 'type' => $type, 'format' => $format, 'title' => $title];
 		} else {
 			echo "$id: [UNKNOWN HANDLING]\n";
 		}
@@ -105,12 +105,13 @@ while ( !feof($fp) )
     $data = str_getcsv($line, $delimiter);
 
     $screen_type = $data[0];
-    $id = $data[1];
-	$entry_id = $data[2];
-    $from_url = $data[3];
-    $to_path = $data[4];
-    $to_filename = $data[5];
-    $title = $data[6];
+	$release_seq = $data[1];
+    $id = $data[2];
+	$entry_id = $data[3];
+    $from_url = $data[4];
+    $to_path = $data[5];
+    $to_filename = $data[6];
+    $title = $data[7];
 
     if($screen_type == 'load' || $screen_type == 'run') {
 	// echo "to_path: $to_path, to_filename: $to_filename \n";
@@ -151,10 +152,10 @@ while ( !feof($fp) )
 			}
 			$newfilesize = filesize($target_file_base.$ext);
 
-			$object = (object) ['entry_id' => intval($entry_id), 'filename' => $newfilename, 'url' => $outfile_converted, 'scrUrl' => $from_url, 'size' => $newfilesize, 'type' => $type, 'format' => $format, 'title' => $title];
+			$object = (object) ['entry_id' => intval($entry_id), 'release_seq' => $release_seq, 'filename' => $newfilename, 'url' => $outfile_converted, 'scrUrl' => $from_url, 'size' => $newfilesize, 'type' => $type, 'format' => $format, 'title' => $title];
     	} else {
 	    	echo "$id: converting source to " . $to_path . $to_filename . "\n";
-	    	$object = convertScreen($id, $entry_id, $source_file, $from_url, $to_path, $to_filename, $title);
+	    	$object = convertScreen($id, $entry_id, $source_file, $from_url, $to_path, $to_filename, $title, $release_seq);
 
     	}
 		if(is_null($scr_array[$id])) {

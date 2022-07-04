@@ -18,7 +18,7 @@ var path = process.argv[2];
 fs.readdir(path, function(err, items) {
     for (var i = 0; i < items.length; i++) {
         if (items[i].endsWith(".json")) {
-            console.log("inserting: ", items[i]);
+            console.log(`[UPDATE SCREEN] - insert: ${items[i]}`);
             var id = items[i].substr(0, 7);
             var screens_new = jsonfile.readFileSync(path + items[i]);
             var done = false;
@@ -30,7 +30,7 @@ fs.readdir(path, function(err, items) {
                 },
                 function(error, response) {
                     if (error) {
-                        console.error("[WARNING] " + id + ": NOT FOUND");
+                        console.error(`[WARNING] - NOT FOUND: ${id}`);
                         done = true;
                     } else {
                         body = response._source;
@@ -38,7 +38,7 @@ fs.readdir(path, function(err, items) {
                         var j = 0;
                         for (; j < screens_new.screens.length; j++) {
                             body.screens.push(screens_new.screens[j]);
-                            body.screens = _.sortBy(body.screens, ["filename"]);
+                            body.screens = _.sortBy(body.screens, ["release_seq", "type"]);
                         }
                         // remove duplicates
                         body.screens = _.uniqWith(body.screens, _.isEqual);
