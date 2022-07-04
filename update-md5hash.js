@@ -18,7 +18,7 @@ var path = process.argv[2];
 fs.readdir(path, function(err, items) {
     for (var i = 0; i < items.length; i++) {
         if (items[i].endsWith(".json")) {
-            console.log("inserting: ", items[i]);
+            console.log(`[UPDATE MD5HASH] - insert: ${items[i]}`);
             var id = items[i].substr(0, 7);
             var md5hash = jsonfile.readFileSync(path + items[i]);
             var done = false;
@@ -30,7 +30,7 @@ fs.readdir(path, function(err, items) {
                 },
                 function(error, response) {
                     if (error) {
-                        console.error("[WARNING] " + id + ": NOT FOUND");
+                        console.error(`[WARNING] - NOT FOUND: ${id}`);
                         done = true;
                     } else {
                         body = response._source;
