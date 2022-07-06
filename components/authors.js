@@ -126,9 +126,9 @@ var getAuthors = function (id) {
             notes: [],
           };
           var note = { text: results[i].text, noteType: results[i].notetypes };
-          console.log("[authors] - " + JSON.stringify(note));
+          // console.log("[authors] - " + JSON.stringify(note));
           if (note.text !== null || note.noteType !== null) {
-            console.log("[authors] - adding this note" );
+            // console.log("[authors] - adding this note" );
             item.notes.push(utils.removeEmpty(note));
           }
 
