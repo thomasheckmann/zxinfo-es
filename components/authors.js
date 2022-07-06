@@ -28,7 +28,6 @@ SELECT
     tc1.text AS groupCountry,
     tlt.text AS groupType,
     n.text,
-    n.section,
     nt.id AS notetypes
 FROM authors
     aut
@@ -126,8 +125,10 @@ var getAuthors = function (id) {
             groupType: results[i].groupType,
             notes: [],
           };
-          var note = { text: results[i].text, section: results[i].section, noteType: results[i].notetypes };
-          if (note.text !== null || note.section !== null || note.noteType !== null) {
+          var note = { text: results[i].text, noteType: results[i].notetypes };
+          console.log("[authors] - " + JSON.stringify(note));
+          if (note.text !== null || note.noteType !== null) {
+            console.log("[authors] - adding this note" );
             item.notes.push(utils.removeEmpty(note));
           }
 
@@ -136,8 +137,8 @@ var getAuthors = function (id) {
             item.roles.push(utils.removeEmpty(role));
           }
         } else {
-          var note = { text: results[i].text, section: results[i].section, noteType: results[i].notetypes };
-          if (note.text !== null || note.section !== null || note.noteType !== null) {
+          var note = { text: results[i].text, noteType: results[i].notetypes };
+          if (note.text !== null || note.noteType !== null) {
             item.notes.push(utils.removeEmpty(note));
           }
           var role = { roleType: results[i].roleType, roleName: results[i].roleName };
