@@ -80,8 +80,8 @@ var getPublishers = function (id) {
         if (name !== prevName) {
           if (prevName !== null) {
             // Add current note line
-            note = { text: results[i].text, section: results[i].section, noteType: results[i].notetypes };
-            if (note.text !== null || note.section !== null || note.noteType !== null) {
+            note = { text: results[i].text, noteType: results[i].notetypes };
+            if (note.text !== null || note.noteType !== null) {
               authorItem.notes.push(utils.removeEmpty(note));
             }
             publishers.push(utils.removeEmpty(authorItem));
@@ -94,8 +94,8 @@ var getPublishers = function (id) {
         authorItem.name = results[i].name;
         authorItem.country = results[i].country;
         authorItem.labelType = results[i].labeltype;
-        note = { text: results[i].text, section: results[i].section, noteType: results[i].notetypes };
-        if (note.text !== null || note.section !== null || note.noteType !== null) {
+        note = { text: results[i].text, noteType: results[i].notetypes };
+        if (note.text !== null || note.noteType !== null) {
           authorItem.notes.push(utils.removeEmpty(note));
         }
       }
