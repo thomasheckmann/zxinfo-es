@@ -217,7 +217,7 @@ var getAdditionalDownloads = function (id) {
   var deferred = Q.defer();
   var connection = db.getConnection();
   connection.query(
-    "SELECT d.file_link AS url, file_size AS size, filet.text AS type, ex.text AS format, l.id as language_id, l.text as language FROM downloads d INNER JOIN filetypes filet ON d.filetype_id = filet.id INNER JOIN extensions ex ON INSTR(file_link, ex.ext) > 1 LEFT JOIN languages l on l.id = d.language_id WHERE NOT ( filetype_id IN(46, 47) OR filetype_id BETWEEN 8 AND 22 ) AND d.entry_id = ? ORDER BY filet.text, ex.text, url",
+    "SELECT d.release_seq, d.file_link AS url, file_size AS size, filet.text AS type, ex.text AS format, l.id as language_id, l.text as language FROM downloads d INNER JOIN filetypes filet ON d.filetype_id = filet.id INNER JOIN extensions ex ON INSTR(file_link, ex.ext) > 1 LEFT JOIN languages l on l.id = d.language_id WHERE NOT ( filetype_id IN(46, 47) OR filetype_id BETWEEN 8 AND 22 ) AND d.entry_id = ? ORDER BY d.release_seq, field(filet.text, 'POK pokes file', 'Game map', 'Instructions', 'Running screen', 'Opening screen', 'Loading screen', 'Inlay - Side','Inlay - Back', 'Inlay - Front') DESC, filet.text, ex.text, url;",
     [id],
     function (error, results, fields) {
       if (error) {

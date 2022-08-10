@@ -3,5 +3,5 @@
 /node_modules/
 /data/*
 /UpdateScreens/zxscreens/*
-/Scripts/*.txt
+/Scripts/transfer/*.txt
 zxscreens.txt

@@ -54,7 +54,7 @@ var BB = require("./components/bookinfo");
 var LI = require("./components/linksinfo");
 var ZX = require("./components/zxinfoonly");
 
-const perf = require("execution-time")();
+const perf = require("execution-time")(console.log);
 
 /*
  * #############################################
@@ -229,7 +229,9 @@ var getID = function (zxdb_id) {
     }
     var i = 0;
     for (; i < results.length; i++) {
+      perf.start();
       zxdb_doc(results[i].id);
+      perf.stop();
     }
     done = true;
   });
