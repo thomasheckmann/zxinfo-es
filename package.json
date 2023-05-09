@@ -9,16 +9,14 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "allcombinations": "^1.1.4",
-    "bindings": "^1.5.0",
-    "deasync": "^0.1.21",
-    "elasticdump": "^6.62.1",
+    "allcombinations": "^1.1.5",
+    "deasync": "^0.1.28",
     "elasticsearch": "^16.7.1",
     "execution-time": "^1.4.1",
     "json-diff": "^0.7.1",
     "json.sortify": "^2.2.2",
-    "jsonfile": "^6.0.1",
-    "minimist": "^1.2.5",
+    "jsonfile": "^6.1.0",
+    "minimist": "^1.2.8",
     "mysql": "^2.18.1",
     "q": "^1.5.1"
   }

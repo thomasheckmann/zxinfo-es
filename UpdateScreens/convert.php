@@ -33,10 +33,14 @@ function convertScreen($id, $entry_id, $scr_file, $scr_path, $out_dir, $out_file
 		if ($ext == "mlt") { $scrType = 'mlt'; }; //not correct mode but at least we get an image
 		if (($ext == "scr") && (filesize($scr_file) >=12000) ) { $scrType = 'timexhr';};
 
-		if (strpos($out_file, '-load') !== false) {
+		// Priority: Loading screen, Opening screen, Running screen - also ignore case
+		if (stripos($out_file, '-load') !== false) {
 			$type = 'Loading screen';
 			$format = 'Picture';
-		} else if (strpos($out_file, '-run') !== false) {
+		} else if (stripos($out_file, '-open') !== false) {
+			$type = 'Opening screen';
+			$format = 'Picture';
+		} else if (stripos($out_file, '-run') !== false) {
 			$type = 'Running screen';
 			$format = 'Picture';
 		}
@@ -113,7 +117,7 @@ while ( !feof($fp) )
     $to_filename = $data[6];
     $title = $data[7];
 
-    if($screen_type == 'load' || $screen_type == 'run') {
+    if($screen_type == 'load' || $screen_type == 'open' || $screen_type == 'run') {
 	// echo "to_path: $to_path, to_filename: $to_filename \n";
 
     	$object;

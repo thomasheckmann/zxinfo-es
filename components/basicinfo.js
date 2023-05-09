@@ -17,6 +17,10 @@
  *
  *  https://spectrumcomputing.co.uk/forums/viewtopic.php?p=67399#p67399
  *   - entrries.book_isbn -> releases.book_isbn (as per release)
+ * 
+ * 06.03.2023
+ *  https://spectrumcomputing.co.uk/forums/viewtopic.php?p=108950#p108950
+ *  - magazines.label_id -> issues.label_id
  */
 "use strict";
 
