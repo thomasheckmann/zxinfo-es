@@ -133,7 +133,7 @@ If Screen Dump and Picture both exists, Picture is removed(only scr + ifl refere
 More screens: 0030237
 
 */
-var getScreens = function (id) {
+var getScreens = function (id, outStream) {
   var deferred = Q.defer();
   var connection = db.getConnection();
   connection.query(
@@ -192,7 +192,7 @@ var getScreens = function (id) {
             if (results[i].title == null) {
               results[i].title = "";
             }
-            console.error(
+            outStream.write(
               screen_type +
               "\t" +
               results[i].release_seq +
@@ -207,7 +207,8 @@ var getScreens = function (id) {
               "\t" +
               new_filename +
               "\t" +
-              results[i].title
+              results[i].title + 
+              "\n"
             );
           }
         }
