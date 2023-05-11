@@ -1,5 +1,6 @@
 #!/bin/bash
 source settings.sh
+source ../.env
 
 # Delete all indexes
 # curl -XDELETE "http://192.168.1.60:9200/zxinfo-*";
@@ -35,7 +36,7 @@ curl -H'Content-Type: application/json' -XPOST "http://${ES_HOST}:${ES_PORT}/_al
 echo ""
 echo 'Now importing data into ['${WRITE_ALIAS}']'
 
-(cd ../ && (node import-entries.js data/entries/ 2> import-entries.log)) &
+(cd ../ && (node import-entries.js data/entries_${ZXDB_NEW}/ 2> import-entries-${WRITE_INDEX}.log)) &
 PID=$!
 wait $PID
 
