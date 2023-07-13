@@ -58,7 +58,7 @@ WHERE
     )
 ORDER BY
     g.name,
-    others.series_seq ASC
+    others.member_seq ASC
 
 
 +------+------------------+----------+-----------------------+-----------------+-------------+-----------+
@@ -74,7 +74,7 @@ var getSeries = function (id) {
   var deferred = Q.defer();
   var connection = db.getConnection();
   connection.query(
-    'SELECT DISTINCT prog.id AS id, prog.title AS title, prog.id AS entry_id, pub.NAME AS publisher, pc1.text AS country, lt.text AS labeltype, machinet.text AS machinetype, g.name AS groupname, groupt.id AS grouptype FROM entries e INNER JOIN members memb ON memb.entry_id = e.id INNER JOIN tags g ON memb.tag_id = g.id INNER JOIN tagtypes groupt ON g.tagtype_id = groupt.id AND groupt.id = "S" INNER JOIN members others ON others.tag_id = g.id INNER JOIN entries prog ON others.entry_id = prog.id LEFT JOIN machinetypes machinet ON prog.machinetype_id = machinet.id LEFT JOIN publishers p ON p.entry_id = prog.id LEFT JOIN labels pub ON p.label_id = pub.id LEFT JOIN countries pc1 ON pub.country_id = pc1.id LEFT JOIN labeltypes lt ON lt.id = pub.labeltype_id WHERE e.id = ? AND( ( p.label_id IS NOT NULL AND p.release_seq = 0 ) OR( p.label_id IS NULL AND p.release_seq IS NULL ) ) ORDER BY g.name, others.series_seq ASC;',
+    'SELECT DISTINCT prog.id AS id, prog.title AS title, prog.id AS entry_id, pub.NAME AS publisher, pc1.text AS country, lt.text AS labeltype, machinet.text AS machinetype, g.name AS groupname, groupt.id AS grouptype FROM entries e INNER JOIN members memb ON memb.entry_id = e.id INNER JOIN tags g ON memb.tag_id = g.id INNER JOIN tagtypes groupt ON g.tagtype_id = groupt.id AND groupt.id = "S" INNER JOIN members others ON others.tag_id = g.id INNER JOIN entries prog ON others.entry_id = prog.id LEFT JOIN machinetypes machinet ON prog.machinetype_id = machinet.id LEFT JOIN publishers p ON p.entry_id = prog.id LEFT JOIN labels pub ON p.label_id = pub.id LEFT JOIN countries pc1 ON pub.country_id = pc1.id LEFT JOIN labeltypes lt ON lt.id = pub.labeltype_id WHERE e.id = ? AND( ( p.label_id IS NOT NULL AND p.release_seq = 0 ) OR( p.label_id IS NULL AND p.release_seq IS NULL ) ) ORDER BY g.name, others.member_seq ASC;',
     [id],
     function (error, results, fields) {
       if (error) {
