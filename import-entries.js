@@ -9,7 +9,12 @@ if (process.argv.length <= 2) {
   process.exit(-1);
 }
 
+var consoleControl = require('console-control-strings');
 var path = process.argv[2];
+
+console.clear();
+console.log(consoleControl.color('black', 'bgWhite', 'bold') + '######### Importing entries' + consoleControl.color('reset'));
+console.log(`# running node ${process.version}`);
 
 var stats = fs.statSync(path);
 
@@ -18,7 +23,7 @@ if (stats.isDirectory()) {
   fs.readdir(path, function (err, items) {
     for (var i = 0; i < items.length; i++) {
       if (items[i].endsWith(".json")) {
-        console.log("inserting: ", items[i]);
+        process.stdout.write(`[IMPORT ENTRIES] - insert: ${i}/${items.length} ${items[i]}` + consoleControl.eraseLine() + consoleControl.gotoSOL());
         var id = items[i].substr(0, 7);
         var body = jsonfile.readFileSync(path + items[i]);
         var done = false;
@@ -30,7 +35,7 @@ if (stats.isDirectory()) {
           },
           function (error, response) {
             if (error) {
-	      console.log(id + " - ERROR importing into elasticsearch");
+              console.log(id + " - ERROR importing into elasticsearch" + consoleControl.eraseLine());
               throw error;
             }
             done = true;

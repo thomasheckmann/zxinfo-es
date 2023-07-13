@@ -55,12 +55,18 @@ var LI = require("./components/linksinfo");
 var ZX = require("./components/zxinfoonly");
 
 const perf = require("execution-time")(console.log);
+const fs = require('fs');
+
+var consoleControl = require('console-control-strings')
+
+require('dotenv').config();
+const ZXSCREENS_FILE = fs.createWriteStream("zxscreens.txt");
 
 /*
  * #############################################
  */
 
-var zxdb_doc = function (id) {
+var zxdb_doc = function (id, index, total) {
   var done = false;
   Q.all([
     /* BASIC INFO */
@@ -159,7 +165,7 @@ var zxdb_doc = function (id) {
     MI.getMagazineRefs(id),
 
     /* ZXINFO */
-    ZX.getScreens(id),
+    ZX.getScreens(id, ZXSCREENS_FILE),
     ZX.getTitlesForSuggestions(id),
     ZX.getAuthorsForSuggestions(id),
     ZX.getPublishersForSuggestions(id),
@@ -179,13 +185,14 @@ var zxdb_doc = function (id) {
     }
 
     var zerofilled = ("0000000" + id).slice(-7);
-    var filename = json_output_dir + zerofilled + ".json";
+    var filename = `${json_output_dir}_${process.env.ZXDB_NEW}/${zerofilled}.json`;
+    //json_output_dir process.env.ZXDB_NEW + zerofilled + ".json";
     jsonfile.writeFile(filename, doc_array, { spaces: 2 }, function (err) {
       if (err) {
         throw err;
       }
       var zerofilled = ("0000000" + id).slice(-7);
-      console.log("saved file: ", filename);
+      process.stdout.write(`saved file: ${index}/${total} - ${filename}` + consoleControl.eraseLine() + consoleControl.gotoSOL());
       done = true;
     });
   });
@@ -209,7 +216,7 @@ var getAllIDs = function (min_id, max_id) {
     }
     var i = 0;
     for (; i < results.length; i++) {
-      zxdb_doc(results[i].id);
+      zxdb_doc(results[i].id, i, results.length);
     }
     done = true;
   });
@@ -230,7 +237,7 @@ var getID = function (zxdb_id) {
     var i = 0;
     for (; i < results.length; i++) {
       perf.start();
-      zxdb_doc(results[i].id);
+      zxdb_doc(results[i].id, 1, 1);
       perf.stop();
     }
     done = true;
@@ -242,20 +249,43 @@ var getID = function (zxdb_id) {
   db.closeConnection(connection);
 };
 
-var argv = require("minimist")(process.argv.slice(2));
-if (argv.all) {
-  getAllIDs(0, 99999999);
-} else if (argv.from && argv.to) {
-  getAllIDs(argv.from, argv.to);
-} else if (argv.from && !argv.to) {
-  getAllIDs(argv.from, 99999999);
-} else if (argv.id) {
-  getID(argv.id);
-} else if (argv.list) {
-  var listOfIDs = argv.list.split(",");
-  getID(listOfIDs);
-} else {
-  console.log("Usage: " + __filename + " [--all] [--id id] | [--list id1,id2,..] | [--from id] [--to id]");
-  process.exit(-1);
+function main() {
+  console.clear();
+  console.log(consoleControl.color('black','bgWhite', 'bold') + '######### creating JSON for entries' + consoleControl.color('reset'));
+  console.log(`# running node ${process.version}`);
+
+  if(!process.env.ZXDB_NEW) {
+    console.log(consoleControl.color('white','bgRed', 'bold') + 'ZXDB_NEW is missing, please check .env' + consoleControl.color('reset'));
+    process.exit(-1);
+  }
+
+  console.log(`# using ZXDB v${process.env.ZXDB_NEW}`);
+
+  const outputdir = `${json_output_dir}_${process.env.ZXDB_NEW}/`;
+  if(!fs.existsSync(outputdir)){
+    console.log(`output dir: ${outputdir} is missing, creating...`);
+    fs.mkdirSync(outputdir);
+  }
+
+  var argv = require("minimist")(process.argv.slice(2));
+  if (argv.all) {
+    getAllIDs(0, 99999999);
+  } else if (argv.from && argv.to) {
+    getAllIDs(argv.from, argv.to);
+  } else if (argv.from && !argv.to) {
+    getAllIDs(argv.from, 99999999);
+  } else if (argv.id) {
+    getID(argv.id);
+  } else if (argv.list) {
+    var listOfIDs = argv.list.split(",");
+    getID(listOfIDs);
+  } else {
+    console.log("Usage: " + __filename + " [--all] [--id id] | [--list id1,id2,..] | [--from id] [--to id]");
+    process.exit(-1);
+  }
+
+  console.log(consoleControl.color('reset') + consoleControl.showCursor());
+  process.exit(0);
 }
-process.exit(0);
+
+main();

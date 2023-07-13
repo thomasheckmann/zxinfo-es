@@ -13,24 +13,29 @@ if (process.argv.length <= 2) {
     process.exit(-1);
 }
 
+var consoleControl = require('console-control-strings');
 var path = process.argv[2];
 
-fs.readdir(path, function(err, items) {
+console.clear();
+console.log(consoleControl.color('black', 'bgWhite', 'bold') + '######### Importing screen info' + consoleControl.color('reset'));
+console.log(`# running node ${process.version}`);
+
+fs.readdir(path, function (err, items) {
     for (var i = 0; i < items.length; i++) {
         if (items[i].endsWith(".json")) {
-            console.log(`[UPDATE SCREEN] - insert: ${items[i]}`);
+            process.stdout.write(`[UPDATE SCREEN] - insert: ${i}/${items.length} ${items[i]}` + consoleControl.eraseLine() + consoleControl.gotoSOL());
             var id = items[i].substr(0, 7);
             var screens_new = jsonfile.readFileSync(path + items[i]);
             var done = false;
 
             var body;
             es.client.get({
-                    index: es.zxinfo_index,
-                    id: id
-                },
-                function(error, response) {
+                index: es.zxinfo_index,
+                id: id
+            },
+                function (error, response) {
                     if (error) {
-                        console.error(`[WARNING] - NOT FOUND: ${id}`);
+                        console.error(`[WARNING] - NOT FOUND: ${id}` + consoleControl.eraseLine());
                         done = true;
                     } else {
                         body = response._source;
@@ -44,11 +49,11 @@ fs.readdir(path, function(err, items) {
                         body.screens = _.uniqWith(body.screens, _.isEqual);
 
                         es.client.index({
-                                index: es.zxinfo_index,
-                                id: id,
-                                body: body
-                            },
-                            function(error, response) {
+                            index: es.zxinfo_index,
+                            id: id,
+                            body: body
+                        },
+                            function (error, response) {
                                 if (error) {
                                     throw error;
                                 }
@@ -57,7 +62,7 @@ fs.readdir(path, function(err, items) {
                     }
                 });
 
-            require('deasync').loopWhile(function() {
+            require('deasync').loopWhile(function () {
                 return !done;
             });
         }

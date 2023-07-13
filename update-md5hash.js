@@ -13,12 +13,18 @@ if (process.argv.length <= 2) {
     process.exit(-1);
 }
 
+var consoleControl = require('console-control-strings');
 var path = process.argv[2];
+
+console.clear();
+console.log(consoleControl.color('black','bgWhite', 'bold') + '######### Importing md5hash' + consoleControl.color('reset'));
+console.log(`# running node ${process.version}`);
 
 fs.readdir(path, function(err, items) {
     for (var i = 0; i < items.length; i++) {
         if (items[i].endsWith(".json")) {
-            console.log(`[UPDATE MD5HASH] - insert: ${items[i]}`);
+            process.stdout.write(`[UPDATE MD5HASH] - insert: ${i}/${items.length} ${items[i]}` + consoleControl.eraseLine() + consoleControl.gotoSOL());
+
             var id = items[i].substr(0, 7);
             var md5hash = jsonfile.readFileSync(path + items[i]);
             var done = false;
@@ -30,7 +36,7 @@ fs.readdir(path, function(err, items) {
                 },
                 function(error, response) {
                     if (error) {
-                        console.error(`[WARNING] - NOT FOUND: ${id}`);
+                        console.error(`[WARNING] - NOT FOUND: ${id}`+consoleControl.eraseLine());
                         done = true;
                     } else {
                         body = response._source;
