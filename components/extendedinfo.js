@@ -9,6 +9,10 @@
  * - getOtherSystems(id),
  * - getInspiredByTieInLicense(id),
  *
+ * Changelog:
+ * 12.07.2023: members.series_seq -> members.member_seq
+ *        https://spectrumcomputing.co.uk/forums/viewtopic.php?p=120357&sid=6d2b317996fd1ed72fd77cf21d3bf871#p120357
+ * 
  */
 "use strict";
 
