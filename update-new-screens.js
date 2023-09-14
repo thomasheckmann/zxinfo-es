@@ -19,6 +19,9 @@ var path = process.argv[2];
 console.clear();
 console.log(consoleControl.color('black', 'bgWhite', 'bold') + '######### Importing screen info' + consoleControl.color('reset'));
 console.log(`# running node ${process.version}`);
+console.log(`ZXDB_NEW: ${process.env.ZXDB_NEW}`);
+console.log(`ZXDB_OLD: ${process.env.ZXDB_OLD}`);
+console.log(`# input folder: ${path}`);
 
 fs.readdir(path, function (err, items) {
     for (var i = 0; i < items.length; i++) {

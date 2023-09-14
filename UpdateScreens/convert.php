@@ -176,16 +176,24 @@ Update "screens" section for json documents
 
 */
 
+$output_folder = "/Users/kolbeck/Public/ZXINFO/zxinfo-data/release-" . getenv('ZXDB_NEW') . "/screens/";
 echo "### GENERATING json FILES...\n";
+echo "output folder: " . $output_folder . "\n";
 
 foreach ($scr_array as $key => $items) {
 	$json_file = str_pad($key, 7, '0', STR_PAD_LEFT) . ".json";
 	$json_items = json_encode($items, JSON_UNESCAPED_SLASHES);
 	$json_str = "{ \"screens\": $json_items }";
 
-	$json_file = "../data/screens/" . $json_file;
-	file_put_contents($json_file, $json_str);
-	echo "saved json for $key in file: $json_file\n";
+	$json_file = $output_folder . $json_file;
+	$r = file_put_contents($json_file, $json_str);
+	if ($r)
+		echo "saved json for $key in file: $json_file\n";
+  	else {
+		echo "ERROR saving file: $json_file\n";
+		echo $r;
+		exit(1);
+	};
 }
 
 ?>

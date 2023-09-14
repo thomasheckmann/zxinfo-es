@@ -185,7 +185,8 @@ var zxdb_doc = function (id, index, total) {
     }
 
     var zerofilled = ("0000000" + id).slice(-7);
-    var filename = `${json_output_dir}_${process.env.ZXDB_NEW}/${zerofilled}.json`;
+    var filename = `${json_output_dir}/${zerofilled}.json`;
+    // var filename = `${json_output_dir}_${process.env.ZXDB_NEW}/${zerofilled}.json`;
     //json_output_dir process.env.ZXDB_NEW + zerofilled + ".json";
     jsonfile.writeFile(filename, doc_array, { spaces: 2 }, function (err) {
       if (err) {
@@ -261,13 +262,21 @@ function main() {
 
   console.log(`# using ZXDB v${process.env.ZXDB_NEW}`);
 
-  const outputdir = `${json_output_dir}_${process.env.ZXDB_NEW}/`;
+
+  var argv = require("minimist")(process.argv.slice(2));
+
+  var outputdir = `${json_output_dir}_${process.env.ZXDB_NEW}/`;
+  if(argv.output) {
+    outputdir = `${argv.output}/entries/`;
+  }
+
   if(!fs.existsSync(outputdir)){
     console.log(`output dir: ${outputdir} is missing, creating...`);
     fs.mkdirSync(outputdir);
   }
+  console.log(`# output folder:${outputdir}`);
+  json_output_dir = outputdir;
 
-  var argv = require("minimist")(process.argv.slice(2));
   if (argv.all) {
     getAllIDs(0, 99999999);
   } else if (argv.from && argv.to) {

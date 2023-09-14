@@ -36,7 +36,8 @@ curl -H'Content-Type: application/json' -XPOST "http://${ES_HOST}:${ES_PORT}/_al
 echo ""
 echo 'Now importing data into ['${WRITE_ALIAS}']'
 
-(cd ../ && (node import-entries.js data/entries_${ZXDB_NEW}/ 2> import-entries-${WRITE_INDEX}.log)) &
+##### (cd ../ && (node import-entries.js data/entries_${ZXDB_NEW}/ 2> import-entries-${WRITE_INDEX}.log)) &
+(cd ../ && (node import-entries.js ~/Public/ZXINFO/zxinfo-data/release-${ZXDB_NEW}/entries/ 2> import-entries-${WRITE_INDEX}.log)) &
 PID=$!
 wait $PID
 
