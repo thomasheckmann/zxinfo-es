@@ -446,6 +446,20 @@
           }
         }
       },
+      "competition": {
+        "properties": {
+          "name": {
+            "type": "keyword"
+          }
+        }
+      },
+      "demoParty": {
+        "properties": {
+          "name": {
+            "type": "keyword"
+          }
+        }
+      },
       "features": {
         "properties": {
           "name": {
@@ -453,7 +467,35 @@
           }
         }
       },
-      "competition": {
+      "graphicalView": {
+        "properties": {
+          "name": {
+            "type": "keyword"
+          }
+        }
+      },
+      "programmingLanguage": {
+        "properties": {
+          "name": {
+            "type": "keyword"
+          }
+        }
+      },
+      "screenMovement": {
+        "properties": {
+          "name": {
+            "type": "keyword"
+          }
+        }
+      },
+      "sport": {
+        "properties": {
+          "name": {
+            "type": "keyword"
+          }
+        }
+      },
+      "copyright": {
         "properties": {
           "name": {
             "type": "keyword"
@@ -468,6 +510,20 @@
         }
       },
       "unsortedGroup": {
+        "properties": {
+          "name": {
+            "type": "keyword"
+          }
+        }
+      },
+      "crossPlatform": {
+        "properties": {
+          "name": {
+            "type": "keyword"
+          }
+        }
+      },
+      "featuresZX81": {
         "properties": {
           "name": {
             "type": "keyword"

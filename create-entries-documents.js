@@ -87,10 +87,18 @@ var zxdb_doc = function (id, index, total) {
 
     /* EXTENDED INFO */
     EI.getSeries(id),
+    EI.getFeatures(id, "R", "copyright"),
     EI.getFeatures(id, "F", "features"),
+    EI.getFeatures(id, "Z", "featuresZX81"),
     EI.getFeatures(id, "C", "competition"),
     EI.getFeatures(id, "T", "themedGroup"),
     EI.getFeatures(id, "U", "unsortedGroup"),
+    EI.getFeatures(id, "X", "crossPlatform"),
+    EI.getFeatures(id, "D", "demoParty"),
+    EI.getFeatures(id, "G", "graphicalView"),
+    EI.getFeatures(id, "L", "programmingLanguage"),
+    EI.getFeatures(id, "M", "screenMovement"),
+    EI.getFeatures(id, "P", "sport"),
 
     EI.getOtherSystems(id),
     EI.getInspiredByTieInLicense(id),
