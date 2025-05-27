@@ -90,5 +90,5 @@ then
 fi
 
 echo "TRANSFER EXPORT FILES TO HOST: 135.181.195.52"
-rsync -avz $FILES_TO_EXPORT -e 'ssh -i ~/.ssh/thishost-rsync-key' kolbeck@135.181.195.52:/home/kolbeck/git/zxinfo-es/scripts/transfer/
+#rsync -avz $FILES_TO_EXPORT -e 'ssh -i ~/.ssh/thishost-rsync-key' kolbeck@135.181.195.52:/home/kolbeck/git/zxinfo-es/scripts/transfer/
 
