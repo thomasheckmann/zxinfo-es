@@ -67,7 +67,7 @@ var getRelatedLinks = function (id) {
   var deferred = Q.defer();
   var connection = db.getConnection();
   connection.query(
-    'SELECT relw.name AS sitename,rel.link FROM webrefs rel INNER JOIN websites relw ON rel.website_id = relw.id WHERE relw.name NOT IN ("Freebase","The Tipshop","RZX Archive Channel (YouTube)", "ZX81 videos (Youtube)") AND rel.entry_id = ? ORDER BY sitename, link',
+    'SELECT relw.name AS sitename,rel.link FROM webrefs rel INNER JOIN websites relw ON rel.website_id = relw.id WHERE relw.name NOT IN ("Freebase","The Tipshop","Spectrum Computing RZX - YouTube", "ZX81 videos (Youtube)") AND rel.entry_id = ? ORDER BY sitename, link',
     [id],
     function (error, results, fields) {
       if (error) {
@@ -143,13 +143,14 @@ var getRelatedSites = function (id) {
 	"ZX81 videos (Youtube)" - 12369
 	"The Spectrum Show - Youtube" - 15
 	"TV Advert (YouTube)" - 2383
+  "Spectrum Computing RZX - YouTube"
 
 */
 var getYouTubeLinks = function (id) {
   var deferred = Q.defer();
   var connection = db.getConnection();
   connection.query(
-    'SELECT relw.name AS sitename, rel.link FROM webrefs rel INNER JOIN websites relw ON rel.website_id = relw.id WHERE relw.name IN( "RZX Archive - YouTube", "ZX81 videos (Youtube)", "The Spectrum Show - Youtube", "TV Advert (YouTube)" ) AND rel.entry_id = ? ORDER BY sitename',
+    'SELECT relw.name AS sitename, rel.link FROM webrefs rel INNER JOIN websites relw ON rel.website_id = relw.id WHERE relw.name IN( "Spectrum Computing RZX - YouTube", "ZX81 videos (Youtube)", "The Spectrum Show - Youtube", "TV Advert (YouTube)" ) AND rel.entry_id = ? ORDER BY sitename',
     [id],
     function (error, results, fields) {
       if (error) {

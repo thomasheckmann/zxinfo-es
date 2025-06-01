@@ -1,6 +1,19 @@
 #!/bin/bash
+
+#
+# ES_PORT=<port> ES_HOST=<host> ./import_zxinfo.sh
+#
+
+if [ -z "${ES_HOST}" ];
+then
 ES_HOST=localhost
+fi
+
+if [ -z "${ES_PORT}" ];
+then
 ES_PORT=9200
+fi
+
 
 GAMES_INDEX=zxinfo_games
 
@@ -16,17 +29,18 @@ echo 'Index/Type        : ' $GAMES_INDEX
 echo 'Index             : ' ${WRITE_INDEX}
 echo 'Index_alias       : ' ${WRITE_ALIAS}
 
+
 ## ZXINFO
 echo '-- create ' $WRITE_INDEX
 ./elasticdump/bin/elasticdump \
   --input=zxinfo_games.analyzers.txt \
-  --output=http://localhost:9200/${WRITE_INDEX} \
+  --output=http://${ES_HOST}:${ES_PORT}/${WRITE_INDEX} \
   --type=analyzer \
   --headers='{"Content-Type": "application/json"}'
 
 ./elasticdump/bin/elasticdump \
   --input=zxinfo_games.mappings.txt \
-  --output=http://localhost:9200/${WRITE_INDEX} \
+  --output=http://${ES_HOST}:${ES_PORT}/${WRITE_INDEX} \
   --type=mapping \
   --headers='{"Content-Type": "application/json"}'
 
@@ -50,7 +64,7 @@ curl -H'Content-Type: application/json' -XPOST "http://${ES_HOST}:${ES_PORT}/_al
 echo '-- importing data into ' $WRITE_ALIAS
 ./elasticdump/bin/elasticdump \
   --input=zxinfo_games.index.txt \
-  --output=http://localhost:9200/${WRITE_ALIAS} \
+  --output=http://${ES_HOST}:${ES_PORT}/${WRITE_ALIAS} \
   --type=data \
   --headers='{"Content-Type": "application/json"}'
 
@@ -78,4 +92,4 @@ curl -H'Content-Type: application/json' -XPOST "http://${ES_HOST}:${ES_PORT}/_al
 # curl http://localhost:9200/_cat/aliases?v
 # curl http://localhost:9200/zxinfo_games/_doc/0002259
 echo ""
-echo "test: curl http://localhost:9200/zxinfo_games/_doc/0002259 | jq"
+echo "test: curl http://${ES_HOST}:${ES_PORT}/zxinfo_games/_doc/0002259 | jq"

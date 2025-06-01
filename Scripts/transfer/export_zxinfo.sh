@@ -89,6 +89,9 @@ then
     FILES_TO_EXPORT+=" zxinfo_magazines.index.txt zxinfo_magazines.mappings.txt"
 fi
 
-echo "TRANSFER EXPORT FILES TO HOST: 135.181.195.52"
-#rsync -avz $FILES_TO_EXPORT -e 'ssh -i ~/.ssh/thishost-rsync-key' kolbeck@135.181.195.52:/home/kolbeck/git/zxinfo-es/scripts/transfer/
+echo "TRANSFER EXPORT FILES TO HOST: ZXINFO.DK"
+echo $FILES_TO_EXPORT
+echo "--------------->"
+
+sshpass -p mju76YHNTH rsync -avz $FILES_TO_EXPORT docker@zxinfo.dk:/home/docker/es-import/
 

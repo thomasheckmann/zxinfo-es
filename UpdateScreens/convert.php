@@ -6,9 +6,9 @@ error_reporting(0);
 
 //$asset_path = '/Users/dkthahko/Public/Sinclair/git_zxinfo/assets/mirror/spectrumcomputing.co.uk';
 //$asset_path = '/Users/kolbeck/Public/ZXINFO/zxinfo-hash-check/files/spectrumcomputing.co.uk';
-$asset_path = '/Users/kolbeck/Public/ZXINFO/assets/spectrumcomputing.co.uk';
+$asset_path = '/Volumes/M2_SSD/kolbeck/Public/ZXINFO/assets/spectrumcomputing.co.uk';
 
-$zxscreen_path = '/Users/kolbeck/Public/ZXINFO/assets';
+$zxscreen_path = '/Volumes/M2_SSD/kolbeck/Public/ZXINFO/assets';
 
 $scr_array = array();
 
@@ -176,7 +176,7 @@ Update "screens" section for json documents
 
 */
 
-$output_folder = "/Users/kolbeck/Public/ZXINFO/zxinfo-data/release-" . getenv('ZXDB_NEW') . "/screens/";
+$output_folder = "/Volumes/M2_SSD/kolbeck/Public/ZXINFO/zxinfo-data/release-" . getenv('ZXDB_NEW') . "/screens/";
 echo "### GENERATING json FILES...\n";
 echo "output folder: " . $output_folder . "\n";
 
