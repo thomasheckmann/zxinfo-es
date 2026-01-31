@@ -1,9 +1,9 @@
-news.json
 *.log
 .DS_Store
 /node_modules/
 /data/*
-/UpdateScreens/zxscreens/*
+/test-data/*
 /Scripts/transfer/*.txt
 zxscreens.txt
 .env
+news.json

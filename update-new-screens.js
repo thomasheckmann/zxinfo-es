@@ -2,7 +2,7 @@
  updates additionals on existing JSON {id}, with additionals read from JSON file
 */
 
-var es = require('./esConfig');
+var es = require('./includes/esConfig');
 
 var fs = require('fs');
 var jsonfile = require('jsonfile')

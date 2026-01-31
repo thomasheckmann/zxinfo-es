@@ -26,8 +26,8 @@ const _ = require("lodash");
 
 const consoleControl = require("console-control-strings");
 
-const ZXDB_NEW_DIR = `/Users/kolbeck/Public/ZXINFO/zxinfo-data/release-${process.env.ZXDB_NEW}/entries`;
-const ZXDB_OLD_DIR = `/Users/kolbeck/Public/ZXINFO/zxinfo-data/release-${process.env.ZXDB_OLD}/entries`;
+const ZXDB_NEW_DIR = `../zxinfo-data/release-${process.env.ZXDB_NEW}/entries`;
+const ZXDB_OLD_DIR = `../zxinfo-data/release-${process.env.ZXDB_OLD}/entries`;
 // const ZXDB_NEW_DIR = `data/entries_${process.env.ZXDB_NEW}`;
 // const ZXDB_OLD_DIR = `data/entries_${process.env.ZXDB_OLD}`;
 

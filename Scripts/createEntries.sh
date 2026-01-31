@@ -45,7 +45,7 @@ if [ $? -eq 0 ]
 then
   echo "Import OK"
 else
-  echo "Entries import failed - pleae check log: import-zxinfo.log"
+  echo "Entries import failed - pleae check log: ${import-entries-${WRITE_INDEX}.log}"
   exit 1
 fi
 
